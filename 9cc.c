@@ -237,6 +237,16 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
+void free_nodes(Node *node) {
+  if (node->lhs) {
+    free_nodes(node->lhs);
+  }
+  if (node->rhs) {
+    free_nodes(node->rhs);
+  }
+  free(node);
+}
+
 int main(int argc, char **argv) {
   if (argc != 2) {
     fprintf(stderr, "引数の個数が正しくありません\n");
@@ -259,6 +269,7 @@ int main(int argc, char **argv) {
   printf("  ret\n");
 
   free_tokens(head);
+  free_nodes(node);
 
   return 0;
 }
