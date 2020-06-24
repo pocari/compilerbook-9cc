@@ -214,8 +214,8 @@ void gen(Node *node) {
   gen(node->lhs);
   gen(node->rhs);
 
-  printf(" pop rdi\n");
-  printf(" pop rax\n");
+  printf("  pop rdi\n");
+  printf("  pop rax\n");
 
   switch (node->kind) {
     case ND_ADD:
