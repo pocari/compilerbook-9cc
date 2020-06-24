@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
   user_input = argv[1];
 
   // head はfree用
-  Token *head = token = tokenize(argv[1]);
+  Token *head = token = tokenize(user_input);
 
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
