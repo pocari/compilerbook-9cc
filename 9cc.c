@@ -82,11 +82,11 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-Token *new_token(TokenKind kind, Token *cur, char *str) {
+Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
-  tok->len = 1;
+  tok->len = len;
   cur->next = tok;
   return tok;
 }
@@ -102,6 +102,10 @@ void free_tokens(Token *cur) {
   }
 }
 
+bool starts_with(char *p, char *str) {
+  return memcmp(p, str, strlen(str)) == 0;
+}
+
 Token * tokenize(char *p) {
   Token head;
   head.next = NULL;
@@ -113,30 +117,40 @@ Token * tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
-      cur = new_token(TK_RESERVED, cur, p++);
+    if (starts_with(p, "<=") || starts_with(p, ">=") || starts_with(p, "==") || starts_with(p, "!=")) {
+      cur = new_token(TK_RESERVED, cur, p, 2);
+      p += 2;
+      continue;
+    }
+
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '>' || *p == '<') {
+      cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
 
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p);
+      cur = new_token(TK_NUM, cur, p, 0);
       cur->val = strtol(p, &p, 10);
       continue;
     }
 
     error_at(p, "トークナイズできません");
   }
-  new_token(TK_EOF, cur, p);
+  new_token(TK_EOF, cur, p, 0);
 
   return head.next;
 }
 
 typedef enum {
-  ND_ADD, // +
-  ND_SUB, // -
-  ND_MUL, // *
-  ND_DIV, // /
-  ND_NUM, // 整数
+  ND_ADD,     // +
+  ND_SUB,     // -
+  ND_MUL,     // *
+  ND_DIV,     // /
+  ND_LT,      // <
+  ND_LTE,     // <=
+  ND_EQL,     // ==
+  ND_NOT_EQL, // !=
+  ND_NUM,     // 整数
 } NodeKind;
 
 typedef struct Node Node;
@@ -167,17 +181,59 @@ Node *new_node_num(int val) {
   return node;
 }
 
-// expr    = mul ("+" mul | "-" mul)*
-// mul     = unary ("*" unary | "/" unary)*
-// unary   = ("+" | "-")? primary
-// primary = num | "(" expr ")"
+// expr       = equality
+// equality   = relational ("==" relational | "!=" relational)*
+// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+// add        = mul ("+" mul | "-" mul)*
+// mul        = unary ("*" unary | "/" unary)*
+// unary      = ("+" | "-")? primary
+// primary    = num | "(" expr ")"
 
 Node *expr();
+Node *equality();
+Node *relational();
+Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
 
 Node *expr() {
+  return equality();
+}
+
+Node *equality() {
+  Node *node = relational();
+
+  for (;;) {
+    if (consume("==")) {
+      node = new_node(ND_EQL, node, relational());
+    } else if (consume("!=")) {
+      node = new_node(ND_NOT_EQL, node, relational());
+    } else {
+      return node;
+    }
+  }
+}
+
+Node *relational() {
+  Node *node = add();
+
+  for (;;) {
+    if (consume("<=")) {
+      node = new_node(ND_LTE, node, add());
+    } else if (consume(">=")) {
+      node = new_node(ND_LTE, add(), node);
+    } else if (consume("<")) {
+      node = new_node(ND_LT, node, add());
+    } else if (consume(">")) {
+      node = new_node(ND_LT, add(), node);
+    } else {
+      return node;
+    }
+  }
+}
+
+Node *add() {
   Node *node = mul();
 
   for (;;) {
@@ -248,6 +304,26 @@ void gen(Node *node) {
     case ND_DIV:
       printf("  cqo\n");
       printf("  idiv rdi\n");
+      break;
+    case ND_LT:
+      printf("  cmp rax, rdi\n");
+      printf("  setl al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_LTE:
+      printf("  cmp rax, rdi\n");
+      printf("  setle al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_EQL:
+      printf("  cmp rax, rdi\n");
+      printf("  sete al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_NOT_EQL:
+      printf("  cmp rax, rdi\n");
+      printf("  setne al\n");
+      printf("  movzb rax, al\n");
       break;
     default:
       error("予期しないNodeです。 kind: %d\n", node->kind);
