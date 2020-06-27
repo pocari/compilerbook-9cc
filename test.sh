@@ -84,3 +84,42 @@ return sum;
 EOS
 )"
 
+assert 11 "$(cat <<EOS
+foo = 1;
+if (foo == 1) {
+  return 11;
+}
+return 12;
+EOS
+)"
+
+assert 12 "$(cat <<EOS
+foo = 0;
+if (foo == 1) {
+  return 11;
+}
+return 12;
+EOS
+)"
+
+assert 13 "$(cat <<EOS
+foo = 0;
+if (foo == 1) {
+  return 11;
+} else {
+  return 13;
+}
+return 12;
+EOS
+)"
+
+assert 11 "$(cat <<EOS
+foo = 1;
+if (foo == 1) {
+  return 11;
+} else {
+  return 13;
+}
+return 12;
+EOS
+)"

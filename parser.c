@@ -117,6 +117,7 @@ LVar *find_lvar(Token *token) {
 // program    = stmt*
 // stmt       = expr ";"
 //            | "return" expr ";"
+//            | "if" "(" expr ")" stmt ("else" stmt)?
 //            | "while" "(" expr ")" stmt
 // expr       = assign
 // assign     = equality (= assign)?
@@ -157,6 +158,21 @@ Node *stmt() {
     node->kind = ND_RETURN;
     node->lhs = expr();
     expect(";");
+  } else if (consume_kind(TK_IF)) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_IF;
+
+    expect("(");
+    node->code[0] = expr();
+    expect(")");
+    node->code[1] = stmt();
+
+    // elseがあればパース
+    if (consume_kind(TK_ELSE)) {
+      node->code[2] = stmt();
+    } else {
+      node->code[2] = NULL;
+    }
   } else if (consume_kind(TK_WHILE)) {
     expect("(");
     Node *condition = expr();

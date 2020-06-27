@@ -68,6 +68,14 @@ static Keyword keywords[] = {
     "while",
     TK_WHILE,
   },
+  {
+    "if",
+    TK_IF,
+  },
+  {
+    "else",
+    TK_ELSE,
+  },
 };
 
 Keyword *tokenize_keyword(char *p) {

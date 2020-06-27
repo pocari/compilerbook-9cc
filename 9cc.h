@@ -15,6 +15,8 @@ typedef enum {
   TK_NUM,      // 整数トークン
   TK_RETURN,   // return
   TK_WHILE,    // while
+  TK_IF,       // if
+  TK_ELSE,     // else
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -53,6 +55,7 @@ typedef enum {
   ND_RETURN,  // return
   ND_WHILE,   // while
   ND_BLOCK,   // { stmt* } のブロック
+  ND_IF,      // if文
   ND_NUM,     // 整数
 } NodeKind;
 
@@ -62,7 +65,7 @@ struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
-  Node *code[20]; // blockの場合の中身（とりあえず最大20 stmt)
+  Node *code[20]; // blockの場合の中身と、ifの場合の0:cnd, 1: true_block, 2: else_block（とりあえず最大20 stmt)
   int val;    // kindがND_NUMの場合に使う
   int offset; // kindがND_LVARの場合に使う(その変数のrbpからのオフセット)
 };
