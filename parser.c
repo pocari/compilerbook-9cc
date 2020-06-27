@@ -1,4 +1,5 @@
 #include "9cc.h"
+#include <stdlib.h>
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -85,6 +86,25 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
+LVar *dummy_lvar() {
+  LVar *var = calloc(1, sizeof(LVar));
+  var->next = NULL;
+  var->offset = 0;
+
+  return var;
+}
+
+LVar *find_lvar(Token *token) {
+  for (LVar *var = locals; var; var = var->next) {
+    if (var->len == token->len &&
+        memcmp(var->name, token->str, var->len) == 0) {
+      return var;
+    }
+  }
+  return NULL;
+}
+
+
 // program    = stmt*
 // stmt       = expr ";"
 // expr       = assign
@@ -108,6 +128,7 @@ Node *unary();
 Node *primary();
 
 Node *code[100];
+LVar *locals = NULL;
 
 void program() {
   int i = 0;
@@ -219,9 +240,22 @@ Node *primary() {
     // fprintf(stderr, "true,consume_ident\n");
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
-    // 識別子aが rbp + 8
-    // 識別子bが rbp + 16 のオフセットになるように計算する
-    node->offset = (t->str[0] - 'a' + 1) * 8;
+
+    LVar *lvar = find_lvar(t);
+    if (lvar) {
+      // 既存のローカル変数の場合
+      node->offset = lvar -> offset;
+    } else {
+      // 初めて出てきたローカル変数の場合
+      lvar = calloc(1, sizeof(LVar));
+      lvar->name = t->str;
+      lvar->len = t->len;
+      lvar->next = locals;
+      // 新しく変数確保するのでオフセットも広げる
+      lvar->offset = locals->offset + 8;
+      node->offset = lvar->offset;
+      locals = lvar;
+    }
     return node;
   }
 
@@ -237,5 +271,24 @@ void free_nodes(Node *node) {
     free_nodes(node->rhs);
   }
   free(node);
+}
+
+void free_lvars(LVar *var) {
+  while (var) {
+    LVar *tmp = var->next;
+    free(var);
+    var = tmp;
+  }
+}
+
+int count_lvar() {
+  int i = 0;
+  LVar *v = locals;
+  while (v) {
+    i++;
+    v = v->next;
+  }
+  // 最後の1つはダミーなので1引いて返す
+  return i - 1;
 }
 

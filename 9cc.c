@@ -21,6 +21,9 @@ int main(int argc, char **argv) {
   // プログラム全体を保存
   user_input = argv[1];
 
+  // ローカル変数の初期化
+  locals = dummy_lvar();
+
   // head はfree用
   Token *head = token = tokenize(user_input);
   // fprintf(stderr, "-------------------------------- tokenized\n");
@@ -36,10 +39,10 @@ int main(int argc, char **argv) {
 
   // プロローグ
   // rbp初期化とローカル変数確保
-  // 識別子用のアルファベット小文字26(=8byte * 26 = 208byte)文字分の領域確保
   printf("  push rbp\n"); // 前の関数呼び出しでのrbpをスタックに対比
   printf("  mov rbp, rsp\n"); // この関数呼び出しでのベースポインタ設定
-  printf("  sub rsp, 208\n"); // ローカル変数確保
+  // 使用されているローカル変数の数分、領域確保
+  printf("  sub rsp, %d\n", 8 * count_lvar());
 
   // 先頭の文からコード生成
   for (int i = 0; code[i]; i++) {
@@ -60,6 +63,7 @@ int main(int argc, char **argv) {
   for (int i = 0; code[i]; i++) {
     free_nodes(code[i]);
   }
+  free_lvars(locals);
 
   return 0;
 }

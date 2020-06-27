@@ -61,12 +61,27 @@ struct Node {
   int offset; // kindがND_LVARの場合に使う(その変数のrbpからのオフセット)
 };
 
+typedef struct LVar LVar;
+
+struct LVar {
+  LVar *next; // 次の変数
+  char *name; // この変数の名前
+  int len;    // 変数名の長さ
+  int offset; // rbpからのオフセット
+};
+
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 void free_nodes(Node *node);
-
-extern Node *code[100];
+void free_lvars(LVar *var);
 void program();
+LVar *dummy_lvar();
+int count_lvar();
+
+// 文(stmmt)達
+extern Node *code[100];
+// ローカル変数達
+extern LVar *locals;
 
 
 // codegen.c

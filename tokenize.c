@@ -31,12 +31,9 @@ void dump_token(Token *t) {
 }
 
 void free_tokens(Token *cur) {
-  while (cur->next) {
+  while (cur) {
     Token *tmp = cur->next;
     free(cur);
-    if (!tmp) {
-      return;
-    }
     cur  = tmp;
   }
 }
