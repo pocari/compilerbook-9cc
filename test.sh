@@ -153,3 +153,6 @@ if (sum != 20) {
 }
 EOS
 )"
+
+assert 11 'returnx = 11; return returnx;'
+
