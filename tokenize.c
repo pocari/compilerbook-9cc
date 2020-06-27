@@ -71,8 +71,13 @@ Token * tokenize(char *p) {
       continue;
     }
 
+    // とりあえず連続したアルファベット小文字を識別子とみなす
     if ('a' <= *p && *p <= 'z') {
-      cur = new_token(TK_IDENT, cur, p++, 1);
+      char *s = p; // 識別子の先頭
+      while ('a' <= *p && *p <= 'z') {
+        p++;
+      }
+      cur = new_token(TK_IDENT, cur, s, p - s); //p - s で文字列長さになる
       continue;
     }
 
