@@ -9,6 +9,27 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   return tok;
 }
 
+void dump_token(Token *t) {
+  char *kind_str;
+  switch (t->kind) {
+  case TK_RESERVED: // RESERVEDとなっているが今の時点では + または - の記号
+    kind_str = "TK_RESERVED";
+    break;
+  case TK_IDENT: // 識別子
+    kind_str = "TK_IDENT";
+    break;
+  case TK_NUM: // 整数トークン
+    kind_str = "TK_NUM";
+    break;
+  case TK_EOF: // 入力終了
+    kind_str = "TK_EOF";
+    break;
+  default:
+    error("不正なtokenです");
+  }
+  fprintf(stderr, "(Token kind: %s)\n", kind_str);
+}
+
 void free_tokens(Token *cur) {
   while (cur->next) {
     Token *tmp = cur->next;
@@ -30,6 +51,7 @@ Token * tokenize(char *p) {
   Token *cur = &head;
 
   while (*p) {
+    // fprintf(stderr, "*p ... %c\n", *p);
     if (isspace(*p)) {
       p++;
       continue;
@@ -41,7 +63,7 @@ Token * tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '>' || *p == '<') {
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '>' || *p == '<' || *p == ';' || *p == '=') {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -49,6 +71,11 @@ Token * tokenize(char *p) {
     if (isdigit(*p)) {
       cur = new_token(TK_NUM, cur, p, 0);
       cur->val = strtol(p, &p, 10);
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
       continue;
     }
 

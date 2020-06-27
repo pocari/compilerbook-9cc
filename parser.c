@@ -52,11 +52,21 @@ bool consume(char *op) {
   return true;
 }
 
+Token *consume_ident() {
+  if (token->kind == TK_IDENT) {
+    Token *ret = token;
+    token = token->next;
+
+    return ret;
+  }
+  return NULL;
+}
+
 void expect(char *op) {
   if (token->kind != TK_RESERVED ||
       token->len != strlen(op) ||
       memcmp(token->str, op, token->len)) {
-    error("'%c'ではありません", op);
+    error("'%c'(token->kind: %d, token->len: %d, strlen(op): %d)ではありません", op, token->kind, token->len, strlen(op));
   }
   token = token->next;
 }
@@ -75,15 +85,21 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-// expr       = equality
+// program    = stmt*
+// stmt       = expr ";"
+// expr       = assign
+// assign     = equality (= assign)?
 // equality   = relational ("==" relational | "!=" relational)*
 // relational = add ("<" add | "<=" add | ">" add | ">=" add)*
 // add        = mul ("+" mul | "-" mul)*
 // mul        = unary ("*" unary | "/" unary)*
 // unary      = ("+" | "-")? primary
-// primary    = num | "(" expr ")"
+// primary    = num | ident | "(" expr ")"
 
+void program();
+Node *stmt();
 Node *expr();
+Node *assign();
 Node *equality();
 Node *relational();
 Node *add();
@@ -91,8 +107,34 @@ Node *mul();
 Node *unary();
 Node *primary();
 
+Node *code[100];
+
+void program() {
+  int i = 0;
+  while (!at_eof()) {
+    code[i++] = stmt();
+  }
+  code[i] = NULL;
+}
+
+Node *stmt() {
+  Node *node = expr();
+  expect(";");
+  return node;
+}
+
 Node *expr() {
-  return equality();
+  return assign();
+}
+
+Node *assign() {
+  Node *node = equality();
+
+  if (consume("=")) {
+    return new_node(ND_ASSIGN, node, assign());
+  }
+
+  return node;
 }
 
 Node *equality() {
@@ -170,6 +212,20 @@ Node *primary() {
     expect(")");
     return node;
   }
+
+  Token *t = consume_ident();
+  // fprintf(stderr, "try,consume_ident\n");
+  if (t) {
+    // fprintf(stderr, "true,consume_ident\n");
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+    // 識別子aが rbp + 8
+    // 識別子bが rbp + 16 のオフセットになるように計算する
+    node->offset = (t->str[0] - 'a' + 1) * 8;
+    return node;
+  }
+
+  // () でも ident でもなければ 整数
   return new_node_num(expect_number());
 }
 

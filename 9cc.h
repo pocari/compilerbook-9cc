@@ -11,6 +11,7 @@
 // tokenize.c
 typedef enum {
   TK_RESERVED, // RESERVEDとなっているが今の時点では + または - の記号
+  TK_IDENT, // 識別子
   TK_NUM, // 整数トークン
   TK_EOF, // 入力終了
 } TokenKind;
@@ -26,6 +27,7 @@ struct Token {
 
 Token * tokenize(char *p);
 void free_tokens(Token *cur);
+void dump_token(Token *token);
 
 // 現在着目しているトークン
 extern Token *token;
@@ -44,6 +46,8 @@ typedef enum {
   ND_LTE,     // <=
   ND_EQL,     // ==
   ND_NOT_EQL, // !=
+  ND_ASSIGN,  // =
+  ND_LVAR,    // ローカル変数
   ND_NUM,     // 整数
 } NodeKind;
 
@@ -53,14 +57,16 @@ struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
-  int val;
+  int val;    // kindがND_NUMの場合に使う
+  int offset; // kindがND_LVARの場合に使う(その変数のrbpからのオフセット)
 };
 
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 void free_nodes(Node *node);
 
-Node *expr();
+extern Node *code[100];
+void program();
 
 
 // codegen.c
