@@ -244,7 +244,7 @@ Node *primary() {
     LVar *lvar = find_lvar(t);
     if (lvar) {
       // 既存のローカル変数の場合
-      node->offset = lvar -> offset;
+      node->offset = lvar->offset;
     } else {
       // 初めて出てきたローカル変数の場合
       lvar = calloc(1, sizeof(LVar));
