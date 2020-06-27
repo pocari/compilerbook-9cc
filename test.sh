@@ -52,3 +52,7 @@ assert 20 'a=b=10;a+b;'
 assert 15 'a = 1 + 2; b = 3 * 4; a + b;'
 assert 15 'foo = 1 + 2; bar = 3 * 4; foo + bar;'
 assert 1 'a=foo=1; boo = a + foo; boo == 2;'
+
+assert 2 'return 2;'
+assert 4 'b=boo =1; return b + boo + 2;'
+assert 3 'return 3; return 2;'

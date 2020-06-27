@@ -43,6 +43,14 @@ void codegen(Node *node) {
       printf("  mov [rax], rdi\n"); // 左辺の変数にrhsの結果を代入
       printf("  push rdi\n"); // この代入結果自体もスタックに積む(右結合でどんどん左に伝搬していくときの右辺値になる)
       return;
+    case ND_RETURN:
+      codegen(node->lhs);
+      printf("  pop rax\n");
+      printf("  mov rsp, rbp\n");
+      printf("  pop rbp\n");
+      printf("  ret\n");
+
+      return;
   }
 
   codegen(node->lhs);

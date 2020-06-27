@@ -21,6 +21,9 @@ void dump_token(Token *t) {
   case TK_NUM: // 整数トークン
     kind_str = "TK_NUM";
     break;
+  case TK_RETURN: // returnトークン
+    kind_str = "TK_RETURN";
+    break;
   case TK_EOF: // 入力終了
     kind_str = "TK_EOF";
     break;
@@ -38,11 +41,19 @@ void free_tokens(Token *cur) {
   }
 }
 
+bool is_alnum(char c) {
+  return
+    ('a' <= c && c <= 'z') ||
+    ('A' <= c && c <= 'Z') ||
+    ('0' <= c && c <= '9') ||
+    (c == '_');
+}
+
 bool starts_with(char *p, char *str) {
   return memcmp(p, str, strlen(str)) == 0;
 }
 
-Token * tokenize(char *p) {
+Token *tokenize(char *p) {
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -51,6 +62,12 @@ Token * tokenize(char *p) {
     // fprintf(stderr, "*p ... %c\n", *p);
     if (isspace(*p)) {
       p++;
+      continue;
+    }
+
+    if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
+      cur = new_token(TK_RETURN, cur, p, 6);
+      p += 6;
       continue;
     }
 
