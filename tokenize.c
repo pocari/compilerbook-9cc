@@ -54,6 +54,33 @@ bool starts_with(char *p, char *str) {
   return memcmp(p, str, strlen(str)) == 0;
 }
 
+typedef struct Keyword {
+  char *keyword;
+  TokenKind kind;
+} Keyword;
+
+static Keyword keywords[] = {
+  {
+    "return",
+    TK_RETURN,
+  },
+  {
+    "while",
+    TK_WHILE,
+  },
+};
+
+Keyword *tokenize_keyword(char *p) {
+  for (int i = 0; i < sizeof(keywords) / sizeof(Keyword); i++) {
+    Keyword *k = &keywords[i];
+    int len = strlen(k->keyword);
+    if (strncmp(p, k->keyword, len) == 0 && !is_alnum(p[len])) {
+      return k;
+    }
+  }
+  return NULL;
+};
+
 Token *tokenize(char *p) {
   Token head;
   head.next = NULL;
@@ -66,15 +93,11 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
-      cur = new_token(TK_RETURN, cur, p, 6);
-      p += 6;
-      continue;
-    }
-
-    if (strncmp(p, "while", 5) == 0 && !is_alnum(p[5])) {
-      cur = new_token(TK_WHILE, cur, p, 5);
-      p += 5;
+    Keyword *key = tokenize_keyword(p);
+    if (key) {
+      int keyword_len = strlen(key->keyword);
+      cur = new_token(key->kind, cur, p, keyword_len);
+      p += keyword_len;
       continue;
     }
 
