@@ -14,6 +14,7 @@ typedef enum {
   TK_IDENT, // 識別子
   TK_NUM, // 整数トークン
   TK_RETURN, // return
+  TK_WHILE, // while
   TK_EOF, // 入力終了
 } TokenKind;
 
