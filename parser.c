@@ -75,6 +75,7 @@ void expect(char *op) {
   if (token->kind != TK_RESERVED ||
       token->len != strlen(op) ||
       memcmp(token->str, op, token->len)) {
+    dump_token(token);
     error("'%c'(token->kind: %d, token->len: %d, strlen(op): %d)ではありません", op, token->kind, token->len, strlen(op));
   }
   token = token->next;
@@ -114,7 +115,9 @@ LVar *find_lvar(Token *token) {
 
 
 // program    = stmt*
-// stmt       = (expr | return expr) ";"
+// stmt       = expr ";"
+//            | "return" expr ";"
+//            | "while" "(" expr ")" stmt
 // expr       = assign
 // assign     = equality (= assign)?
 // equality   = relational ("==" relational | "!=" relational)*
@@ -153,10 +156,25 @@ Node *stmt() {
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
     node->lhs = expr();
+    expect(";");
+  } else if (consume_kind(TK_WHILE)) {
+    expect("(");
+    Node *condition = expr();
+    expect(")");
+    Node *body = stmt();
+    node = new_node(ND_WHILE, condition, body);
+  } else if (consume("{")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_BLOCK;
+    int i = 0;
+    while (!consume("}")) {
+      node->code[i++] = stmt();
+    }
+    node->code[i] = NULL;
   } else {
     node = expr();
+    expect(";");
   }
-  expect(";");
 
   return node;
 }

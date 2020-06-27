@@ -11,11 +11,11 @@
 // tokenize.c
 typedef enum {
   TK_RESERVED, // RESERVEDとなっているが今の時点では + または - の記号
-  TK_IDENT, // 識別子
-  TK_NUM, // 整数トークン
-  TK_RETURN, // return
-  TK_WHILE, // while
-  TK_EOF, // 入力終了
+  TK_IDENT,    // 識別子
+  TK_NUM,      // 整数トークン
+  TK_RETURN,   // return
+  TK_WHILE,    // while
+  TK_EOF,      // 入力終了
 } TokenKind;
 
 typedef struct Token Token;
@@ -51,6 +51,8 @@ typedef enum {
   ND_ASSIGN,  // =
   ND_LVAR,    // ローカル変数
   ND_RETURN,  // return
+  ND_WHILE,   // while
+  ND_BLOCK,   // { stmt* } のブロック
   ND_NUM,     // 整数
 } NodeKind;
 
@@ -60,6 +62,7 @@ struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
+  Node *code[20]; // blockの場合の中身（とりあえず最大20 stmt)
   int val;    // kindがND_NUMの場合に使う
   int offset; // kindがND_LVARの場合に使う(その変数のrbpからのオフセット)
 };

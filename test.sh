@@ -65,3 +65,22 @@ return hoge;
 EOS
 )"
 
+assert 10 "$(cat <<EOS
+i = 0;
+while (i < 10)
+  i = i + 1;
+return i;
+EOS
+)"
+
+assert 30 "$(cat <<EOS
+i = 0;
+sum = 0;
+while (i < 10) {
+  sum = sum + 3;
+  i = i + 1;
+}
+return sum;
+EOS
+)"
+
