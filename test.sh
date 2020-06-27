@@ -56,3 +56,12 @@ assert 1 'a=foo=1; boo = a + foo; boo == 2;'
 assert 2 'return 2;'
 assert 4 'b=boo =1; return b + boo + 2;'
 assert 3 'return 3; return 2;'
+
+assert 22 "$(cat <<EOS
+a = 10;
+boo = 12;
+hoge = a + boo;
+return hoge;
+EOS
+)"
+
