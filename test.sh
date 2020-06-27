@@ -123,3 +123,33 @@ if (foo == 1) {
 return 12;
 EOS
 )"
+
+assert 4 "$(cat <<EOS
+i = 0;
+sum = 0;
+while (i < 10) {
+  sum = sum + 2;
+  i = i + 1;
+}
+if (sum == 20) {
+  return 4;
+} else {
+  return 5;
+}
+EOS
+)"
+
+assert 5 "$(cat <<EOS
+i = 0;
+sum = 0;
+while (i < 10) {
+  sum = sum + 2;
+  i = i + 1;
+}
+if (sum != 20) {
+  return 4;
+} else {
+  return 5;
+}
+EOS
+)"
