@@ -43,39 +43,44 @@ extern char *user_input;
 
 // ASTのノード種別
 typedef enum {
-  ND_ADD,     // +
-  ND_SUB,     // -
-  ND_MUL,     // *
-  ND_DIV,     // /
-  ND_LT,      // <
-  ND_LTE,     // <=
-  ND_EQL,     // ==
-  ND_NOT_EQL, // !=
-  ND_ASSIGN,  // =
-  ND_LVAR,    // ローカル変数
-  ND_RETURN,  // return
-  ND_WHILE,   // while
-  ND_BLOCK,   // { stmt* } のブロック
-  ND_IF,      // if文
-  ND_FOR,     // for文
-  ND_CALL,    // 関数呼び出し
-  ND_NUM,     // 整数
+  ND_ADD,      // +
+  ND_SUB,      // -
+  ND_MUL,      // *
+  ND_DIV,      // /
+  ND_LT,       // <
+  ND_LTE,      // <=
+  ND_EQL,      // ==
+  ND_NOT_EQL,  // !=
+  ND_ASSIGN,   // =
+  ND_LVAR,     // ローカル変数
+  ND_RETURN,   // return
+  ND_WHILE,    // while
+  ND_BLOCK,    // { stmt* } のブロック
+  ND_IF,       // if文
+  ND_FOR,      // for文
+  ND_CALL,     // 関数呼び出し
+  ND_FUNC_DEF, // 関数定義
+  ND_NUM,      // 整数
 } NodeKind;
 
 typedef struct Node Node;
+typedef struct LVar LVar;
 
 struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
-  Node *code[20]; // blockの場合の中身と、ifの場合の0:cnd, 1: true_block, 2: else_block（とりあえず最大20 stmt)
+
+  // blockの場合の中身と
+  // ifの場合の0:cnd, 1: true_block, 2: else_block
+  // 関数定義時の関数本体 等々
+  Node *code[50];
   int val;    // kindがND_NUMの場合に使う
   int offset; // kindがND_LVARの場合に使う(その変数のrbpからのオフセット)
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
 };
 
-typedef struct LVar LVar;
 
 struct LVar {
   LVar *next; // 次の変数
@@ -92,8 +97,8 @@ void program();
 LVar *dummy_lvar();
 int count_lvar();
 
-// 文(stmmt)達
-extern Node *code[100];
+// 関数達
+extern Node *functions[100];
 // ローカル変数達
 extern LVar *locals;
 

@@ -94,6 +94,19 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
+// strndup が mac側になくてlspでエラーになるので作る
+char *my_strndup(char *str, int len) {
+  char *buf = calloc(len + 1, sizeof(char));
+
+  int i;
+  for (i = 0; i < len; i++) {
+    buf[i] = str[i];
+  }
+  buf[i] = '\0';
+
+  return buf;
+}
+
 LVar *dummy_lvar() {
   LVar *var = calloc(1, sizeof(LVar));
   var->next = NULL;
@@ -113,22 +126,26 @@ LVar *find_lvar(Token *token) {
 }
 
 
-// program    = stmt*
-// stmt       = expr ";"
-//            | "return" expr ";"
-//            | "if" "(" expr ")" stmt ("else" stmt)?
-//            | "while" "(" expr ")" stmt
-//            | "for" "(" expr? ";" expr? ";" expr? ")" stmt
-// expr       = assign
-// assign     = equality (= assign)?
-// equality   = relational ("==" relational | "!=" relational)*
-// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
-// add        = mul ("+" mul | "-" mul)*
-// mul        = unary ("*" unary | "/" unary)*
-// unary      = ("+" | "-")? primary
-// primary    = num | ident ("(" arg_list? ")")? | "(" expr ")"
+// program       = function_decl*
+// function_def  = ident "(" params? ")" "{" stmt* "}"
+// stmt          = expr ";"
+//               | "{" stmt* "}"
+//               | "return" expr ";"
+//               | "if" "(" expr ")" stmt ("else" stmt)?
+//               | "while" "(" expr ")" stmt
+//               | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+// expr          = assign
+// assign        = equality (= assign)?
+// equality      = relational ("==" relational | "!=" relational)*
+// relational    = add ("<" add | "<=" add | ">" add | ">=" add)*
+// add           = mul ("+" mul | "-" mul)*
+// mul           = unary ("*" unary | "/" unary)*
+// unary         = ("+" | "-")? primary
+// primary       = num | ident ("(" arg_list? ")")? | "(" expr ")"
 
 void program();
+Node *function_def();
+void function_body();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -139,15 +156,42 @@ Node *mul();
 Node *unary();
 Node *primary();
 
-Node *code[100];
+Node *functions[100];
 LVar *locals = NULL;
 
 void program() {
   int i = 0;
   while (!at_eof()) {
-    code[i++] = stmt();
+    functions[i++] = function_def();
   }
-  code[i] = NULL;
+
+  functions[i] = NULL;
+}
+
+// function_def  = ident "(" params? ")" "{" funcgtion_body "}"
+Node *function_def() {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_FUNC_DEF;
+
+  Token *t = consume_ident();
+  if (!t) {
+    error("関数定義がありません");
+  }
+  node->funcname = my_strndup(t->str, t->len);
+
+  expect("(");
+  // とりあえず引数なしの関数定義のみ
+  expect(")");
+  expect("{");
+
+  // 関数本体
+  int i = 0;
+  while (!consume("}")) {
+    node->code[i++] = stmt();
+  }
+  node->code[i] = NULL;
+
+  return node;
 }
 
 Node *stmt() {
@@ -327,19 +371,6 @@ Node *parse_lvar(Token *t) {
       locals = lvar;
     }
     return node;
-}
-
-// strndup が mac側になくてlspでエラーになるので作る
-char *my_strndup(char *str, int len) {
-  char *buf = calloc(len + 1, sizeof(char));
-
-  int i;
-  for (i = 0; i < len; i++) {
-    buf[i] = str[i];
-  }
-  buf[i] = '\0';
-
-  return buf;
 }
 
 Node *parse_call_func(Token *t) {
