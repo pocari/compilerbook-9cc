@@ -32,31 +32,7 @@ int main(int argc, char **argv) {
   int i = 0;
   while (functions[i]) {
     Node *f = functions[i];
-    printf("%s:\n", f->funcname);
-
-
-    // プロローグ
-    // rbp初期化とローカル変数確保
-    printf("  push rbp\n"); // 前の関数呼び出しでのrbpをスタックに対比
-    printf("  mov rbp, rsp\n"); // この関数呼び出しでのベースポインタ設定
-    // 使用されているローカル変数の数分、領域確保
-    printf("  sub rsp, %d\n", 8 * count_lvar());
-
-    // 先頭の文からコード生成
-    for (int i = 0; f->code[i]; i++) {
-      codegen(f->code[i]);
-
-      // 最後に演算結果がスタックの先頭にあるので、スタックが溢れないようにそれを1文毎にraxに対比
-      printf("  pop rax\n");
-    }
-
-    // エピローグ
-    // rbpの復元と戻り値設定
-    // 最後の演算結果が、rax(forの最後でpopしてるやつ)にロードされてるのでそれをmainの戻り値として返す
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  ret\n");
-
+    codegen(f);
     i++;
   }
 
