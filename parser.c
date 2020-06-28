@@ -200,14 +200,14 @@ Node *stmt() {
       node->code[1] = expr();
       expect(";");
     }
-    if (consume(";")) {
-      //次が";"なら継続式なしなのでNULL入れる
+    if (consume(")")) {
+      //次が")"なら継続式なしなのでNULL入れる
       node->code[2] = NULL;
     } else {
-      // ";"でないなら継続式があるのでパース
+      // ")"でないなら継続式があるのでパース
       node->code[2] = expr();
+      expect(")");
     }
-    expect(")");
     node->code[3] = stmt();
   } else if (consume("{")) {
     node = calloc(1, sizeof(Node));

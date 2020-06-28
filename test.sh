@@ -165,3 +165,24 @@ return sum;
 EOS
 )"
 
+assert 45 "$(cat <<EOS
+sum = 0;
+i = 0;
+for (; i < 10; i = i + 1) {
+  sum = sum + i;
+}
+return sum;
+EOS
+)"
+
+assert 45 "$(cat <<EOS
+sum = 0;
+i = 0;
+for (; i < 10;) {
+  sum = sum + i;
+  i = i + 1;
+}
+return sum;
+EOS
+)"
+
