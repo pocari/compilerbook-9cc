@@ -1,5 +1,9 @@
 #include "9cc.h"
 
+// 今パース中の関数のローカル変数
+static LVar *locals = NULL;
+Function *functions = NULL;
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
 
@@ -17,6 +21,16 @@ Node *new_node_num(int val) {
   node->val = val;
 
   return node;
+}
+
+LVar *new_lvar(char *name) {
+  LVar *lvar = calloc(1, sizeof(LVar));
+  lvar->name = name;
+  lvar->next = locals;
+  // fprintf(stderr, "new_lvar:next ... %s\n", locals ? "nanika" : "NULL");
+  locals = lvar;
+
+  return lvar;
 }
 
 void error_at(char *loc, char *fmt, ...) {
@@ -90,10 +104,6 @@ int expect_number() {
   return val;
 }
 
-bool at_eof() {
-  return token->kind == TK_EOF;
-}
-
 // strndup が mac側になくてlspでエラーになるので作る
 char *my_strndup(char *str, int len) {
   char *buf = calloc(len + 1, sizeof(char));
@@ -107,10 +117,24 @@ char *my_strndup(char *str, int len) {
   return buf;
 }
 
+char *expect_ident() {
+  if (token->kind != TK_IDENT) {
+    error_at(token->str, "識別子ではありません。");
+  }
+  char *s = my_strndup(token->str, token->len);
+  token = token->next;
+  return s;
+}
+
+bool at_eof() {
+  return token->kind == TK_EOF;
+}
+
 LVar *find_lvar(Token *token) {
   for (LVar *var = locals; var; var = var->next) {
-    if (var->len == token->len &&
-        memcmp(var->name, token->str, var->len) == 0) {
+    // fprintf(stderr, "var_name: %s\n", var->name);
+    if (strlen(var->name) == token->len &&
+        memcmp(var->name, token->str, token->len) == 0) {
       return var;
     }
   }
@@ -119,7 +143,7 @@ LVar *find_lvar(Token *token) {
 
 
 // program       = function_decl*
-// function_def  = ident "(" params? ")" "{" stmt* "}"
+// function_def  = ident "(" function_params? ")" "{" stmt* "}"
 // stmt          = expr ";"
 //               | "{" stmt* "}"
 //               | "return" expr ";"
@@ -147,10 +171,6 @@ Node *mul();
 Node *unary();
 Node *primary();
 
-// 今パース中の関数のローカル変数
-LVar *locals = NULL;
-Function *functions = NULL;
-
 void program() {
   int i = 0;
   Function head = {};
@@ -162,7 +182,26 @@ void program() {
   functions = head.next;
 }
 
-// function_def  = ident "(" params? ")" "{" funcgtion_body "}"
+void function_params(Function *func) {
+  if (consume(")")) {
+    return;
+  }
+
+  int len = 0;
+  new_lvar(expect_ident());
+  len++;
+  // fprintf(stderr, "parse func param start\n");
+  while (!consume(")")) {
+    expect(",");
+    new_lvar(expect_ident());
+    len++;
+  }
+  // fprintf(stderr, "parse func param end\n");
+
+  func->params = locals;
+  func->param_len = len;
+}
+
 Function *function_def() {
   // 今からパースすう関数ようにグローバルのlocalsを初期化
   locals = NULL;
@@ -175,18 +214,20 @@ Function *function_def() {
   func->name = my_strndup(t->str, t->len);
 
   expect("(");
-  // とりあえず引数なしの関数定義のみ
-  expect(")");
+  function_params(func);
   expect("{");
 
   // 関数本体
   int i = 0;
   Node head = {};
   Node *cur = &head;
+  // fprintf(stderr, "parse function body start\n");
   while (!consume("}")) {
+    // dump_token(token);
     cur->next = stmt();
     cur = cur->next;
   }
+  // fprintf(stderr, "parse function body end\n");
   func->body = head.next;
   func->locals = locals;
 
@@ -365,12 +406,7 @@ Node *parse_lvar(Token *t) {
       node->var = lvar;
     } else {
       // 初めて出てきたローカル変数の場合
-      lvar = calloc(1, sizeof(LVar));
-      lvar->name = t->str;
-      lvar->len = t->len;
-      lvar->next = locals;
-      locals = lvar;
-      node->var = lvar;
+      node->var = new_lvar(my_strndup(t->str, t->len));
     }
     return node;
 }

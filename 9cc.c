@@ -42,7 +42,6 @@ int main(int argc, char **argv) {
   }
 
   free_tokens(head);
-  free_lvars(locals);
 
   return 0;
 }

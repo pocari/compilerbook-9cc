@@ -5,7 +5,7 @@ void gen_lval(Node *node) {
     error("代入の左辺値が変数ではありません");
   }
   // rbp からのオフセットからローカル変数のアドレスを計算してスタックに積む
-  printf("  # gen_lval start\n");
+  printf("  # gen_lval start (var_name: %s)\n", node->var->name);
   printf("  mov rax, rbp\n");
   printf("  sub rax, %d\n", node->var->offset);
   printf("  push rax\n");
@@ -33,7 +33,7 @@ void gen(Node *node) {
       printf("  push %d\n", node->val);
       return ;
     case ND_LVAR:
-      printf("  # ND_LVAR start\n");
+      printf("  # ND_LVAR start(var_name: %s)\n", node->var->name);
       gen_lval(node);
       printf("  pop rax\n"); // gen_lval(node)で積んだ変数のアドレスをraxにロード
       printf("  mov rax, [rax]\n"); // 変数のアドレスにある値をraxにロード
@@ -237,8 +237,15 @@ void codegen(Function *node) {
   // rbp初期化とローカル変数確保
   printf("  push rbp\n"); // 前の関数呼び出しでのrbpをスタックに対比
   printf("  mov rbp, rsp\n"); // この関数呼び出しでのベースポインタ設定
-  // 使用されているローカル変数の数分、領域確保
+  // 使用されているローカル変数の数分、領域確保(ここに引数の値を保存する領域も確保される)
   printf("  sub rsp, %d\n", node->stack_size);
+
+  // レジスタから引数の情報をスタックに確保
+  LVar *v = node->params;
+  for (int i = 0; i < node->param_len; i++) {
+    printf("  mov [rbp-%d], %s\n", v->offset, ARGUMENT_REGISTERS[i]);
+    v = v->next;
+  }
 
   // fprintf(stderr, "func: %s, stack_size: %d\n", node->name, node->stack_size);
   // 先頭の文からコード生成

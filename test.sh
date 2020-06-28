@@ -241,3 +241,17 @@ main() {
 }
 EOS
 )"
+
+assert 10 "$(cat <<EOS
+hoge(foo, boo) {
+  baz = 4;
+  return foo - boo - baz;
+}
+main() {
+  foo = 1;
+  bar = 2;
+
+  return hoge(20, 3) - foo - bar;
+}
+EOS
+)"

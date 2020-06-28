@@ -72,6 +72,8 @@ struct Function {
   char *name; // 関数名
   Node *body; // 関数定義本体
   LVar *locals; //この関数のローカル変数情報
+  LVar *params; //この関数の仮引数
+  int param_len; // この関数の仮引数の数
   int stack_size; //この関数のスタックサイズ
 };
 
@@ -103,7 +105,6 @@ struct Node {
 struct LVar {
   LVar *next; // 次の変数
   char *name; // この変数の名前
-  int len;    // 変数名の長さ
   int offset; // rbpからのオフセット
 };
 
@@ -115,9 +116,6 @@ void program();
 
 // 関数達
 extern Function *functions;
-
-// ローカル変数達
-extern LVar *locals;
 
 // codegen.c
 void codegen(Function *func);
