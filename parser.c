@@ -119,6 +119,7 @@ LVar *find_lvar(Token *token) {
 //            | "return" expr ";"
 //            | "if" "(" expr ")" stmt ("else" stmt)?
 //            | "while" "(" expr ")" stmt
+//            | "for" "(" expr? ";" expr? ";" expr? ";" ")" stmt
 // expr       = assign
 // assign     = equality (= assign)?
 // equality   = relational ("==" relational | "!=" relational)*
@@ -179,6 +180,35 @@ Node *stmt() {
     expect(")");
     Node *body = stmt();
     node = new_node(ND_WHILE, condition, body);
+  } else if (consume_kind(TK_FOR)) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_FOR;
+    expect("(");
+    if (consume(";")) {
+      //次が";"なら初期化式なしなのでNULL入れる
+      node->code[0] = NULL;
+    } else {
+      // ";"でないなら初期化式があるのでパース
+      node->code[0] = expr();
+      expect(";");
+    }
+    if (consume(";")) {
+      //次が";"なら条件式なしなのでNULL入れる
+      node->code[1] = NULL;
+    } else {
+      // ";"でないなら条件式があるのでパース
+      node->code[1] = expr();
+      expect(";");
+    }
+    if (consume(";")) {
+      //次が";"なら継続式なしなのでNULL入れる
+      node->code[2] = NULL;
+    } else {
+      // ";"でないなら継続式があるのでパース
+      node->code[2] = expr();
+    }
+    expect(")");
+    node->code[3] = stmt();
   } else if (consume("{")) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_BLOCK;

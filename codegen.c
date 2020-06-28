@@ -89,7 +89,6 @@ void codegen(Node *node) {
           codegen(node->code[1]); // true節のコード生成
           printf(".Lend%04d:\n", end_label); // elseのときの飛び先
         }
-
         printf("  # ND_IF end\n");
       }
       return;
@@ -111,8 +110,41 @@ void codegen(Node *node) {
         printf("  jmp .Lbegin%04d\n", begin_label); //繰り返し
         printf(".Lend%04d:\n", end_label);
         printf("  # ND_WHILE end\n");
-        return;
       }
+      return;
+    case ND_FOR:
+      // node->code[0] ... 初期化式またはNULL
+      // node->code[1] ... 条件式またはNULL
+      // node->code[2] ... 継続式またはNULL
+      // node->code[3] ... forの中身
+      {
+        printf("  # ND_FOR start\n");
+        int begin_label = next_label_key();
+        int end_label = next_label_key();
+        // 初期化式
+        if (node->code[0]) {
+          codegen(node->code[0]);
+        }
+        printf(".Lbegin%04d:\n", begin_label);
+        // 条件式
+        if (node->code[1]) {
+          codegen(node->code[1]);
+          printf("  pop rax\n"); // 条件式の結果をraxにロード
+          printf("  cmp rax, 0\n"); // 条件式の結果チェック
+          printf("  je .Lend%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
+        }
+        // for の中身のアセンブラ
+        codegen(node->code[3]);
+        // 継続式
+        if (node->code[2]) {
+          codegen(node->code[2]);
+        }
+        printf("  jmp .Lbegin%04d\n", begin_label); //繰り返し
+        printf(".Lend%04d:\n", end_label);
+
+        printf("  # ND_FOR end\n");
+      }
+      return;
   }
 
   codegen(node->lhs);

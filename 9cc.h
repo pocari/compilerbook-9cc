@@ -17,6 +17,7 @@ typedef enum {
   TK_WHILE,    // while
   TK_IF,       // if
   TK_ELSE,     // else
+  TK_FOR,      // for
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -56,6 +57,7 @@ typedef enum {
   ND_WHILE,   // while
   ND_BLOCK,   // { stmt* } のブロック
   ND_IF,      // if文
+  ND_FOR,     // for文
   ND_NUM,     // 整数
 } NodeKind;
 

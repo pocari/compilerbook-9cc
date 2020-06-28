@@ -13,7 +13,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 void dump_token(Token *t) {
   char *kind_str;
   switch (t->kind) {
-  case TK_RESERVED: // RESERVEDとなっているが今の時点では + または - の記号
+  case TK_RESERVED: // 記号系
     kind_str = "TK_RESERVED";
     break;
   case TK_IDENT: // 識別子
@@ -24,6 +24,18 @@ void dump_token(Token *t) {
     break;
   case TK_RETURN: // returnトークン
     kind_str = "TK_RETURN";
+    break;
+  case TK_WHILE: // while
+    kind_str = "TK_WHILE";
+    break;
+  case TK_IF: // if
+    kind_str = "TK_IF";
+    break;
+  case TK_ELSE: // else
+    kind_str = "TK_ELSE";
+    break;
+  case TK_FOR: // for
+    kind_str = "TK_FOR";
     break;
   case TK_EOF: // 入力終了
     kind_str = "TK_EOF";
@@ -75,6 +87,10 @@ static Keyword keywords[] = {
   {
     "else",
     TK_ELSE,
+  },
+  {
+    "for",
+    TK_FOR,
   },
 };
 
