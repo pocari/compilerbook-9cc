@@ -6,16 +6,6 @@ Token *token;
 // 入力プログラム
 char *user_input;
 
-void set_stack_info(Function *f) {
-  int offset = 0;
-  for (LVar *var = f->locals; var; var = var->next) {
-    offset += 8;
-    var->offset = offset;
-  }
-  f->stack_size = offset;
-}
-
-
 int main(int argc, char **argv) {
   if (argc != 2) {
     fprintf(stderr, "引数の個数が正しくありません\n");
@@ -36,7 +26,6 @@ int main(int argc, char **argv) {
   printf(".intel_syntax noprefix\n");
 
   for (Function *f = functions; f; f = f->next) {
-    set_stack_info(f);
     codegen(f);
   }
 

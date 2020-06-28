@@ -202,6 +202,17 @@ void function_params(Function *func) {
   func->param_len = len;
 }
 
+// 関数のスタックサイズ関連を計算
+void set_stack_info(Function *f) {
+  int offset = 0;
+  for (LVar *var = f->locals; var; var = var->next) {
+    offset += 8;
+    var->offset = offset;
+  }
+  f->stack_size = offset;
+}
+
+
 Function *function_def() {
   // 今からパースすう関数ようにグローバルのlocalsを初期化
   locals = NULL;
@@ -230,6 +241,7 @@ Function *function_def() {
   // fprintf(stderr, "parse function body end\n");
   func->body = head.next;
   func->locals = locals;
+  set_stack_info(func);
 
   return func;
 }
