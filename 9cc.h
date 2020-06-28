@@ -58,6 +58,7 @@ typedef enum {
   ND_BLOCK,   // { stmt* } のブロック
   ND_IF,      // if文
   ND_FOR,     // for文
+  ND_CALL,    // 関数呼び出し
   ND_NUM,     // 整数
 } NodeKind;
 
@@ -70,6 +71,7 @@ struct Node {
   Node *code[20]; // blockの場合の中身と、ifの場合の0:cnd, 1: true_block, 2: else_block（とりあえず最大20 stmt)
   int val;    // kindがND_NUMの場合に使う
   int offset; // kindがND_LVARの場合に使う(その変数のrbpからのオフセット)
+  char *funcname;
 };
 
 typedef struct LVar LVar;

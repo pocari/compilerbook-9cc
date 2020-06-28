@@ -5,7 +5,9 @@ assert() {
   input="$2"
 
   ./9cc "$input" > tmp.s
-  cc -o tmp tmp.s
+  # 関数呼び出しのテスト用にgcc側で正常な関数を作ってリンクする
+  gcc -c test_func.c
+  cc -o tmp test_func.o tmp.s
   ./tmp
   actual="$?"
 
@@ -185,4 +187,8 @@ for (; i < 10;) {
 return sum;
 EOS
 )"
+
+# 一旦今の時点では 別途gccでコンパイルした test_func.cで定義した foo_return2 を使う
+assert 2 "return foo_return2();"
+assert 4 "return 2 + foo_return2();"
 

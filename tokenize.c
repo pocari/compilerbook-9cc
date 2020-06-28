@@ -62,6 +62,13 @@ bool is_alnum(char c) {
     (c == '_');
 }
 
+bool is_ident_first_char(char c) {
+  return
+    ('a' <= c && c <= 'z') ||
+    ('A' <= c && c <= 'Z') ||
+    (c == '_');
+}
+
 bool starts_with(char *p, char *str) {
   return memcmp(p, str, strlen(str)) == 0;
 }
@@ -131,6 +138,15 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    if (is_ident_first_char(*p)) {
+      char *s = p; // 識別子の先頭
+      while (is_alnum(*p)) {
+        p++;
+      }
+      cur = new_token(TK_IDENT, cur, s, p - s); //p - s で文字列長さになる
+      continue;
+    }
+
     if (ispunct(*p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
@@ -139,16 +155,6 @@ Token *tokenize(char *p) {
     if (isdigit(*p)) {
       cur = new_token(TK_NUM, cur, p, 0);
       cur->val = strtol(p, &p, 10);
-      continue;
-    }
-
-    // とりあえず連続したアルファベット小文字を識別子とみなす
-    if ('a' <= *p && *p <= 'z') {
-      char *s = p; // 識別子の先頭
-      while ('a' <= *p && *p <= 'z') {
-        p++;
-      }
-      cur = new_token(TK_IDENT, cur, s, p - s); //p - s で文字列長さになる
       continue;
     }
 

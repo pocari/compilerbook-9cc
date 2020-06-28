@@ -1,5 +1,4 @@
 #include "9cc.h"
-#include <stdlib.h>
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -308,17 +307,7 @@ Node *unary() {
   return primary();
 }
 
-Node *primary() {
-  if (consume("(")) {
-    Node *node = expr();
-    expect(")");
-    return node;
-  }
-
-  Token *t = consume_ident();
-  // fprintf(stderr, "try,consume_ident\n");
-  if (t) {
-    // fprintf(stderr, "true,consume_ident\n");
+Node *parse_lvar(Token *t) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
 
@@ -338,6 +327,47 @@ Node *primary() {
       locals = lvar;
     }
     return node;
+}
+
+// strndup が mac側になくてlspでエラーになるので作る
+char *my_strndup(char *str, int len) {
+  char *buf = calloc(len + 1, sizeof(char));
+
+  int i;
+  for (i = 0; i < len; i++) {
+    buf[i] = str[i];
+  }
+  buf[i] = '\0';
+
+  return buf;
+}
+
+Node *parse_call_func(Token *t) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_CALL;
+  node->funcname = my_strndup(t->str, t->len);
+
+  expect(")");
+
+  return node;
+}
+
+Node *primary() {
+  if (consume("(")) {
+    Node *node = expr();
+    expect(")");
+    return node;
+  }
+
+  Token *t = consume_ident();
+  if (t) {
+    if (consume("(")) {
+      // identに続けて"("があったら関数呼び出し
+      return parse_call_func(t);
+    } else {
+      // "("がなかったらローカル変数
+      return parse_lvar(t);
+    }
   }
 
   // () でも ident でもなければ 整数
@@ -351,6 +381,7 @@ void free_nodes(Node *node) {
   if (node->rhs) {
     free_nodes(node->rhs);
   }
+  free(node->funcname);
   free(node);
 }
 

@@ -145,6 +145,14 @@ void codegen(Node *node) {
         printf("  # ND_FOR end\n");
       }
       return;
+    case ND_CALL:
+      {
+        printf("  # ND_CALL start\n");
+        printf("  call %s\n", node->funcname);
+        printf("  push rax\n"); // 関数の戻り値をスタックに積む
+        printf("  # ND_CALL end\n");
+      }
+      return;
   }
 
   codegen(node->lhs);
