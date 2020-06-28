@@ -231,25 +231,26 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void codegen(Function *node) {
-  printf("%s:\n", node->name);
+void codegen(Function *func) {
+  printf(".global %s\n", func->name);
+  printf("%s:\n", func->name);
   // プロローグ
   // rbp初期化とローカル変数確保
   printf("  push rbp\n"); // 前の関数呼び出しでのrbpをスタックに対比
   printf("  mov rbp, rsp\n"); // この関数呼び出しでのベースポインタ設定
   // 使用されているローカル変数の数分、領域確保(ここに引数の値を保存する領域も確保される)
-  printf("  sub rsp, %d\n", node->stack_size);
+  printf("  sub rsp, %d\n", func->stack_size);
 
   // レジスタから引数の情報をスタックに確保
-  LVar *v = node->params;
-  for (int i = 0; i < node->param_len; i++) {
+  LVar *v = func->params;
+  for (int i = 0; i < func->param_len; i++) {
     printf("  mov [rbp-%d], %s\n", v->offset, ARGUMENT_REGISTERS[i]);
     v = v->next;
   }
 
   // fprintf(stderr, "func: %s, stack_size: %d\n", node->name, node->stack_size);
   // 先頭の文からコード生成
-  for (Node *n = node->body; n; n = n->next) {
+  for (Node *n = func->body; n; n = n->next) {
     gen(n);
     // 最後に演算結果がスタックの先頭にあるので、スタックが溢れないようにそれを1文毎にraxに対比
     printf("  pop rax\n");
@@ -262,4 +263,3 @@ void codegen(Function *node) {
   printf("  pop rbp\n");
   printf("  ret\n");
 }
-

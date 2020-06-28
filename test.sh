@@ -1,7 +1,6 @@
 #!/bin/bash
 
-assert() {
-  expected="$1"
+assert() { expected="$1"
   input="$2"
 
   ./9cc "$input" > tmp.s
@@ -252,6 +251,40 @@ main() {
   bar = 2;
 
   return hoge(20, 3) - foo - bar;
+}
+EOS
+)"
+
+assert 120 "$(cat <<EOS
+fact(n) {
+  if (n == 1) {
+    return 1;
+  } else {
+    return fact(n - 1) * n;
+  }
+}
+
+main() {
+  return fact(5);
+}
+EOS
+)"
+
+assert 55 "$(cat <<EOS
+fib(n) {
+  if (n == 1) {
+    return 1;
+  } else {
+    if (n == 2) {
+      return 1;
+    } else {
+      return fib(n - 1) + fib(n - 2);
+    }
+  }
+}
+
+main() {
+  return fib(10);
 }
 EOS
 )"

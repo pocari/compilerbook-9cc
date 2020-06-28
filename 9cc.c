@@ -34,7 +34,6 @@ int main(int argc, char **argv) {
 
   // fprintf(stderr, "-------------------------------- parsed\n");
   printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
 
   for (Function *f = functions; f; f = f->next) {
     set_stack_info(f);
