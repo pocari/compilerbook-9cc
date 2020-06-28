@@ -126,7 +126,7 @@ LVar *find_lvar(Token *token) {
 // add        = mul ("+" mul | "-" mul)*
 // mul        = unary ("*" unary | "/" unary)*
 // unary      = ("+" | "-")? primary
-// primary    = num | ident | "(" expr ")"
+// primary    = num | ident ("(" arg_list? ")")? | "(" expr ")"
 
 void program();
 Node *stmt();
@@ -347,6 +347,22 @@ Node *parse_call_func(Token *t) {
   node->kind = ND_CALL;
   node->funcname = my_strndup(t->str, t->len);
 
+  if (consume(")")) {
+    // 閉じカッコがきたら引数なし関数
+    return node;
+  }
+
+  // 引数パース
+  int args = 0;
+  node->code[args++] = expr();
+  while (consume(",")) {
+    node->code[args++] = expr();
+  }
+  node->funcarg_num = args;
+
+  if (args > 6) {
+    fprintf(stderr, "関数呼び出しの引数が6を超えると今はコンパイル出来ません\n");
+  }
   expect(")");
 
   return node;

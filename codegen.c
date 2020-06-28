@@ -18,6 +18,16 @@ int next_label_key() {
   return label_index++;
 }
 
+// を参照(引数1から引数6までは rdi, rsi, rdx, rcx, r8, r9の順に積む)
+static char *ARGUMENT_REGISTERS[] = {
+  "rdi",
+  "rsi",
+  "rdx",
+  "rcx",
+  "r8",
+  "r9",
+};
+
 void codegen(Node *node) {
   switch (node->kind) {
     case ND_NUM:
@@ -147,7 +157,25 @@ void codegen(Node *node) {
       return;
     case ND_CALL:
       {
+        // 引数を渡すときにつかうレジスタは
+        // https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf
+        // の
+        // Figure 3.4: Register Usage
+        // を参照(引数1から引数6までは rdi, rsi, rdx, rcx, r8, r9の順に積む)
         printf("  # ND_CALL start\n");
+        if (node->funcarg_num > 0) {
+          for (int i = 0; i < node->funcarg_num; i++) {
+            // 引数のアセンブリを出力(どんどん引数の式の値がスタックに積まれる)
+            printf("  # func call argument %d\n", i + 1);
+            codegen(node->code[i]);
+          }
+
+          // スタックから引数用のレジスタに値をロード
+          for (int i = 0; i < node->funcarg_num; i++) {
+            printf("  # load argument %d to register\n", i + 1);
+            printf("  pop %s\n", ARGUMENT_REGISTERS[i]);
+          }
+        }
         printf("  call %s\n", node->funcname);
         printf("  push rax\n"); // 関数の戻り値をスタックに積む
         printf("  # ND_CALL end\n");

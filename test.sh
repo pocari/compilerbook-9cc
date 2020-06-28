@@ -192,3 +192,12 @@ EOS
 assert 2 "return foo_return2();"
 assert 4 "return 2 + foo_return2();"
 
+assert 5 "return foo_with_args_add(2, 3);";
+assert 10 "$(cat <<EOS
+foo = 1;
+bar = 2;
+return foo_with_args_add(foo + bar, 3 + 4);
+EOS
+)"
+
+assert 21 "return foo_with_args_add6(1, 2, 3, 4, 5, 6);";

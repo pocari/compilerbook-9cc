@@ -71,7 +71,8 @@ struct Node {
   Node *code[20]; // blockの場合の中身と、ifの場合の0:cnd, 1: true_block, 2: else_block（とりあえず最大20 stmt)
   int val;    // kindがND_NUMの場合に使う
   int offset; // kindがND_LVARの場合に使う(その変数のrbpからのオフセット)
-  char *funcname;
+  char *funcname; // 関数名
+  int funcarg_num; // 関数呼び出しの引数の数
 };
 
 typedef struct LVar LVar;
