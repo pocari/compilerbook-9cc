@@ -25,9 +25,6 @@ int main(int argc, char **argv) {
   // プログラム全体を保存
   user_input = argv[1];
 
-  // ローカル変数の初期化
-  locals = dummy_lvar();
-
   // head はfree用
   Token *head = token = tokenize(user_input);
   // fprintf(stderr, "-------------------------------- tokenized\n");

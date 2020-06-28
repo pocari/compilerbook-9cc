@@ -107,14 +107,6 @@ char *my_strndup(char *str, int len) {
   return buf;
 }
 
-LVar *dummy_lvar() {
-  LVar *var = calloc(1, sizeof(LVar));
-  var->next = NULL;
-  var->offset = 0;
-
-  return var;
-}
-
 LVar *find_lvar(Token *token) {
   for (LVar *var = locals; var; var = var->next) {
     if (var->len == token->len &&
@@ -451,16 +443,5 @@ void free_lvars(LVar *var) {
     free(var);
     var = tmp;
   }
-}
-
-int count_lvar() {
-  int i = 0;
-  LVar *v = locals;
-  while (v) {
-    i++;
-    v = v->next;
-  }
-  // 最後の1つはダミーなので1引いて返す
-  return i - 1;
 }
 

@@ -112,8 +112,6 @@ void error(char *fmt, ...);
 void free_nodes(Node *node);
 void free_lvars(LVar *var);
 void program();
-LVar *dummy_lvar();
-int count_lvar();
 
 // 関数達
 extern Function *functions;
