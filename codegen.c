@@ -1,6 +1,5 @@
 #include "9cc.h"
 
-
 void gen_lval(Node *node) {
   if (node->kind != ND_LVAR) {
     error("代入の左辺値が変数ではありません");
@@ -8,7 +7,7 @@ void gen_lval(Node *node) {
   // rbp からのオフセットからローカル変数のアドレスを計算してスタックに積む
   printf("  # gen_lval start\n");
   printf("  mov rax, rbp\n");
-  printf("  sub rax, %d\n", node->offset);
+  printf("  sub rax, %d\n", node->var->offset);
   printf("  push rax\n");
   printf("  # gen_lval end\n");
 }
@@ -28,7 +27,7 @@ static char *ARGUMENT_REGISTERS[] = {
   "r9",
 };
 
-void codegen(Node *node) {
+void gen(Node *node) {
   switch (node->kind) {
     case ND_NUM:
       printf("  push %d\n", node->val);
@@ -44,7 +43,7 @@ void codegen(Node *node) {
     case ND_ASSIGN:
       printf("  # ND_ASSIGN start\n");
       gen_lval(node->lhs);
-      codegen(node->rhs);
+      gen(node->rhs);
       //rhsの結果がスタックの先頭、その次に変数のアドレスが入ってるのでそれをロード
       printf("  pop rdi\n"); // rhsの結果
       printf("  pop rax\n"); // 左辺の変数のアドレス
@@ -54,19 +53,20 @@ void codegen(Node *node) {
       return;
     case ND_RETURN:
       printf("  # ND_RETURN start\n");
-      codegen(node->lhs);
+      gen(node->lhs);
       printf("  pop rax\n");
       printf("  mov rsp, rbp\n");
       printf("  pop rbp\n");
       printf("  ret\n");
       printf("  # ND_RETURN end\n");
-      codegen(node->lhs);
+      gen(node->lhs);
       return;
     case ND_BLOCK:
       printf("  # ND_BLOCK start\n");
       // このブロックの先頭の文からコード生成
-      for (int i = 0; node->code[i]; i++) {
-        codegen(node->code[i]);
+      //
+      for (Node *n = node->body; n; n = n->next) {
+        gen(n);
         // 最後に演算結果がスタックの先頭にあるので、スタックが溢れないようにそれを1文毎にraxに対比
         printf("  pop rax\n");
       }
@@ -77,18 +77,18 @@ void codegen(Node *node) {
     case ND_IF:
       {
         printf("  # ND_IF start\n");
-        codegen(node->code[0]); // 条件式のコード生成
-        if (node->code[2]) {
+        gen(node->cond); // 条件式のコード生成
+        if (node->els) {
           // else ありの if
           printf("  pop rax\n"); // 条件式の結果をraxにロード
           printf("  cmp rax, 0\n"); // 条件式の結果チェック
           int else_label = next_label_key();
           int end_label = next_label_key();
           printf("  je .Lelse%04d\n", else_label); // false(rax == 0)ならwhile終了なのでジャンプ
-          codegen(node->code[1]); // true節のコード生成
+          gen(node->then);                         // true節のコード生成
           printf("  jmp .Lend%04d\n", end_label); // true節のコードが終わったのでif文抜ける
           printf(".Lelse%04d:\n", else_label); // elseのときの飛崎
-          codegen(node->code[2]); // false節のコード生成
+          gen(node->els);                      // false節のコード生成
           printf(".Lend%04d:\n", end_label); // elseのときの飛崎
         } else {
           // else なしの if
@@ -96,7 +96,7 @@ void codegen(Node *node) {
           printf("  cmp rax, 0\n"); // 条件式の結果チェック
           int end_label = next_label_key();
           printf("  je .Lend%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
-          codegen(node->code[1]); // true節のコード生成
+          gen(node->then);                       // true節のコード生成
           printf(".Lend%04d:\n", end_label); // elseのときの飛び先
         }
         printf("  # ND_IF end\n");
@@ -108,14 +108,14 @@ void codegen(Node *node) {
         int begin_label = next_label_key();
         printf(".Lbegin%04d:\n", begin_label);
         printf("  # ND_WHILE condition start\n");
-        codegen(node->lhs); // 条件式のコード生成
+        gen(node->cond); // 条件式のコード生成
         printf("  # ND_WHILE condition end\n");
         printf("  pop rax\n"); // 条件式の結果をraxにロード
         printf("  cmp rax, 0\n"); // 条件式の結果チェック
         int end_label = next_label_key();
         printf("  je .Lend%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
         printf("  # ND_WHILE body start\n");
-        codegen(node->rhs); // whileの本体実行
+        gen(node->body); // whileの本体実行
         printf("  # ND_WHILE body end\n");
         printf("  jmp .Lbegin%04d\n", begin_label); //繰り返し
         printf(".Lend%04d:\n", end_label);
@@ -123,31 +123,27 @@ void codegen(Node *node) {
       }
       return;
     case ND_FOR:
-      // node->code[0] ... 初期化式またはNULL
-      // node->code[1] ... 条件式またはNULL
-      // node->code[2] ... 継続式またはNULL
-      // node->code[3] ... forの中身
       {
         printf("  # ND_FOR start\n");
         int begin_label = next_label_key();
         int end_label = next_label_key();
         // 初期化式
-        if (node->code[0]) {
-          codegen(node->code[0]);
+        if (node->init) {
+          gen(node->init);
         }
         printf(".Lbegin%04d:\n", begin_label);
         // 条件式
-        if (node->code[1]) {
-          codegen(node->code[1]);
+        if (node->cond) {
+          gen(node->cond);
           printf("  pop rax\n"); // 条件式の結果をraxにロード
           printf("  cmp rax, 0\n"); // 条件式の結果チェック
           printf("  je .Lend%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
         }
         // for の中身のアセンブラ
-        codegen(node->code[3]);
+        gen(node->body);
         // 継続式
-        if (node->code[2]) {
-          codegen(node->code[2]);
+        if (node->inc) {
+          gen(node->inc);
         }
         printf("  jmp .Lbegin%04d\n", begin_label); //繰り返し
         printf(".Lend%04d:\n", end_label);
@@ -164,10 +160,12 @@ void codegen(Node *node) {
         // を参照(引数1から引数6までは rdi, rsi, rdx, rcx, r8, r9の順に積む)
         printf("  # ND_CALL start\n");
         if (node->funcarg_num > 0) {
+          Node *cur = node->arg;
           for (int i = 0; i < node->funcarg_num; i++) {
             // 引数のアセンブリを出力(どんどん引数の式の値がスタックに積まれる)
             printf("  # func call argument %d\n", i + 1);
-            codegen(node->code[i]);
+            gen(cur);
+            cur = cur->next;
           }
 
           // スタックから引数用のレジスタに値をロード
@@ -183,34 +181,12 @@ void codegen(Node *node) {
       return;
     case ND_FUNC_DEF:
       {
-        printf("%s:\n", node->funcname);
-        // プロローグ
-        // rbp初期化とローカル変数確保
-        printf("  push rbp\n"); // 前の関数呼び出しでのrbpをスタックに対比
-        printf("  mov rbp, rsp\n"); // この関数呼び出しでのベースポインタ設定
-        // 使用されているローカル変数の数分、領域確保
-        printf("  sub rsp, %d\n", 8 * count_lvar());
-
-        // 先頭の文からコード生成
-        for (int i = 0; node->code[i]; i++) {
-          codegen(node->code[i]);
-
-          // 最後に演算結果がスタックの先頭にあるので、スタックが溢れないようにそれを1文毎にraxに対比
-          printf("  pop rax\n");
-        }
-
-        // エピローグ
-        // rbpの復元と戻り値設定
-        // 最後の演算結果が、rax(forの最後でpopしてるやつ)にロードされてるのでそれをmainの戻り値として返す
-        printf("  mov rsp, rbp\n");
-        printf("  pop rbp\n");
-        printf("  ret\n");
       }
       return;
   }
 
-  codegen(node->lhs);
-  codegen(node->rhs);
+  gen(node->lhs);
+  gen(node->rhs);
 
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -254,3 +230,29 @@ void codegen(Node *node) {
   }
   printf("  push rax\n");
 }
+
+void codegen(Function *node) {
+  printf("%s:\n", node->name);
+  // プロローグ
+  // rbp初期化とローカル変数確保
+  printf("  push rbp\n"); // 前の関数呼び出しでのrbpをスタックに対比
+  printf("  mov rbp, rsp\n"); // この関数呼び出しでのベースポインタ設定
+  // 使用されているローカル変数の数分、領域確保
+  printf("  sub rsp, %d\n", node->stack_size);
+
+  // fprintf(stderr, "func: %s, stack_size: %d\n", node->name, node->stack_size);
+  // 先頭の文からコード生成
+  for (Node *n = node->body; n; n = n->next) {
+    gen(n);
+    // 最後に演算結果がスタックの先頭にあるので、スタックが溢れないようにそれを1文毎にraxに対比
+    printf("  pop rax\n");
+  }
+
+  // エピローグ
+  // rbpの復元と戻り値設定
+  // 最後の演算結果が、rax(forの最後でpopしてるやつ)にロードされてるのでそれをmainの戻り値として返す
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  ret\n");
+}
+

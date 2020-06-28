@@ -65,18 +65,36 @@ typedef enum {
 
 typedef struct Node Node;
 typedef struct LVar LVar;
+typedef struct Function Function;
+
+struct Function {
+  Function *next; //次の関数
+  char *name; // 関数名
+  Node *body; // 関数定義本体
+  LVar *locals; //この関数のローカル変数情報
+  int stack_size; //この関数のスタックサイズ
+};
 
 struct Node {
   NodeKind kind;
-  Node *lhs;
-  Node *rhs;
 
-  // blockの場合の中身と
-  // ifの場合の0:cnd, 1: true_block, 2: else_block
-  // 関数定義時の関数本体 等々
-  Node *code[50];
+  Node *lhs; // 二項演算での左辺
+  Node *rhs; // 二項演算での右辺
+
+  Node *body; //while, forとかの本文
+  Node *next; // ブロックや関数引数など複数Nodeになる場合の次のnode
+
+  Node *cond; // if, while, for の条件式
+  Node *then; // ifの then節
+  Node *els; // ifのelse節
+
+  Node *init; // forの初期化式
+  Node *inc; // forの継続式
+
+  Node *arg; //関数の引数
+
+  LVar *var; //ND_VARのときの変数情報
   int val;    // kindがND_NUMの場合に使う
-  int offset; // kindがND_LVARの場合に使う(その変数のrbpからのオフセット)
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
 };
@@ -98,12 +116,12 @@ LVar *dummy_lvar();
 int count_lvar();
 
 // 関数達
-extern Node *functions[100];
+extern Function *functions;
+
 // ローカル変数達
 extern LVar *locals;
 
-
 // codegen.c
-void codegen(Node *node);
+void codegen(Function *func);
 
 #endif

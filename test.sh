@@ -225,3 +225,19 @@ EOS
 )"
 
 assert 21 "main() { return foo_with_args_add6(1, 2, 3, 4, 5, 6);}";
+
+assert 15 "$(cat <<EOS
+hoge() {
+  foo = 1;
+  boo = 2;
+  baz = 3;
+  return foo + boo + baz;
+}
+main() {
+  foo = 4;
+  bar = 5;
+
+  return hoge() + foo + bar;
+}
+EOS
+)"

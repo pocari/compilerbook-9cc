@@ -6,6 +6,16 @@ Token *token;
 // 入力プログラム
 char *user_input;
 
+void set_stack_info(Function *f) {
+  int offset = 0;
+  for (LVar *var = f->locals; var; var = var->next) {
+    offset += 8;
+    var->offset = offset;
+  }
+  f->stack_size = offset;
+}
+
+
 int main(int argc, char **argv) {
   if (argc != 2) {
     fprintf(stderr, "引数の個数が正しくありません\n");
@@ -22,24 +32,19 @@ int main(int argc, char **argv) {
   Token *head = token = tokenize(user_input);
   // fprintf(stderr, "-------------------------------- tokenized\n");
 
-  // パースする(結果は グローバル変数のcode[100]に入る)
+  // パースする(結果は グローバル変数のfunctionsに入る)
   program();
 
   // fprintf(stderr, "-------------------------------- parsed\n");
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
 
-  int i = 0;
-  while (functions[i]) {
-    Node *f = functions[i];
+  for (Function *f = functions; f; f = f->next) {
+    set_stack_info(f);
     codegen(f);
-    i++;
   }
 
   free_tokens(head);
-  for (int i = 0; functions[i]; i++) {
-    free_nodes(functions[i]);
-  }
   free_lvars(locals);
 
   return 0;

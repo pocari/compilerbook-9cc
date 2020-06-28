@@ -144,8 +144,7 @@ LVar *find_lvar(Token *token) {
 // primary       = num | ident ("(" arg_list? ")")? | "(" expr ")"
 
 void program();
-Node *function_def();
-void function_body();
+Function *function_def();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -156,28 +155,32 @@ Node *mul();
 Node *unary();
 Node *primary();
 
-Node *functions[100];
+// 今パース中の関数のローカル変数
 LVar *locals = NULL;
+Function *functions = NULL;
 
 void program() {
   int i = 0;
+  Function head = {};
+  Function *cur = &head;
   while (!at_eof()) {
-    functions[i++] = function_def();
+    cur->next = function_def();
+    cur = cur->next;
   }
-
-  functions[i] = NULL;
+  functions = head.next;
 }
 
 // function_def  = ident "(" params? ")" "{" funcgtion_body "}"
-Node *function_def() {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_FUNC_DEF;
+Function *function_def() {
+  // 今からパースすう関数ようにグローバルのlocalsを初期化
+  locals = NULL;
+  Function *func = calloc(1, sizeof(Function));
 
   Token *t = consume_ident();
   if (!t) {
     error("関数定義がありません");
   }
-  node->funcname = my_strndup(t->str, t->len);
+  func->name = my_strndup(t->str, t->len);
 
   expect("(");
   // とりあえず引数なしの関数定義のみ
@@ -186,12 +189,16 @@ Node *function_def() {
 
   // 関数本体
   int i = 0;
+  Node head = {};
+  Node *cur = &head;
   while (!consume("}")) {
-    node->code[i++] = stmt();
+    cur->next = stmt();
+    cur = cur->next;
   }
-  node->code[i] = NULL;
+  func->body = head.next;
+  func->locals = locals;
 
-  return node;
+  return func;
 }
 
 Node *stmt() {
@@ -207,59 +214,64 @@ Node *stmt() {
     node->kind = ND_IF;
 
     expect("(");
-    node->code[0] = expr();
+    node->cond = expr();
     expect(")");
-    node->code[1] = stmt();
+    node->then = stmt();
 
     // elseがあればパース
     if (consume_kind(TK_ELSE)) {
-      node->code[2] = stmt();
+      node->els = stmt();
     } else {
-      node->code[2] = NULL;
+      node->els = NULL;
     }
   } else if (consume_kind(TK_WHILE)) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_WHILE;
+
     expect("(");
-    Node *condition = expr();
+    node->cond = expr();
     expect(")");
-    Node *body = stmt();
-    node = new_node(ND_WHILE, condition, body);
+    node->body = stmt();
   } else if (consume_kind(TK_FOR)) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_FOR;
     expect("(");
     if (consume(";")) {
       //次が";"なら初期化式なしなのでNULL入れる
-      node->code[0] = NULL;
+      node->init = NULL;
     } else {
       // ";"でないなら初期化式があるのでパース
-      node->code[0] = expr();
+      node->init = expr();
       expect(";");
     }
     if (consume(";")) {
       //次が";"なら条件式なしなのでNULL入れる
-      node->code[1] = NULL;
+      node->cond = NULL;
     } else {
       // ";"でないなら条件式があるのでパース
-      node->code[1] = expr();
+      node->cond = expr();
       expect(";");
     }
     if (consume(")")) {
       //次が")"なら継続式なしなのでNULL入れる
-      node->code[2] = NULL;
+      node->inc = NULL;
     } else {
       // ")"でないなら継続式があるのでパース
-      node->code[2] = expr();
+      node->inc = expr();
       expect(")");
     }
-    node->code[3] = stmt();
+    node->body = stmt();
   } else if (consume("{")) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_BLOCK;
     int i = 0;
+    Node head = {};
+    Node *cur = &head;
     while (!consume("}")) {
-      node->code[i++] = stmt();
+      cur->next = stmt();
+      cur = cur->next;
     }
-    node->code[i] = NULL;
+    node->body = head.next;
   } else {
     node = expr();
     expect(";");
@@ -358,17 +370,15 @@ Node *parse_lvar(Token *t) {
     LVar *lvar = find_lvar(t);
     if (lvar) {
       // 既存のローカル変数の場合
-      node->offset = lvar->offset;
+      node->var = lvar;
     } else {
       // 初めて出てきたローカル変数の場合
       lvar = calloc(1, sizeof(LVar));
       lvar->name = t->str;
       lvar->len = t->len;
       lvar->next = locals;
-      // 新しく変数確保するのでオフセットも広げる
-      lvar->offset = locals->offset + 8;
-      node->offset = lvar->offset;
       locals = lvar;
+      node->var = lvar;
     }
     return node;
 }
@@ -385,9 +395,12 @@ Node *parse_call_func(Token *t) {
 
   // 引数パース
   int args = 0;
-  node->code[args++] = expr();
+  Node *cur = node->arg = expr();
+  args++;
   while (consume(",")) {
-    node->code[args++] = expr();
+    cur->next = expr();
+    cur = cur->next;
+    args++;
   }
   node->funcarg_num = args;
 
