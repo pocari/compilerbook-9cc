@@ -17,7 +17,8 @@ int next_label_key() {
   return label_index++;
 }
 
-// を参照(引数1から引数6までは rdi, rsi, rdx, rcx, r8, r9の順に積む)
+// 引数に渡す時用のレジスタ
+// ND_CALLの実装参照
 static char *ARGUMENT_REGISTERS[] = {
   "rdi",
   "rsi",
