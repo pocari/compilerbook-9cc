@@ -247,6 +247,7 @@ void codegen(Function *func) {
   int i = 0;
   for (VarList *v = func->params; v; v = v->next) {
     printf("  mov [rbp-%d], %s\n", v->var->offset, ARGUMENT_REGISTERS[i]);
+    i++;
   }
 
   // fprintf(stderr, "func: %s, stack_size: %d\n", node->name, node->stack_size);
