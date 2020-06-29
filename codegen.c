@@ -86,20 +86,20 @@ void gen(Node *node) {
           printf("  cmp rax, 0\n"); // 条件式の結果チェック
           int else_label = next_label_key();
           int end_label = next_label_key();
-          printf("  je .Lelse%04d\n", else_label); // false(rax == 0)ならwhile終了なのでジャンプ
+          printf("  je .L.else.%04d\n", else_label); // false(rax == 0)ならwhile終了なのでジャンプ
           gen(node->then);                         // true節のコード生成
-          printf("  jmp .Lend%04d\n", end_label); // true節のコードが終わったのでif文抜ける
-          printf(".Lelse%04d:\n", else_label); // elseのときの飛崎
+          printf("  jmp .L.end.%04d\n", end_label); // true節のコードが終わったのでif文抜ける
+          printf(".L.else.%04d:\n", else_label); // elseのときの飛崎
           gen(node->els);                      // false節のコード生成
-          printf(".Lend%04d:\n", end_label); // elseのときの飛崎
+          printf(".L.end.%04d:\n", end_label); // elseのときの飛崎
         } else {
           // else なしの if
           printf("  pop rax\n"); // 条件式の結果をraxにロード
           printf("  cmp rax, 0\n"); // 条件式の結果チェック
           int end_label = next_label_key();
-          printf("  je .Lend%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
+          printf("  je .L.end.%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
           gen(node->then);                       // true節のコード生成
-          printf(".Lend%04d:\n", end_label); // elseのときの飛び先
+          printf(".L.end.%04d:\n", end_label); // elseのときの飛び先
         }
         printf("  # ND_IF end\n");
       }
@@ -108,19 +108,19 @@ void gen(Node *node) {
       {
         printf("  # ND_WHILE start\n");
         int begin_label = next_label_key();
-        printf(".Lbegin%04d:\n", begin_label);
+        printf(".L.begin.%04d:\n", begin_label);
         printf("  # ND_WHILE condition start\n");
         gen(node->cond); // 条件式のコード生成
         printf("  # ND_WHILE condition end\n");
         printf("  pop rax\n"); // 条件式の結果をraxにロード
         printf("  cmp rax, 0\n"); // 条件式の結果チェック
         int end_label = next_label_key();
-        printf("  je .Lend%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
+        printf("  je .L.end.%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
         printf("  # ND_WHILE body start\n");
         gen(node->body); // whileの本体実行
         printf("  # ND_WHILE body end\n");
-        printf("  jmp .Lbegin%04d\n", begin_label); //繰り返し
-        printf(".Lend%04d:\n", end_label);
+        printf("  jmp .L.begin.%04d\n", begin_label); //繰り返し
+        printf(".L.end.%04d:\n", end_label);
         printf("  # ND_WHILE end\n");
       }
       return;
@@ -133,13 +133,13 @@ void gen(Node *node) {
         if (node->init) {
           gen(node->init);
         }
-        printf(".Lbegin%04d:\n", begin_label);
+        printf(".L.begin.%04d:\n", begin_label);
         // 条件式
         if (node->cond) {
           gen(node->cond);
           printf("  pop rax\n"); // 条件式の結果をraxにロード
           printf("  cmp rax, 0\n"); // 条件式の結果チェック
-          printf("  je .Lend%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
+          printf("  je .L.end.%04d\n", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
         }
         // for の中身のアセンブラ
         gen(node->body);
@@ -147,8 +147,8 @@ void gen(Node *node) {
         if (node->inc) {
           gen(node->inc);
         }
-        printf("  jmp .Lbegin%04d\n", begin_label); //繰り返し
-        printf(".Lend%04d:\n", end_label);
+        printf("  jmp .L.begin.%04d\n", begin_label); //繰り返し
+        printf(".L.end.%04d:\n", end_label);
 
         printf("  # ND_FOR end\n");
       }
