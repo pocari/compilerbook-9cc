@@ -1,7 +1,7 @@
 #include "9cc.h"
 
 // 今パース中の関数のローカル変数
-static LVar *locals = NULL;
+static VarList *locals = NULL;
 Function *functions = NULL;
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
@@ -26,9 +26,13 @@ Node *new_node_num(int val) {
 LVar *new_lvar(char *name) {
   LVar *lvar = calloc(1, sizeof(LVar));
   lvar->name = name;
-  lvar->next = locals;
+
+  VarList *v = calloc(1, sizeof(VarList));
+  v->var = lvar;
+  v->next = locals;
+
   // fprintf(stderr, "new_lvar:next ... %s\n", locals ? "nanika" : "NULL");
-  locals = lvar;
+  locals = v;
 
   return lvar;
 }
@@ -131,11 +135,11 @@ bool at_eof() {
 }
 
 LVar *find_lvar(Token *token) {
-  for (LVar *var = locals; var; var = var->next) {
+  for (VarList *var_list = locals; var_list; var_list = var_list->next) {
     // fprintf(stderr, "var_name: %s\n", var->name);
-    if (strlen(var->name) == token->len &&
-        memcmp(var->name, token->str, token->len) == 0) {
-      return var;
+    if (strlen(var_list-> var->name) == token->len &&
+        memcmp(var_list-> var->name, token->str, token->len) == 0) {
+      return var_list->var;
     }
   }
   return NULL;
@@ -187,34 +191,36 @@ void function_params(Function *func) {
     return;
   }
 
-  int len = 0;
-  new_lvar(expect_ident());
-  len++;
+  LVar *var = new_lvar(expect_ident());
+  VarList *var_list = calloc(1, sizeof(VarList));
+  var_list->var = var;
   // fprintf(stderr, "parse func param start\n");
   while (!consume(")")) {
     expect(",");
-    new_lvar(expect_ident());
-    len++;
+    LVar *var = new_lvar(expect_ident());
+    VarList *v = calloc(1, sizeof(VarList));
+    v->var = var;
+    v->next = var_list;
+    var_list = v;
   }
   // fprintf(stderr, "parse func param end\n");
 
-  func->params = locals;
-  func->param_len = len;
+  func->params = var_list;
 }
 
 // 関数のスタックサイズ関連を計算
 void set_stack_info(Function *f) {
   int offset = 0;
-  for (LVar *var = f->locals; var; var = var->next) {
+  for (VarList *v = f->locals; v; v = v->next) {
     offset += 8;
-    var->offset = offset;
+    v->var->offset = offset;
   }
   f->stack_size = offset;
 }
 
 
 Function *function_def() {
-  // 今からパースすう関数ようにグローバルのlocalsを初期化
+  // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
   Function *func = calloc(1, sizeof(Function));
 
@@ -483,13 +489,5 @@ void free_nodes(Node *node) {
   }
   free(node->funcname);
   free(node);
-}
-
-void free_lvars(LVar *var) {
-  while (var) {
-    LVar *tmp = var->next;
-    free(var);
-    var = tmp;
-  }
 }
 

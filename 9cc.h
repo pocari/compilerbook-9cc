@@ -65,15 +65,15 @@ typedef enum {
 
 typedef struct Node Node;
 typedef struct LVar LVar;
+typedef struct VarList VarList;
 typedef struct Function Function;
 
 struct Function {
   Function *next; //次の関数
   char *name; // 関数名
   Node *body; // 関数定義本体
-  LVar *locals; //この関数のローカル変数情報
-  LVar *params; //この関数の仮引数
-  int param_len; // この関数の仮引数の数
+  VarList *locals; //この関数のローカル変数情報
+  VarList *params; //この関数の仮引数
   int stack_size; //この関数のスタックサイズ
 };
 
@@ -101,11 +101,14 @@ struct Node {
   int funcarg_num; // 関数呼び出しの引数の数
 };
 
-
 struct LVar {
-  LVar *next; // 次の変数
   char *name; // この変数の名前
   int offset; // rbpからのオフセット
+};
+
+struct VarList {
+  VarList *next; // 次の変数
+  LVar *var; // 変数の実体へのポインタ
 };
 
 void error_at(char *loc, char *fmt, ...);

@@ -244,10 +244,9 @@ void codegen(Function *func) {
   printf("  sub rsp, %d\n", func->stack_size);
 
   // レジスタから引数の情報をスタックに確保
-  LVar *v = func->params;
-  for (int i = 0; i < func->param_len; i++) {
-    printf("  mov [rbp-%d], %s\n", v->offset, ARGUMENT_REGISTERS[i]);
-    v = v->next;
+  int i = 0;
+  for (VarList *v = func->params; v; v = v->next) {
+    printf("  mov [rbp-%d], %s\n", v->var->offset, ARGUMENT_REGISTERS[i]);
   }
 
   // fprintf(stderr, "func: %s, stack_size: %d\n", node->name, node->stack_size);
