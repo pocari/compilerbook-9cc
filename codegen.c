@@ -28,6 +28,8 @@ static char *ARGUMENT_REGISTERS[] = {
 };
 
 void gen(Node *node) {
+  // switchの警告を消すpragma
+  #pragma clang diagnostic ignored "-Wswitch"
   switch (node->kind) {
     case ND_NUM:
       printf("  push %d\n", node->val);
