@@ -10,6 +10,7 @@
 
 // tokenize.c
 typedef enum {
+  TK_DUMMY,    // dummy
   TK_RESERVED, // RESERVEDとなっているが今の時点では + または - の記号
   TK_IDENT,    // 識別子
   TK_NUM,      // 整数トークン
