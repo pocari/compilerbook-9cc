@@ -26,10 +26,12 @@ int main(int argc, char **argv) {
   printf(".intel_syntax noprefix\n");
 
   for (Function *f = functions; f; f = f->next) {
+    // function_body_ast(f);
     codegen(f);
   }
 
   free_tokens(head);
+  free_functions(functions);
 
   return 0;
 }

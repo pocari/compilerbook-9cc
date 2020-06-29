@@ -481,13 +481,138 @@ Node *primary() {
 }
 
 void free_nodes(Node *node) {
-  if (node->lhs) {
-    free_nodes(node->lhs);
+  if (!node) {
+    return;
   }
-  if (node->rhs) {
-    free_nodes(node->rhs);
-  }
+  // LVar の free は別途VarListのfreeで一緒にする(共有しているため)
+  free_nodes(node->next);
+  free_nodes(node->arg);
+  free_nodes(node->lhs);
+  free_nodes(node->rhs);
+  free_nodes(node->body);
+  free_nodes(node->cond);
+  free_nodes(node->then);
+  free_nodes(node->els);
+  free_nodes(node->init);
+  free_nodes(node->inc);
   free(node->funcname);
   free(node);
 }
 
+void free_lvar(LVar *var) {
+  if (var) {
+    free(var->name);
+    var->name = NULL;
+  }
+  free(var);
+}
+
+void free_var_list_deep(VarList *var) {
+  VarList *v = var;
+  while (v) {
+    VarList *tmp = v->next;
+    free_lvar(v->var);
+    v->var = NULL;
+    free(v);
+    v = tmp;
+  }
+}
+
+void free_var_list_shallow(VarList *var) {
+  VarList *v = var;
+  while (v) {
+    VarList *tmp = v->next;
+    free(v);
+    v = tmp;
+  }
+}
+
+void free_function(Function *f) {
+  free(f->name);
+  // var_listの中のLVarは locals にローカル変数も関数の引数も含めて全部もっているので localsのfreeで一緒に削除する
+  free_var_list_deep(f->locals);
+  // 引数のvar_listの LVar * はlocalsのfreeでおこなｗれているので、こちらは VarList の freeのみ行う
+  free_var_list_shallow(f->params);
+
+  free_nodes(f->body);
+  free(f);
+}
+
+void free_functions(Function *func) {
+  Function *f = func;
+  while (f) {
+    Function *tmp = f->next;
+    free_function(f);
+    f = tmp;
+  }
+}
+
+char *node_ast(Node *node) {
+  char buf[10000];
+  int n;
+
+  switch (node->kind) {
+      case ND_DUMMY:
+        break;
+      case ND_ADD:
+        n = sprintf(buf, "(+ %s %s)", node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_SUB:
+        n = sprintf(buf, "(- %s %s)", node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_MUL:
+        n = sprintf(buf, "(* %s %s)", node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_DIV:
+        n = sprintf(buf, "(/ %s %s)", node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_LT:
+        n = sprintf(buf, "(< %s %s)", node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_LTE:
+        n = sprintf(buf, "(<= %s %s)", node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_EQL:
+        n = sprintf(buf, "(== %s %s)", node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_NOT_EQL:
+        n = sprintf(buf, "(!= %s %s)", node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_ASSIGN:
+        n = sprintf(buf, "(let(%p) %s %s)", node, node_ast(node->lhs), node_ast(node->rhs));
+        return my_strndup(buf, n);
+      case ND_LVAR:
+        n = sprintf(buf, "(lvar %s)", node->var->name);
+        return my_strndup(buf, n);
+      case ND_RETURN:
+        n = sprintf(buf, "(return(%p) %s)", node, node_ast(node->lhs));
+        return my_strndup(buf, n);
+      case ND_WHILE:
+        break;
+      case ND_BLOCK:
+        break;
+      case ND_IF:
+        break;
+      case ND_FOR:
+        break;
+      case ND_CALL:
+        break;
+      case ND_FUNC_DEF:
+        break;
+      case ND_NUM:
+        n = sprintf(buf, "(num %d)", node->val);
+        return my_strndup(buf, n);
+        break;
+  }
+  return NULL;
+}
+
+void node_ast_helper(Node *body) {
+  for (Node *n = body; n; n = n->next) {
+    fprintf(stderr, "%s\n", node_ast(n));
+  }
+}
+
+void function_body_ast(Function *f) {
+  node_ast_helper(f->body);
+}

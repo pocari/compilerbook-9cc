@@ -43,6 +43,7 @@ extern char *user_input;
 
 // ASTのノード種別
 typedef enum {
+  ND_DUMMY,    // dummy
   ND_ADD,      // +
   ND_SUB,      // -
   ND_MUL,      // *
@@ -113,8 +114,9 @@ struct VarList {
 
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
-void free_nodes(Node *node);
-void free_lvars(LVar *var);
+void free_functions(Function *function);
+void function_body_ast(Function *f);
+
 void program();
 
 // 関数達
