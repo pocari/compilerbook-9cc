@@ -1,5 +1,8 @@
 #!/bin/bash
 
+counts=0
+count_ok=0
+
 assert() { expected="$1"
   input="$2"
 
@@ -10,8 +13,10 @@ assert() { expected="$1"
   ./tmp
   actual="$?"
 
+  count=$((count+1))
   if [ "$actual" = "$expected" ]; then
     echo "$input => $actual"
+    count_ok=$((count_ok+1))
   else
     echo "$input => $expected expected, but got $actual"
   fi
@@ -288,3 +293,6 @@ main() {
 }
 EOS
 )"
+
+echo "total case: $count, ok: $count_ok"
+
