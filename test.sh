@@ -294,5 +294,11 @@ main() {
 EOS
 )"
 
+echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 
+if [ $count = $count_ok ]; then
+  exit 0
+else
+  exit 1
+fi
