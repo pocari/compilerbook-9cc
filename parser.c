@@ -176,7 +176,6 @@ Node *unary();
 Node *primary();
 
 void program() {
-  int i = 0;
   Function head = {};
   Function *cur = &head;
   while (!at_eof()) {
@@ -549,7 +548,7 @@ void free_functions(Function *func) {
 
 char *node_ast(Node *node) {
   char buf[10000];
-  int n;
+  int n = 0;
 
   switch (node->kind) {
       case ND_DUMMY:
@@ -579,22 +578,33 @@ char *node_ast(Node *node) {
         n = sprintf(buf, "(!= %s %s)", node_ast(node->lhs), node_ast(node->rhs));
         return my_strndup(buf, n);
       case ND_ASSIGN:
-        n = sprintf(buf, "(let(%p) %s %s)", node, node_ast(node->lhs), node_ast(node->rhs));
+        n = sprintf(buf, "(let %s %s)", node_ast(node->lhs), node_ast(node->rhs));
         return my_strndup(buf, n);
       case ND_LVAR:
         n = sprintf(buf, "(lvar %s)", node->var->name);
         return my_strndup(buf, n);
       case ND_RETURN:
-        n = sprintf(buf, "(return(%p) %s)", node, node_ast(node->lhs));
+        n = sprintf(buf, "(return %s)", node_ast(node->lhs));
         return my_strndup(buf, n);
       case ND_WHILE:
-        break;
+        n = sprintf(buf, "(while (cond %s) (body %s))", node_ast(node->cond), node_ast(node->body));
+        return my_strndup(buf, n);
       case ND_BLOCK:
-        break;
+        n += sprintf(buf, "(block ");
+        for (Node *nd = node->body; nd; nd = nd->next) {
+          n += sprintf(buf + n, "%s", node_ast(nd));
+          if (nd->next) {
+            n += sprintf(buf + n, " ");
+          }
+        }
+        n += sprintf(buf + n, ")");
+        return my_strndup(buf, n);
       case ND_IF:
-        break;
+        n = sprintf(buf, "(if (cond %s) (then %s) (else %s))", node_ast(node->cond), node_ast(node->then), node_ast(node->els));
+        return my_strndup(buf, n);
       case ND_FOR:
-        break;
+        n = sprintf(buf, "(for (init %s) (cond %s) (inc %s) (body %s))", node_ast(node->init), node_ast(node->inc), node_ast(node->inc), node_ast(node->body));
+        return my_strndup(buf, n);
       case ND_CALL:
         break;
       case ND_FUNC_DEF:
