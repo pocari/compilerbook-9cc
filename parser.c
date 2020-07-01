@@ -550,77 +550,245 @@ char *node_ast(Node *node) {
   char buf[10000];
   int n = 0;
 
+  if (!node) {
+    return NULL;
+  }
+
   switch (node->kind) {
       case ND_DUMMY:
         break;
       case ND_ADD:
-        n = sprintf(buf, "(+ %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(+ %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_SUB:
-        n = sprintf(buf, "(- %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(- %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_MUL:
-        n = sprintf(buf, "(* %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(* %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_DIV:
-        n = sprintf(buf, "(/ %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(/ %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_LT:
-        n = sprintf(buf, "(< %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(< %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_LTE:
-        n = sprintf(buf, "(<= %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(<= %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_EQL:
-        n = sprintf(buf, "(== %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(== %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_NOT_EQL:
-        n = sprintf(buf, "(!= %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(!= %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_ASSIGN:
-        n = sprintf(buf, "(let %s %s)", node_ast(node->lhs), node_ast(node->rhs));
-        return my_strndup(buf, n);
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(let %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_LVAR:
         n = sprintf(buf, "(lvar %s)", node->var->name);
         return my_strndup(buf, n);
       case ND_RETURN:
-        n = sprintf(buf, "(return %s)", node_ast(node->lhs));
-        return my_strndup(buf, n);
-      case ND_WHILE:
-        n = sprintf(buf, "(while (cond %s) (body %s))", node_ast(node->cond), node_ast(node->body));
-        return my_strndup(buf, n);
-      case ND_BLOCK:
-        n += sprintf(buf, "(block ");
-        for (Node *nd = node->body; nd; nd = nd->next) {
-          n += sprintf(buf + n, "%s", node_ast(nd));
-          if (nd->next) {
-            n += sprintf(buf + n, " ");
-          }
+        {
+          char *l = node_ast(node->lhs);
+          n = sprintf(buf, "(return %s)", l);
+          free(l);
+          return my_strndup(buf, n);
         }
-        n += sprintf(buf + n, ")");
-        return my_strndup(buf, n);
+      case ND_WHILE:
+        {
+          char *cond = node_ast(node->cond);
+          char *body = node_ast(node->body);
+          n = sprintf(buf, "(while (cond %s) (body %s))", cond, body);
+          char *ret = my_strndup(buf, n);
+          free(cond);
+          free(body);
+          return ret;
+        }
+      case ND_BLOCK:
+        {
+          int i = 0;
+          char *tmp_bufs[1000];
+          n += sprintf(buf, "(block ");
+          for (Node *nd = node->body; nd; nd = nd->next) {
+            tmp_bufs[i] = node_ast(nd);
+            n += sprintf(buf + n, "%s", tmp_bufs[i]);
+            if (nd->next) {
+              n += sprintf(buf + n, " ");
+            }
+            i++;
+          }
+          for (int j = 0; j < i; j++) {
+            free(tmp_bufs[j]);
+          }
+          n += sprintf(buf + n, ")");
+          return my_strndup(buf, n);
+        }
       case ND_IF:
-        n = sprintf(buf, "(if (cond %s) (then %s) (else %s))", node_ast(node->cond), node_ast(node->then), node_ast(node->els));
-        return my_strndup(buf, n);
+        {
+          char *cond = node_ast(node->cond);
+          char *then = node_ast(node->then);
+          char *els = node_ast(node->els);
+          n = sprintf(buf, "(if (cond %s) (then %s) (else %s))", node_ast(node->cond), node_ast(node->then), node_ast(node->els));
+          char *ret = my_strndup(buf, n);
+          free(cond);
+          free(then);
+          free(els);
+          return ret;
+        }
       case ND_FOR:
-        n = sprintf(buf, "(for (init %s) (cond %s) (inc %s) (body %s))", node_ast(node->init), node_ast(node->inc), node_ast(node->inc), node_ast(node->body));
-        return my_strndup(buf, n);
+        {
+          char *init = node_ast(node->init);
+          char *cond = node_ast(node->cond);
+          char *inc = node_ast(node->inc);
+          char *body = node_ast(node->body);
+          n = sprintf(buf, "(for (init %s) (cond %s) (inc %s) (body %s))", node_ast(node->init), node_ast(node->inc), node_ast(node->inc), node_ast(node->body));
+          char *ret = my_strndup(buf, n);
+          free(init);
+          free(cond);
+          free(inc);
+          free(body);
+          return ret;
+        }
       case ND_CALL:
-        break;
+        {
+          char *tmp_bufs[1000];
+          n = sprintf(buf, "(call (name %s)", node->funcname);
+          int i = 0;
+          for (Node *p = node->arg; p; p = p->next) {
+            char *tmp = tmp_bufs[i] = node_ast(p);
+            n += sprintf(buf + n, " %s", tmp);
+            i++;
+          }
+          n += sprintf(buf + n, ")");
+          char *ret = my_strndup(buf, n);
+
+          for (int j = 0; j < i; j++) {
+            free(tmp_bufs[j]);
+          }
+          return ret;
+        }
       case ND_NUM:
         n = sprintf(buf, "(num %d)", node->val);
         return my_strndup(buf, n);
-        break;
   }
   return NULL;
 }
 
-void node_ast_helper(Node *body) {
-  for (Node *n = body; n; n = n->next) {
-    fprintf(stderr, "%s\n", node_ast(n));
+char *node_ast_helper(Node *body) {
+  char *tmp_bufs[1000];// 文の数
+  char buf[10000];// ast dumpの文字列バッファ
+
+  int n = 0;
+  int i = 0;
+
+  n += sprintf(buf + n, "\n");
+  for (Node *nd = body; nd; nd = nd->next) {
+    char *tmp = tmp_bufs[i] = node_ast(nd);
+    n += sprintf(buf + n, "  %s\n", tmp);
   }
+  char *ret = my_strndup(buf, n);
+  for (int j = 0; j < i; j++) {
+    free(tmp_bufs[j]);
+  }
+  return ret;
 }
 
-void function_body_ast(Function *f) {
-  node_ast_helper(f->body);
+char *function_body_ast(Function *f) {
+  int n = 0;
+  char buf[10000];
+  n = sprintf(buf + n, "(def %s (", f->name);
+
+  int i = 0;
+  VarList* reverse_params = NULL;
+  // f->paramsは最後の引数からのリンクリストになってるのでダンプ用には逆順にする。
+  for (VarList *cur = f->params; cur; cur = cur->next) {
+    VarList *vl = calloc(1, sizeof(VarList));
+    vl->next = reverse_params;
+    vl->var = cur->var;
+    reverse_params = vl;
+  }
+
+  // 逆順にしたリストからastダンプ
+  for (VarList *p = reverse_params; p; p = p->next) {
+    n += sprintf(buf + n, "%s", p->var->name);
+    if (p->next) {
+      n += sprintf(buf + n, " ");
+    }
+  }
+  // 逆順のリストはもういらないので捨てる。(そこに紐づくLVar は別途freeされるので無視する)
+  VarList *rp = reverse_params;
+  while (rp) {
+    VarList *tmp = rp->next;
+    free(rp);
+    rp = tmp;
+  }
+
+  char *body_ast = node_ast_helper(f->body);
+  n += sprintf(buf + n, ") ( %s))", body_ast);
+  free(body_ast);
+
+  return my_strndup(buf, n);
 }

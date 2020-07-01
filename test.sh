@@ -294,6 +294,30 @@ main() {
 EOS
 )"
 
+
+assert 1 "$(cat <<EOS
+func(a, b) {
+  for (i = 0; i < 10; i = i + 1) {
+    a = a + 1;
+  }
+  j = 0;
+  while (j < 10) {
+    b = b + 1;
+    j = j + 1;
+  }
+  if (a + b > 0) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+main() {
+  return func(2, 3);
+}
+EOS
+)"
+
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 

@@ -26,7 +26,9 @@ int main(int argc, char **argv) {
   printf(".intel_syntax noprefix\n");
 
   for (Function *f = functions; f; f = f->next) {
-    // function_body_ast(f);
+    char *ast = function_body_ast(f);
+    fprintf(stderr, "%s\n", ast);
+    free(ast);
     codegen(f);
   }
 

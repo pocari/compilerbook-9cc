@@ -115,7 +115,7 @@ struct VarList {
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 void free_functions(Function *function);
-void function_body_ast(Function *f);
+char *function_body_ast(Function *f);
 
 void program();
 
