@@ -182,10 +182,6 @@ void gen(Node *node) {
         printf("  # ND_CALL end\n");
       }
       return;
-    case ND_FUNC_DEF:
-      {
-      }
-      return;
   }
 
   gen(node->lhs);

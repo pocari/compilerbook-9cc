@@ -607,8 +607,6 @@ char *node_ast(Node *node) {
         return my_strndup(buf, n);
       case ND_CALL:
         break;
-      case ND_FUNC_DEF:
-        break;
       case ND_NUM:
         n = sprintf(buf, "(num %d)", node->val);
         return my_strndup(buf, n);

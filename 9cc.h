@@ -61,7 +61,6 @@ typedef enum {
   ND_IF,       // if文
   ND_FOR,      // for文
   ND_CALL,     // 関数呼び出し
-  ND_FUNC_DEF, // 関数定義
   ND_NUM,      // 整数
 } NodeKind;
 
