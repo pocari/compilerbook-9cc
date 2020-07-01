@@ -6,6 +6,12 @@ Token *token;
 // 入力プログラム
 char *user_input;
 
+void dump_function(Function *f) {
+  char *ast = function_body_ast(f);
+  fprintf(stderr, "%s\n", ast);
+  free(ast);
+}
+
 int main(int argc, char **argv) {
   if (argc != 2) {
     fprintf(stderr, "引数の個数が正しくありません\n");
@@ -26,9 +32,7 @@ int main(int argc, char **argv) {
   printf(".intel_syntax noprefix\n");
 
   for (Function *f = functions; f; f = f->next) {
-    char *ast = function_body_ast(f);
-    fprintf(stderr, "%s\n", ast);
-    free(ast);
+    // dump_function(f);
     codegen(f);
   }
 
