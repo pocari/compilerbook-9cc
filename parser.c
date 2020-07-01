@@ -747,7 +747,7 @@ char *node_ast_helper(Node *body) {
   n += sprintf(buf + n, "\n");
   for (Node *nd = body; nd; nd = nd->next) {
     char *tmp = tmp_bufs[i] = node_ast(nd);
-    n += sprintf(buf + n, "  %s\n", tmp);
+    n += sprintf(buf + n, "##   %s\n", tmp);
   }
   char *ret = my_strndup(buf, n);
   for (int j = 0; j < i; j++) {
@@ -787,7 +787,8 @@ char *function_body_ast(Function *f) {
   }
 
   char *body_ast = node_ast_helper(f->body);
-  n += sprintf(buf + n, ") ( %s))", body_ast);
+  n += sprintf(buf + n, ") ( %s", body_ast);
+  n += sprintf(buf + n, "## ))");
   free(body_ast);
 
   return my_strndup(buf, n);

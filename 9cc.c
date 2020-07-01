@@ -8,18 +8,28 @@ char *user_input;
 
 void dump_function(Function *f) {
   char *ast = function_body_ast(f);
-  fprintf(stderr, "%s\n", ast);
+  printf("## %s\n", ast);
   free(ast);
 }
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
+  bool dump_ast = false;
+
+  if (argc < 2) {
     fprintf(stderr, "引数の個数が正しくありません\n");
     return 1;
   }
 
+  if (argc > 2) {
+    for (int i = 1; i < argc - 1; i++) {
+      if (strcmp(argv[i], "--ast") == 0) {
+        dump_ast = true;
+      }
+    }
+  }
+
   // プログラム全体を保存
-  user_input = argv[1];
+  user_input = argv[argc - 1];
 
   // head はfree用
   Token *head = token = tokenize(user_input);
@@ -32,7 +42,9 @@ int main(int argc, char **argv) {
   printf(".intel_syntax noprefix\n");
 
   for (Function *f = functions; f; f = f->next) {
-    // dump_function(f);
+    if (dump_ast) {
+      dump_function(f);
+    }
     codegen(f);
   }
 
