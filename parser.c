@@ -4,6 +4,51 @@
 static VarList *locals = NULL;
 Function *functions = NULL;
 
+char *node_kind_to_s(Node *nd) {
+  switch (nd->kind) {
+    case  ND_DUMMY:
+      return "ND_DUMMY";
+    case  ND_ADD:
+      return  "ND_ADD";
+    case  ND_SUB:
+      return  "ND_SUB";
+    case  ND_MUL:
+      return  "ND_MUL";
+    case  ND_DIV:
+      return  "ND_DIV";
+    case  ND_LT:
+      return  "ND_LT";
+    case  ND_LTE:
+      return  "ND_LTE";
+    case  ND_EQL:
+      return  "ND_EQL";
+    case  ND_NOT_EQL:
+      return  "ND_NOT_EQ";
+    case  ND_ASSIGN:
+      return  "ND_ASSIGN";
+    case  ND_LVAR:
+      return  "ND_LVAR";
+    case  ND_RETURN:
+      return  "ND_RETURN";
+    case  ND_WHILE:
+      return  "ND_WHILE";
+    case  ND_BLOCK:
+      return  "ND_BLOCK";
+    case  ND_IF:
+      return  "ND_IF";
+    case  ND_FOR:
+      return  "ND_FOR";
+    case  ND_CALL:
+      return  "ND_CALL";
+    case  ND_ADDR:
+      return  "ND_ADDR";
+    case  ND_DEREF:
+      return  "ND_DEREF";
+    case  ND_NUM:
+      return "ND_NUM  ";
+  };
+}
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
 
@@ -160,7 +205,10 @@ LVar *find_lvar(Token *token) {
 // relational    = add ("<" add | "<=" add | ">" add | ">=" add)*
 // add           = mul ("+" mul | "-" mul)*
 // mul           = unary ("*" unary | "/" unary)*
-// unary         = ("+" | "-")? primary
+// unary         = "+"? primary
+//               | "-"? primary
+//               | "&" unary
+//               | "*" unary
 // primary       = num | ident ("(" arg_list? ")")? | "(" expr ")"
 
 void program();
@@ -409,6 +457,10 @@ Node *unary() {
     return primary();
   } else if (consume("-")) {
     return new_node(ND_SUB, new_node_num(0), primary());
+  } else if (consume("&")) {
+    return new_node(ND_ADDR, unary(), NULL);
+  } else if (consume("*")) {
+    return new_node(ND_DEREF, unary(), NULL);
   }
   return primary();
 }
@@ -728,6 +780,22 @@ char *node_ast(Node *node) {
           for (int j = 0; j < i; j++) {
             free(tmp_bufs[j]);
           }
+          return ret;
+        }
+      case ND_ADDR:
+        {
+          char *l = node_ast(node->lhs);
+          n = sprintf(buf, "(ADDR %s)", l);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          return ret;
+        }
+      case ND_DEREF:
+        {
+          char *l = node_ast(node->lhs);
+          n = sprintf(buf, "(DEREF %s)", l);
+          char *ret = my_strndup(buf, n);
+          free(l);
           return ret;
         }
       case ND_NUM:

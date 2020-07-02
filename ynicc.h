@@ -61,6 +61,8 @@ typedef enum {
   ND_IF,       // if文
   ND_FOR,      // for文
   ND_CALL,     // 関数呼び出し
+  ND_ADDR,     // &演算子でのアドレス取得
+  ND_DEREF,    // *演算子でのアドレス参照
   ND_NUM,      // 整数
 } NodeKind;
 
@@ -116,6 +118,7 @@ void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 void free_functions(Function *function);
 char *function_body_ast(Function *f);
+char *node_kind_to_s(Node *nd);
 
 void program();
 

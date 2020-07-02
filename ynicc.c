@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
   }
 
   free_tokens(head);
-  free_functions(functions);
+  // free_functions(functions);
 
   return 0;
 }

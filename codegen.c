@@ -1,15 +1,30 @@
 #include "ynicc.h"
 
-void gen_lval(Node *node) {
-  if (node->kind != ND_LVAR) {
-    error("代入の左辺値が変数ではありません");
+void gen(Node *node);
+
+void gen_addr(Node *node) {
+  // switchの警告を消すpragma
+  #pragma clang diagnostic ignored "-Wswitch"
+  switch(node->kind) {
+    case ND_LVAR:
+      printf("  # gen_addr start (var_name: %s)\n", node->var->name);
+      printf("  # gen_addr-ND_LVAR start\n");
+      printf("  mov rax, rbp\n");
+      printf("  sub rax, %d\n", node->var->offset);
+      printf("  push rax\n");
+      printf("  # gen_addr-ND_LVAR end\n");
+      printf("  # gen_addr end\n");
+      return;
+    case ND_DEREF:
+      printf("  # gen_addr start (var_name: none)\n");
+      printf("  # gen_addr-ND_DEREF start\n");
+      gen(node->lhs);
+      printf("  # gen_addr-ND_DEREF stop\n");
+      printf("  # gen_addr end\n");
+      return;
   }
-  // rbp からのオフセットからローカル変数のアドレスを計算してスタックに積む
-  printf("  # gen_lval start (var_name: %s)\n", node->var->name);
-  printf("  mov rax, rbp\n");
-  printf("  sub rax, %d\n", node->var->offset);
-  printf("  push rax\n");
-  printf("  # gen_lval end\n");
+
+ error("代入の左辺値が変数ではありません");
 }
 
 int next_label_key() {
@@ -36,16 +51,20 @@ void gen(Node *node) {
       printf("  push %d\n", node->val);
       return ;
     case ND_LVAR:
-      printf("  # ND_LVAR start(var_name: %s)\n", node->var->name);
-      gen_lval(node);
-      printf("  pop rax\n"); // gen_lval(node)で積んだ変数のアドレスをraxにロード
+      if (node->var) {
+        printf("  # ND_LVAR start(var_name: %s)\n", node->var->name);
+      } else {
+        printf("  # ND_LVAR start(var_name: none)\n");
+      }
+      gen_addr(node);
+      printf("  pop rax\n"); // gen_addr(node)で積んだ変数のアドレスをraxにロード
       printf("  mov rax, [rax]\n"); // 変数のアドレスにある値をraxにロード
       printf("  push rax\n"); // 変数の値(rax)をスタックに積む
       printf("  # ND_LVAR end\n");
       return;
     case ND_ASSIGN:
       printf("  # ND_ASSIGN start\n");
-      gen_lval(node->lhs);
+      gen_addr(node->lhs);
       gen(node->rhs);
       //rhsの結果がスタックの先頭、その次に変数のアドレスが入ってるのでそれをロード
       printf("  pop rdi\n"); // rhsの結果
@@ -62,7 +81,6 @@ void gen(Node *node) {
       printf("  pop rbp\n");
       printf("  ret\n");
       printf("  # ND_RETURN end\n");
-      gen(node->lhs);
       return;
     case ND_BLOCK:
       printf("  # ND_BLOCK start\n");
@@ -181,6 +199,19 @@ void gen(Node *node) {
         printf("  push rax\n"); // 関数の戻り値をスタックに積む
         printf("  # ND_CALL end\n");
       }
+      return;
+    case ND_ADDR:
+      printf("  # ND_ADDR start\n");
+      gen_addr(node->lhs);
+      printf("  # ND_ADDR end\n");
+      return;
+    case ND_DEREF:
+      printf("  # ND_DEREF start\n");
+      gen(node->lhs);
+      printf("  pop rax\n"); // gen_addrでスタックに積んだアドレスを取得
+      printf("  mov rax, [rax]\n"); // raxの値をアドレスとみなして、そのアドレスのにある値をraxにいれる
+      printf("  push rax\n"); // 値をスタックにプッシュ
+      printf("  # ND_DEREF end\n");
       return;
   }
 

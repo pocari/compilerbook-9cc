@@ -3,7 +3,8 @@
 counts=0
 count_ok=0
 
-assert() { expected="$1"
+assert() {
+  expected="$1"
   input="$2"
 
   ./ynicc "$input" > tmp.s
@@ -317,6 +318,26 @@ main() {
 }
 EOS
 )"
+
+assert 3 'main() { foo = 3; return *&foo;}'
+assert 3 'main() { foo = 3; boo = &foo; return *boo;}'
+
+# ローカル変数の持ち方として、最初に現れた変数ほどスタックの伸びる方向の端(アドレスの大きい方)にいる(=最初に出てくる変数がローカル変数のアドレスとしては一番大きくなる)にある
+# main() {a = 1; b = 2; c = 3; }
+# だと、スタック上のレイアウトとしては(変数が8バイトとして)
+# addr    変数
+# 100 ... c
+#  92 ... b
+#  84 ... a
+#   |
+#   v スタック伸びる方向
+#
+# なので、
+# b のアドレスは aのアドレスからみて +8
+# b のアドレスは cのアドレスからみて -8
+assert 5 'main() { a = 4; b = 5; c = 6; d = &a + 8; return *d; }'
+assert 5 'main() { a = 4; b = 5; c = 6; d = &c - 8; return *d; }'
+assert 12 'main() { a = 4; b = 5; c = 6; *(&c - 8) = 12; return b; }'
 
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
