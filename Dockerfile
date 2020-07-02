@@ -1,10 +1,11 @@
 FROM ubuntu:20.04
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN set -ex \
     && apt-get update \
     && apt-get install -y \
-                 gcc \
-                 make \
+                 build-essential \
+                 gdb \
                  git \
                  binutils \
                  libc6-dev \
