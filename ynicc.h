@@ -1,5 +1,5 @@
-#ifndef INCLUDED_9CC
-#define INCLUDED_9CC
+#ifndef INCLUDED_YNICC
+#define INCLUDED_YNICC
 
 #include <ctype.h>
 #include <stdarg.h>

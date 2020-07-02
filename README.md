@@ -18,7 +18,7 @@ fib(n) {
 main() {
   return fib(10);
 }
-$ ./9cc "$(cat examples/fib.c)" > tmp.s
+$ ./ynicc "$(cat examples/fib.c)" > tmp.s
 $ gcc -o tmp tmp.s
 $ ./tmp
 $ echo $?

@@ -1,4 +1,4 @@
-#include "9cc.h"
+#include "ynicc.h"
 
 // 今パース中の関数のローカル変数
 static VarList *locals = NULL;

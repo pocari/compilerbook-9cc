@@ -6,7 +6,7 @@ count_ok=0
 assert() { expected="$1"
   input="$2"
 
-  ./9cc "$input" > tmp.s
+  ./ynicc "$input" > tmp.s
   # 関数呼び出しのテスト用にgcc側で正常な関数を作ってリンクする
   gcc -c test_func.c
   cc -o tmp test_func.o tmp.s
