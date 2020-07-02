@@ -339,6 +339,16 @@ assert 5 'main() { a = 4; b = 5; c = 6; d = &a + 8; return *d; }'
 assert 5 'main() { a = 4; b = 5; c = 6; d = &c - 8; return *d; }'
 assert 12 'main() { a = 4; b = 5; c = 6; *(&c - 8) = 12; return b; }'
 
+assert 3 'main() { x=3; return *&x; }'
+assert 3 'main() { x=3; y=&x; z=&y; return **z; }'
+assert 5 'main() { x=3; y=5; return *(&x+8); }'
+assert 3 'main() { x=3; y=5; return *(&y-8); }'
+assert 5 'main() { x=3; y=&x; *y=5; return x; }'
+assert 7 'main() { x=3; y=5; *(&x+8)=7; return y; }'
+assert 7 'main() { x=3; y=5; *(&y-8)=7; return x; }'
+
+
+
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 
