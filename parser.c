@@ -10,8 +10,14 @@ char *node_kind_to_s(Node *nd) {
       return "ND_DUMMY";
     case  ND_ADD:
       return  "ND_ADD";
+    case  ND_PTR_ADD:
+      return  "ND_PTR_ADD";
     case  ND_SUB:
       return  "ND_SUB";
+    case  ND_PTR_SUB:
+      return  "ND_PTR_SUB";
+    case  ND_PTR_DIFF:
+      return  "ND_PTR_DIFF";
     case  ND_MUL:
       return  "ND_MUL";
     case  ND_DIV:
@@ -58,6 +64,7 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   node->lhs = lhs;
   node->rhs = rhs;
 
+  add_type(node);
   return node;
 }
 
@@ -68,14 +75,6 @@ Node *new_node_num(int val) {
   node->val = val;
 
   return node;
-}
-
-Type *new_type(TypeKind kind, Type *ptr_to) {
-  Type *t = calloc(1, sizeof(Type));
-  t->ty = kind;
-  t->ptr_to = ptr_to;
-
-  return t;
 }
 
 // ローカル変数の確保＋このfunctionでのローカル変数のリストにも追加
@@ -258,14 +257,13 @@ void program() {
   functions = head.next;
 }
 
-char *type_info(Type *t);
 // type_in_decl  = "int" ("*" *)
 Type *type_in_decl() {
   Type *t;
   expect_token(TK_INT);
-  t = new_type(INT, NULL);
+  t = int_type;
   while (consume("*")) {
-    t = new_type(PTR, t);
+    t = pointer_to(t);
   }
   return t;
 }
@@ -421,6 +419,7 @@ Node *stmt() {
     }
   }
 
+  add_type(node);
   return node;
 }
 
@@ -610,7 +609,9 @@ void free_lvar(LVar *var) {
     Type *t = var->type;
     while (t) {
       Type *tmp = t->ptr_to;
-      free(t);
+      if (!is_integer(t)) {
+        free(t);
+      }
       t = tmp;
     }
     free(var->name);
@@ -661,11 +662,11 @@ void free_functions(Function *func) {
 
 int type_info_helper(char *buf, int offset, Type *type) {
   int n = 0;
-  switch (type->ty) {
-    case INT:
+  switch (type->kind) {
+    case TY_INT:
       n += sprintf(buf + offset, "int");
       break;
-    case PTR:
+    case TY_PTR:
       n += sprintf(buf + offset, "*");
       n += type_info_helper(buf, offset + n, type->ptr_to);
       break;

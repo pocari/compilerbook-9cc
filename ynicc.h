@@ -8,6 +8,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Node Node;
+typedef struct LVar LVar;
+typedef struct VarList VarList;
+typedef struct Function Function;
+typedef struct Token Token;
+
 // tokenize.c
 typedef enum {
   TK_DUMMY,    // dummy
@@ -23,7 +29,6 @@ typedef enum {
   TK_EOF,      // 入力終了
 } TokenKind;
 
-typedef struct Token Token;
 struct Token {
   TokenKind kind; // トークンの型
   Token *next;    // 次の入力トークン
@@ -42,13 +47,35 @@ extern Token *token;
 // 入力プログラム
 extern char *user_input;
 
+// type.c
+typedef struct Type Type;
+typedef enum {
+  TY_INT,
+  TY_PTR,
+} TypeKind;
+
+struct Type {
+  TypeKind kind;
+  Type *ptr_to;
+};
+
+extern Type *int_type;
+void add_type(Node *node);
+bool is_integer(Type *t);
+Type *pointer_to(Type *t);
+Type *new_type(TypeKind kind, Type *ptr_to);
+
+
 // parser.c
 
 // ASTのノード種別
 typedef enum {
   ND_DUMMY,    // dummy
-  ND_ADD,      // +
-  ND_SUB,      // -
+  ND_ADD,      // num + num
+  ND_PTR_ADD,  // num + ptr, ptr + num
+  ND_SUB,      // num - num
+  ND_PTR_SUB,  // ptr - num
+  ND_PTR_DIFF, // ptr - ptr
   ND_MUL,      // *
   ND_DIV,      // /
   ND_LT,       // <
@@ -69,11 +96,6 @@ typedef enum {
   ND_NUM,      // 整数
 } NodeKind;
 
-typedef struct Node Node;
-typedef struct LVar LVar;
-typedef struct VarList VarList;
-typedef struct Function Function;
-typedef struct Type Type;
 
 struct Function {
   Function *next; //次の関数
@@ -87,6 +109,7 @@ struct Function {
 
 struct Node {
   NodeKind kind;
+  Type *ty;
 
   Node *lhs; // 二項演算での左辺
   Node *rhs; // 二項演算での右辺
@@ -107,16 +130,6 @@ struct Node {
   int val;    // kindがND_NUMの場合に使う
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
-};
-
-typedef enum {
-  INT,
-  PTR,
-} TypeKind;
-
-struct Type {
-  TypeKind ty;
-  Type *ptr_to;
 };
 
 struct LVar {
