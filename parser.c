@@ -466,17 +466,13 @@ Node *unary() {
 }
 
 Node *parse_lvar(Token *t) {
+    LVar *lvar = find_lvar(t);
+    if (!lvar) {
+      error_at(t->str, "変数 %s は宣言されていません。", my_strndup(t->str, t->len));
+    }
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
-
-    LVar *lvar = find_lvar(t);
-    if (lvar) {
-      // 既存のローカル変数の場合
-      node->var = lvar;
-    } else {
-      // 初めて出てきたローカル変数の場合
-      node->var = new_lvar(my_strndup(t->str, t->len));
-    }
+    node->var = lvar;
     return node;
 }
 
