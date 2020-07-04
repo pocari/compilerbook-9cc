@@ -79,9 +79,9 @@ Type *new_type(TypeKind kind, Type *ptr_to) {
 }
 
 // ローカル変数の確保＋このfunctionでのローカル変数のリストにも追加
-LVar *new_lvar(char *name) {
+LVar *new_lvar(char *name, Type *type) {
   LVar *lvar = calloc(1, sizeof(LVar));
-  lvar->type = new_type(INT, NULL);
+  lvar->type = type;
   lvar->name = name;
 
   VarList *v = calloc(1, sizeof(VarList));
@@ -212,7 +212,7 @@ LVar *find_lvar(Token *token) {
 // ynicc BNF
 //
 // program       = function_def*
-// function_def  = "int" ident "(" function_params? ")" "{" stmt* "}"
+// function_def  = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
 // stmt          = expr ";"
 //               | "{" stmt* "}"
 //               | "return" expr ";"
@@ -220,7 +220,8 @@ LVar *find_lvar(Token *token) {
 //               | "while" "(" expr ")" stmt
 //               | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //               | var_decl
-// var_decl      = "int" ("*" *) ident ";"
+// var_decl      = type_in_decl ident ";"
+// type_in_decl  = "int" ("*" *)
 // expr          = assign
 // assign        = equality (= assign)?
 // equality      = relational ("==" relational | "!=" relational)*
@@ -236,6 +237,7 @@ LVar *find_lvar(Token *token) {
 void program();
 Function *function_def();
 Node *stmt();
+Type *type_in_decl();
 Node *var_decl();
 Node *expr();
 Node *assign();
@@ -256,20 +258,32 @@ void program() {
   functions = head.next;
 }
 
+char *type_info(Type *t);
+// type_in_decl  = "int" ("*" *)
+Type *type_in_decl() {
+  Type *t;
+  expect_token(TK_INT);
+  t = new_type(INT, NULL);
+  while (consume("*")) {
+    t = new_type(PTR, t);
+  }
+  return t;
+}
+
 void function_params(Function *func) {
   if (consume(")")) {
     return;
   }
 
-  expect_token(TK_INT);
-  LVar *var = new_lvar(expect_ident());
+  Type *type = type_in_decl();
+  LVar *var = new_lvar(expect_ident(), type);
   VarList *var_list = calloc(1, sizeof(VarList));
   var_list->var = var;
   // fprintf(stderr, "parse func param start\n");
   while (!consume(")")) {
     expect(",");
-    expect_token(TK_INT);
-    LVar *var = new_lvar(expect_ident());
+    type = type_in_decl();
+    LVar *var = new_lvar(expect_ident(), type);
     VarList *v = calloc(1, sizeof(VarList));
     v->var = var;
     v->next = var_list;
@@ -295,12 +309,13 @@ Function *function_def() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
 
-  expect_token(TK_INT);
+  Type *ret_type = type_in_decl();
   Token *t = consume_ident();
   if (!t) {
     error("関数定義がありません");
   }
   Function *func = calloc(1, sizeof(Function));
+  func->return_type = ret_type;
   func->name = my_strndup(t->str, t->len);
 
   expect("(");
@@ -410,8 +425,9 @@ Node *stmt() {
 }
 
 Node *var_decl() {
-  if (consume_kind(TK_INT)) {
-    LVar *var = new_lvar(expect_ident());
+  if (token->kind == TK_INT) {
+    Type *type = type_in_decl();
+    LVar *var = new_lvar(expect_ident(), type);
     expect(";");
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_VAR_DECL;
@@ -644,7 +660,7 @@ void free_functions(Function *func) {
 }
 
 int type_info_helper(char *buf, int offset, Type *type) {
-  int n;
+  int n = 0;
   switch (type->ty) {
     case INT:
       n += sprintf(buf + offset, "int");
@@ -900,7 +916,10 @@ char *node_ast_helper(Node *body) {
 char *function_body_ast(Function *f) {
   int n = 0;
   char buf[10000];
-  n = sprintf(buf + n, "(def %s (", f->name);
+
+  char *ti = type_info(f->return_type);
+  n = sprintf(buf + n, "(def (%s) %s (", ti, f->name);
+  free(ti);
 
   int i = 0;
   VarList* reverse_params = NULL;
@@ -914,7 +933,9 @@ char *function_body_ast(Function *f) {
 
   // 逆順にしたリストからastダンプ
   for (VarList *p = reverse_params; p; p = p->next) {
-    n += sprintf(buf + n, "%s", p->var->name);
+    char *ti = type_info(p->var->type);
+    n += sprintf(buf + n, "%s %s", ti, p->var->name);
+    free(ti);
     if (p->next) {
       n += sprintf(buf + n, " ");
     }

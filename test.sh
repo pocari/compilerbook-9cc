@@ -381,7 +381,22 @@ assert 5 'int main() {int x; int y; x=3; y=&x; *y=5; return x; }'
 assert 7 'int main() {int x; int y; x=3; y=5; *(&x+8)=7; return y; }'
 assert 7 'int main() {int x; int y; x=3; y=5; *(&y-8)=7; return x; }'
 
+assert 23 "$(cat <<EOS
+int main() {
+  int x;
+  int *y;
+  int **z;
 
+  x = 12;
+  y = &x;
+  z = &y;
+
+  **z = 23;
+
+  return x;
+}
+EOS
+)"
 
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"

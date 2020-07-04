@@ -73,9 +73,11 @@ typedef struct Node Node;
 typedef struct LVar LVar;
 typedef struct VarList VarList;
 typedef struct Function Function;
+typedef struct Type Type;
 
 struct Function {
   Function *next; //次の関数
+  Type *return_type; //戻り値の型
   char *name; // 関数名
   Node *body; // 関数定義本体
   VarList *locals; //この関数のローカル変数情報
@@ -106,7 +108,6 @@ struct Node {
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
 };
-typedef struct Type Type;
 
 typedef enum {
   INT,
