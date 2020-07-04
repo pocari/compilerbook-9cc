@@ -19,6 +19,7 @@ typedef enum {
   TK_IF,       // if
   TK_ELSE,     // else
   TK_FOR,      // for
+  TK_INT,      // int型
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -63,6 +64,7 @@ typedef enum {
   ND_CALL,     // 関数呼び出し
   ND_ADDR,     // &演算子でのアドレス取得
   ND_DEREF,    // *演算子でのアドレス参照
+  ND_VAR_DECL, // 変数定義
   ND_NUM,      // 整数
 } NodeKind;
 
@@ -98,7 +100,7 @@ struct Node {
 
   Node *arg; //関数の引数
 
-  LVar *var; //ND_VARのときの変数情報
+  LVar *var; //ND_VAR, ND_VAR_DECLのときの変数情報
   int val;    // kindがND_NUMの場合に使う
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数

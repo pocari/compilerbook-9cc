@@ -99,6 +99,10 @@ static Keyword keywords[] = {
     "for",
     TK_FOR,
   },
+  {
+    "int",
+    TK_INT,
+  },
 };
 
 Keyword *tokenize_keyword(char *p) {

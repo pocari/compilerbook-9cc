@@ -51,19 +51,21 @@ assert 0  'main() { 1>2;}'
 assert 1  'main() { 1>=0;}'
 assert 1  'main() { 1>=1;}'
 assert 0  'main() { 1>=2;}'
-assert 10 'main() { a=10;}'
-assert 11 'main() { a=10;b=a;b+1;}'
-assert 20 'main() { a=b=10;a+b;}'
-assert 15 'main() { a = 1 + 2; b = 3 * 4; a + b;}'
-assert 15 'main() { foo = 1 + 2; bar = 3 * 4; foo + bar;}'
-assert 1  'main() { a=foo=1; boo = a + foo; boo == 2;}'
+assert 10 'main() {int a; a=10;}'
+assert 11 'main() {int a; int b; a=10;b=a;b+1;}'
+assert 20 'main() {int a; int b; a=b=10;a+b;}'
+assert 15 'main() {int a; int b; a = 1 + 2; b = 3 * 4; a + b;}'
+assert 15 'main() {int foo; int bar; foo = 1 + 2; bar = 3 * 4; foo + bar;}'
+assert 1  'main() {int foo; int boo; int a; a=foo=1; boo = a + foo; boo == 2;}'
 
 assert 2  'main() { return 2; }'
-assert 4  'main() { b=boo =1; return b + boo + 2; }'
+assert 4  'main() {int b; int boo; b=boo =1; return b + boo + 2; }'
 assert 3  'main() { return 3; return 2;}'
 
 assert 22 "$(cat <<EOS
 main() {
+  int a;
+  int boo;  int hoge;
   a = 10;
   boo = 12;
   hoge = a + boo;
@@ -74,6 +76,7 @@ EOS
 
 assert 10 "$(cat <<EOS
 main() {
+  int i;
   i = 0;
   while (i < 10)
     i = i + 1;
@@ -84,6 +87,8 @@ EOS
 
 assert 30 "$(cat <<EOS
 main() {
+  int i;
+  int sum;
   i = 0;
   sum = 0;
   while (i < 10) {
@@ -97,6 +102,7 @@ EOS
 
 assert 11 "$(cat <<EOS
 main() {
+  int foo;
   foo = 1;
   if (foo == 1) {
     return 11;
@@ -108,6 +114,7 @@ EOS
 
 assert 12 "$(cat <<EOS
 main() {
+  int foo;
   foo = 0;
   if (foo == 1) {
     return 11;
@@ -119,6 +126,7 @@ EOS
 
 assert 13 "$(cat <<EOS
 main() {
+  int foo;
   foo = 0;
   if (foo == 1) {
     return 11;
@@ -132,6 +140,7 @@ EOS
 
 assert 11 "$(cat <<EOS
 main() {
+  int foo;
   foo = 1;
   if (foo == 1) {
     return 11;
@@ -145,6 +154,8 @@ EOS
 
 assert 4 "$(cat <<EOS
 main() {
+  int sum;
+  int i;
   i = 0;
   sum = 0;
   while (i < 10) {
@@ -162,6 +173,9 @@ EOS
 
 assert 5 "$(cat <<EOS
 main() {
+  int i;
+  int sum;
+
   i = 0;
   sum = 0;
   while (i < 10) {
@@ -177,10 +191,12 @@ main() {
 EOS
 )"
 
-assert 11 'main() {returnx = 11; return returnx;}'
+assert 11 'main() {int returnx; returnx = 11; return returnx;}'
 
 assert 45 "$(cat <<EOS
 main() {
+  int sum;
+  int i;
   sum = 0;
   for (i = 0; i < 10; i = i + 1) {
     sum = sum + i;
@@ -192,6 +208,8 @@ EOS
 
 assert 45 "$(cat <<EOS
 main() {
+  int sum;
+  int i;
   sum = 0;
   i = 0;
   for (; i < 10; i = i + 1) {
@@ -204,6 +222,8 @@ EOS
 
 assert 45 "$(cat <<EOS
 main() {
+  int sum;
+  int i;
   sum = 0;
   i = 0;
   for (; i < 10;) {
@@ -222,6 +242,8 @@ assert 4 'main() { return 2 + foo_return2();}'
 assert 5 'main() { return foo_with_args_add(2, 3);}'
 assert 10 "$(cat <<EOS
 main() {
+  int foo;
+  int bar;
   foo = 1;
   bar = 2;
   return foo_with_args_add(foo + bar, 3 + 4);
@@ -233,12 +255,19 @@ assert 21 "main() { return foo_with_args_add6(1, 2, 3, 4, 5, 6);}";
 
 assert 15 "$(cat <<EOS
 hoge() {
+  int foo;
+  int boo;
+  int baz;
+
   foo = 1;
   boo = 2;
   baz = 3;
   return foo + boo + baz;
 }
 main() {
+  int foo;
+  int bar;
+
   foo = 4;
   bar = 5;
 
@@ -249,10 +278,13 @@ EOS
 
 assert 10 "$(cat <<EOS
 hoge(foo, boo) {
+  int baz;
   baz = 4;
   return foo - boo - baz;
 }
 main() {
+  int foo;
+  int bar;
   foo = 1;
   bar = 2;
 
@@ -298,6 +330,10 @@ EOS
 
 assert 1 "$(cat <<EOS
 func(a, b) {
+  int i;
+  int j;
+  int a;
+  int b;
   for (i = 0; i < 10; i = i + 1) {
     a = a + 1;
   }
@@ -319,8 +355,8 @@ main() {
 EOS
 )"
 
-assert 3 'main() { foo = 3; return *&foo;}'
-assert 3 'main() { foo = 3; boo = &foo; return *boo;}'
+assert 3 'main() {int foo; foo = 3; return *&foo;}'
+assert 3 'main() {int foo; int boo; foo = 3; boo = &foo; return *boo;}'
 
 # ローカル変数の持ち方として、最初に現れた変数ほどスタックの伸びる方向の端(アドレスの大きい方)にいる(=最初に出てくる変数がローカル変数のアドレスとしては一番大きくなる)にある
 # main() {a = 1; b = 2; c = 3; }
@@ -335,17 +371,17 @@ assert 3 'main() { foo = 3; boo = &foo; return *boo;}'
 # なので、
 # b のアドレスは aのアドレスからみて +8
 # b のアドレスは cのアドレスからみて -8
-assert 5 'main() { a = 4; b = 5; c = 6; d = &a + 8; return *d; }'
-assert 5 'main() { a = 4; b = 5; c = 6; d = &c - 8; return *d; }'
-assert 12 'main() { a = 4; b = 5; c = 6; *(&c - 8) = 12; return b; }'
+assert 5 'main() {int a; int b;int c;int d; a = 4; b = 5; c = 6; d = &a + 8; return *d; }'
+assert 5 'main() {int a; int b; int c; int d; a = 4; b = 5; c = 6; d = &c - 8; return *d; }'
+assert 12 'main() {int a; int b; int c; a = 4; b = 5; c = 6; *(&c - 8) = 12; return b; }'
 
-assert 3 'main() { x=3; return *&x; }'
-assert 3 'main() { x=3; y=&x; z=&y; return **z; }'
-assert 5 'main() { x=3; y=5; return *(&x+8); }'
-assert 3 'main() { x=3; y=5; return *(&y-8); }'
-assert 5 'main() { x=3; y=&x; *y=5; return x; }'
-assert 7 'main() { x=3; y=5; *(&x+8)=7; return y; }'
-assert 7 'main() { x=3; y=5; *(&y-8)=7; return x; }'
+assert 3 'main() {int x; x=3; return *&x; }'
+assert 3 'main() {int x; int y; int z;x=3; y=&x; z=&y; return **z; }'
+assert 5 'main() {int x; int y; x=3; y=5; return *(&x+8); }'
+assert 3 'main() {int x; int y; x=3; y=5; return *(&y-8); }'
+assert 5 'main() {int x; int y; x=3; y=&x; *y=5; return x; }'
+assert 7 'main() {int x; int y; x=3; y=5; *(&x+8)=7; return y; }'
+assert 7 'main() {int x; int y; x=3; y=5; *(&y-8)=7; return x; }'
 
 
 

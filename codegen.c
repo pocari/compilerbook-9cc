@@ -213,6 +213,11 @@ void gen(Node *node) {
       printf("  push rax\n"); // 値をスタックにプッシュ
       printf("  # ND_DEREF end\n");
       return;
+    case ND_VAR_DECL:
+      // 関数の定義の冒頭で、引数＋ローカル変数のサイズ分まとめて確保しているので、変数宣言のNode自体では何もコード生成はしない
+      // ただし、文単位で最後に結果が一つスタックに積まれる想定になっているので、ダミーで0をpushしておく
+      printf("  push 0\n");
+      return;
   }
 
   gen(node->lhs);

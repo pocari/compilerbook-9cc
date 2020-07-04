@@ -44,6 +44,8 @@ char *node_kind_to_s(Node *nd) {
       return  "ND_ADDR";
     case  ND_DEREF:
       return  "ND_DEREF";
+    case  ND_VAR_DECL:
+      return  "ND_VAR_DECL";
     case  ND_NUM:
       return "ND_NUM  ";
   };
@@ -68,6 +70,7 @@ Node *new_node_num(int val) {
   return node;
 }
 
+// ローカル変数の確保＋このfunctionでのローカル変数のリストにも追加
 LVar *new_lvar(char *name) {
   LVar *lvar = calloc(1, sizeof(LVar));
   lvar->name = name;
@@ -190,7 +193,8 @@ LVar *find_lvar(Token *token) {
   return NULL;
 }
 
-
+// ynicc BNF
+//
 // program       = function_decl*
 // function_def  = ident "(" function_params? ")" "{" stmt* "}"
 // stmt          = expr ";"
@@ -199,6 +203,8 @@ LVar *find_lvar(Token *token) {
 //               | "if" "(" expr ")" stmt ("else" stmt)?
 //               | "while" "(" expr ")" stmt
 //               | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//               | var_decl
+// var_decl      = "int" ident ";"
 // expr          = assign
 // assign        = equality (= assign)?
 // equality      = relational ("==" relational | "!=" relational)*
@@ -214,6 +220,7 @@ LVar *find_lvar(Token *token) {
 void program();
 Function *function_def();
 Node *stmt();
+Node *var_decl();
 Node *expr();
 Node *assign();
 Node *equality();
@@ -371,11 +378,28 @@ Node *stmt() {
     }
     node->body = head.next;
   } else {
-    node = expr();
-    expect(";");
+    // キーワードじゃなかったら 変数宣言かどうかチェック
+    node = var_decl();
+    if (!node) {
+      // 変数宣言でなかったら式文
+      node = expr();
+      expect(";");
+    }
   }
 
   return node;
+}
+
+Node *var_decl() {
+  if (consume_kind(TK_INT)) {
+    LVar *var = new_lvar(expect_ident());
+    expect(";");
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_VAR_DECL;
+    node->var = var;
+    return node;
+  }
+  return NULL;
 }
 
 Node *expr() {
@@ -781,7 +805,7 @@ char *node_ast(Node *node) {
       case ND_ADDR:
         {
           char *l = node_ast(node->lhs);
-          n = sprintf(buf, "(ADDR %s)", l);
+          n = sprintf(buf, "(addr %s)", l);
           char *ret = my_strndup(buf, n);
           free(l);
           return ret;
@@ -789,11 +813,15 @@ char *node_ast(Node *node) {
       case ND_DEREF:
         {
           char *l = node_ast(node->lhs);
-          n = sprintf(buf, "(DEREF %s)", l);
+          n = sprintf(buf, "(deref %s)", l);
           char *ret = my_strndup(buf, n);
           free(l);
           return ret;
         }
+      case ND_VAR_DECL:
+        n = sprintf(buf, "(decl (int %s))", node->var->name);
+        char *ret = my_strndup(buf, n);
+        return ret;
       case ND_NUM:
         n = sprintf(buf, "(num %d)", node->val);
         return my_strndup(buf, n);
