@@ -3,7 +3,7 @@
 ```
 $ make
 $ cat examples/fib.c
-fib(n) {
+int fib(int n) {
   if (n == 1) {
     return 1;
   } else {
@@ -15,8 +15,10 @@ fib(n) {
   }
 }
 
-main() {
-  return fib(10);
+int main() {
+  int x;
+  x = 1 + 9;
+  return fib(x);
 }
 $ ./ynicc "$(cat examples/fib.c)" > tmp.s
 $ gcc -o tmp tmp.s

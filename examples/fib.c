@@ -1,4 +1,4 @@
-fib(n) {
+int fib(int n) {
   if (n == 1) {
     return 1;
   } else {
@@ -10,6 +10,8 @@ fib(n) {
   }
 }
 
-main() {
-  return fib(10);
+int main() {
+  int x;
+  x = 1 + 9;
+  return fib(x);
 }
