@@ -252,12 +252,14 @@ void function_params(Function *func) {
     return;
   }
 
+  expect_token(TK_INT);
   LVar *var = new_lvar(expect_ident());
   VarList *var_list = calloc(1, sizeof(VarList));
   var_list->var = var;
   // fprintf(stderr, "parse func param start\n");
   while (!consume(")")) {
     expect(",");
+    expect_token(TK_INT);
     LVar *var = new_lvar(expect_ident());
     VarList *v = calloc(1, sizeof(VarList));
     v->var = var;

@@ -275,7 +275,7 @@ EOS
 )"
 
 assert 10 "$(cat <<EOS
-int hoge(foo, boo) {
+int hoge(int foo, int boo) {
   int baz;
   baz = 4;
   return foo - boo - baz;
@@ -292,7 +292,7 @@ EOS
 )"
 
 assert 120 "$(cat <<EOS
-int fact(n) {
+int fact(int n) {
   if (n == 1) {
     return 1;
   } else {
@@ -307,7 +307,7 @@ EOS
 )"
 
 assert 55 "$(cat <<EOS
-int fib(n) {
+int fib(int n) {
   if (n == 1) {
     return 1;
   } else {
@@ -327,7 +327,7 @@ EOS
 
 
 assert 1 "$(cat <<EOS
-int func(a, b) {
+int func(int a, int b) {
   int i;
   int j;
   int a;
