@@ -10,9 +10,9 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   return tok;
 }
 
-void dump_token(Token *t) {
+char *token_kind_to_s(TokenKind kind) {
   char *kind_str;
-  switch (t->kind) {
+  switch (kind) {
   case TK_RESERVED: // 記号系
     kind_str = "TK_RESERVED";
     break;
@@ -37,13 +37,20 @@ void dump_token(Token *t) {
   case TK_FOR: // for
     kind_str = "TK_FOR";
     break;
+  case TK_INT: // for
+    kind_str = "TK_INT";
+    break;
   case TK_EOF: // 入力終了
     kind_str = "TK_EOF";
     break;
   default:
     error("不正なtokenです");
   }
-  fprintf(stderr, "(Token kind: %s)\n", kind_str);
+  return kind_str;
+}
+
+void dump_token(Token *t) {
+  fprintf(stderr, "(Token kind: %s)\n", token_kind_to_s(t->kind));
 }
 
 void free_tokens(Token *cur) {

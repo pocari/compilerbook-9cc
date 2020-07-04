@@ -35,6 +35,7 @@ struct Token {
 Token * tokenize(char *p);
 void free_tokens(Token *cur);
 void dump_token(Token *token);
+char *token_kind_to_s(TokenKind kind);
 
 // 現在着目しているトークン
 extern Token *token;

@@ -178,6 +178,13 @@ char *expect_ident() {
   return s;
 }
 
+void expect_token(TokenKind kind) {
+  if (token->kind != kind) {
+    error_at(token->str, "トークンが %s ではありません。", token_kind_to_s(kind));
+  }
+  token = token->next;
+}
+
 bool at_eof() {
   return token->kind == TK_EOF;
 }
@@ -195,8 +202,8 @@ LVar *find_lvar(Token *token) {
 
 // ynicc BNF
 //
-// program       = function_decl*
-// function_def  = ident "(" function_params? ")" "{" stmt* "}"
+// program       = function_def*
+// function_def  = "int" ident "(" function_params? ")" "{" stmt* "}"
 // stmt          = expr ";"
 //               | "{" stmt* "}"
 //               | "return" expr ";"
@@ -276,12 +283,13 @@ void set_stack_info(Function *f) {
 Function *function_def() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
-  Function *func = calloc(1, sizeof(Function));
 
+  expect_token(TK_INT);
   Token *t = consume_ident();
   if (!t) {
     error("関数定義がありません");
   }
+  Function *func = calloc(1, sizeof(Function));
   func->name = my_strndup(t->str, t->len);
 
   expect("(");
