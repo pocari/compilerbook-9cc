@@ -643,6 +643,26 @@ void free_functions(Function *func) {
   }
 }
 
+int type_info_helper(char *buf, int offset, Type *type) {
+  int n;
+  switch (type->ty) {
+    case INT:
+      n += sprintf(buf + offset, "int");
+      break;
+    case PTR:
+      n += sprintf(buf + offset, "*");
+      n += type_info_helper(buf, offset + n, type->ptr_to);
+      break;
+  }
+  return n;
+}
+
+char *type_info(Type *type) {
+  char buf[10000];
+  int n = type_info_helper(buf, 0, type);
+  return my_strndup(buf, n);
+}
+
 char *node_ast(Node *node) {
   char buf[10000];
   int n = 0;
@@ -844,9 +864,13 @@ char *node_ast(Node *node) {
           return ret;
         }
       case ND_VAR_DECL:
-        n = sprintf(buf, "(decl (int %s))", node->var->name);
-        char *ret = my_strndup(buf, n);
-        return ret;
+        {
+          char *ti = type_info(node->var->type);
+          n = sprintf(buf, "(decl (%s %s))", ti, node->var->name);
+          char *ret = my_strndup(buf, n);
+          free(ti);
+          return ret;
+        }
       case ND_NUM:
         n = sprintf(buf, "(num %d)", node->val);
         return my_strndup(buf, n);
