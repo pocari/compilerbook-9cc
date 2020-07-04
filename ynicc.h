@@ -106,8 +106,20 @@ struct Node {
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
 };
+typedef struct Type Type;
+
+typedef enum {
+  INT,
+  PTR,
+} TypeKind;
+
+struct Type {
+  TypeKind ty;
+  Type *ptr_to;
+};
 
 struct LVar {
+  Type *type; // この変数の型
   char *name; // この変数の名前
   int offset; // rbpからのオフセット
 };

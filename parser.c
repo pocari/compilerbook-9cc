@@ -70,9 +70,18 @@ Node *new_node_num(int val) {
   return node;
 }
 
+Type *new_type(TypeKind kind, Type *ptr_to) {
+  Type *t = calloc(1, sizeof(Type));
+  t->ty = kind;
+  t->ptr_to = ptr_to;
+
+  return t;
+}
+
 // ローカル変数の確保＋このfunctionでのローカル変数のリストにも追加
 LVar *new_lvar(char *name) {
   LVar *lvar = calloc(1, sizeof(LVar));
+  lvar->type = new_type(INT, NULL);
   lvar->name = name;
 
   VarList *v = calloc(1, sizeof(VarList));
@@ -211,7 +220,7 @@ LVar *find_lvar(Token *token) {
 //               | "while" "(" expr ")" stmt
 //               | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //               | var_decl
-// var_decl      = "int" ident ";"
+// var_decl      = "int" ("*" *) ident ";"
 // expr          = assign
 // assign        = equality (= assign)?
 // equality      = relational ("==" relational | "!=" relational)*
@@ -582,6 +591,12 @@ void free_nodes(Node *node) {
 
 void free_lvar(LVar *var) {
   if (var) {
+    Type *t = var->type;
+    while (t) {
+      Type *tmp = t->ptr_to;
+      free(t);
+      t = tmp;
+    }
     free(var->name);
     var->name = NULL;
   }
