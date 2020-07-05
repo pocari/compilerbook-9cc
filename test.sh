@@ -413,6 +413,8 @@ assert 8  'int main() { int x; return sizeof(&x); }'
 assert 8  'int main() { int *x; return sizeof(x); }'
 assert 8  'int main() { return sizeof(1 + 2); }'
 assert 8  'int main() { int **x; return sizeof x; }'
+assert 8  'int main() { return sizeof(sizeof(0)); }'
+assert 8  'int main() { int x; return sizeof sizeof &x; }'
 
 
 echo "---------------------------------"
