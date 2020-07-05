@@ -62,7 +62,9 @@ struct Type {
 extern Type *int_type;
 void add_type(Node *node);
 bool is_integer(Type *t);
+bool is_pointer(Type *t);
 Type *pointer_to(Type *t);
+int pointer_size(Node *node);
 Type *new_type(TypeKind kind, Type *ptr_to);
 
 

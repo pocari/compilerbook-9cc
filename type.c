@@ -18,6 +18,22 @@ bool is_integer(Type *t) {
   return t->kind == TY_INT;
 }
 
+bool is_pointer(Type *t) {
+  return t->kind == TY_PTR;
+}
+
+int pointer_size(Node *node) {
+  if (!is_pointer(node->ty)) {
+    error("invalid operation: not pointer");
+  }
+  if (is_integer(node->ty->ptr_to)) {
+    // intを指すポインタの場合
+    // TODO: 4にしたいが今ローカル変数を一括で8byteで割り当ててるので一旦8を返す
+    return 8;
+  }
+  // それ以外(ポインタへのポインタとか)は8(byte)を返す
+  return 8;
+}
 
 void add_type(Node *node) {
   if (!node || node->ty)
@@ -48,7 +64,6 @@ void add_type(Node *node) {
     case ND_NOT_EQL:
     case ND_LT:
     case ND_LTE:
-    case ND_LVAR:
     case ND_CALL:
     case ND_NUM:
       node->ty = int_type;
@@ -57,6 +72,9 @@ void add_type(Node *node) {
     case ND_PTR_SUB:
     case ND_ASSIGN:
       node->ty = node->lhs->ty;
+      return;;
+    case ND_LVAR:
+      node->ty = node->var->type;
       return;;
     case ND_ADDR:
       node->ty = pointer_to(node->lhs->ty);

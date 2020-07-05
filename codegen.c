@@ -230,8 +230,35 @@ void gen(Node *node) {
     case ND_ADD:
       printf("  add rax, rdi\n");
       break;
+    case ND_PTR_ADD:
+      printf("  imul rdi, %d\n", pointer_size(node->lhs));
+      printf("  add rax, rdi\n");
+      break;
     case ND_SUB:
       printf("  sub rax, rdi\n");
+      break;
+    case ND_PTR_SUB:
+      printf("  imul rdi, %d\n", pointer_size(node->lhs));
+      printf("  sub rax, rdi\n");
+      break;
+    case ND_PTR_DIFF:
+      // 普通に引き算した結果をポインタの指す先の型のサイズで割って、個数に変換
+      // 例)
+      // int ary[] = { ... };
+      // int *third = ary + 3;
+      // int z = third - ary;
+      // z が 3になるようにする。
+      //
+      // rax - rdi
+      // の結果が
+      // rax
+      // に入るので、
+      // raxをlhsのポインターが指す型のサイズで割った商をraxに入れる。
+      // このため、割る数(rdi)に「ポインターが指す方のサイズ」を設定する必要がある
+      printf("  sub rax, rdi\n");
+      printf("  mov rdi, %d\n", pointer_size(node->lhs));
+      printf("  cqo\n");
+      printf("  idiv rdi\n");
       break;
     case ND_MUL:
       printf("  imul rax, rdi\n");

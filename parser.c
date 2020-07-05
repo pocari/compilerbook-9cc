@@ -482,17 +482,49 @@ Node *relational() {
   }
 }
 
-//  ND_ADD,      // num + num
-//  ND_PTR_ADD,  // num + ptr, ptr + num
 Node *new_add_node(Node *lhs, Node *rhs) {
-  return new_node(ND_ADD, lhs, rhs);
+  add_type(lhs);
+  add_type(rhs);
+
+  // int x
+  // &x + 2
+  // => & に intのサイズ(4) * 2 => xのアドレスの 8byte先
+  //
+  // int x
+  // int *y = &x
+  // int **z = &y
+  // &z + 2
+  // => & に intのポインタのサイズ(8) * 2 => zのアドレスの 16byte先
+  if (is_integer(lhs->ty) && is_integer(rhs->ty)) {
+    // num + num
+    return new_node(ND_ADD, lhs, rhs);
+  } else if (is_pointer(lhs->ty)) {
+    // ptr + num のケース
+    return new_node(ND_PTR_ADD, lhs, rhs);
+  } else {
+    // num + ptrのケースなので、入れ替えてptr + num に正規化する
+    return new_node(ND_PTR_ADD, rhs, lhs);
+  }
 }
 
-//  ND_SUB,      // num - num
-//  ND_PTR_SUB,  // ptr - num
-//  ND_PTR_DIFF, // ptr - ptr
 Node *new_sub_node(Node *lhs, Node *rhs) {
-  return new_node(ND_SUB, lhs, rhs);
+  add_type(lhs);
+  add_type(rhs);
+
+  if (is_integer(lhs->ty) && is_integer(rhs->ty)) {
+    // num - num
+    return new_node(ND_SUB, lhs, rhs);
+  } else if (is_pointer(lhs->ty) && is_pointer(rhs->ty)) {
+    //  ptr - ptr
+    return new_node(ND_PTR_DIFF, lhs, rhs);
+  } else if (is_pointer(lhs->ty) && is_integer(rhs->ty)) {
+    // ptr - num
+    return new_node(ND_PTR_SUB, lhs, rhs);
+  } else {
+    // ここに来た場合 num - ptr になってしまうので、エラーにする
+    error("不正な演算です: num - ptr");
+    return NULL; // error で落ちるので実際にはreturnされない
+  }
 }
 
 Node *add() {
@@ -714,11 +746,41 @@ char *node_ast(Node *node) {
           free(r);
           return ret;
         }
+      case ND_PTR_ADD:
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(ptr+ %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
       case ND_SUB:
         {
           char *l = node_ast(node->lhs);
           char *r = node_ast(node->rhs);
           n = sprintf(buf, "(- %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
+      case ND_PTR_SUB:
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(ptr- %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
+      case ND_PTR_DIFF:
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(ptr-diff %s %s)", l, r);
           char *ret = my_strndup(buf, n);
           free(l);
           free(r);
