@@ -23,380 +23,380 @@ assert() {
   fi
 }
 
-# assert 0  'int main() { 0; }'
-# assert 42 'int main() { 42; }'
-# assert 21 'int main() { 5+20-4;}'
-# assert 41 'int main() {  12 + 34 - 5 ;}'
-# assert 47 'int main() { 5+6*7;}'
-# assert 15 'int main() { 5 * (9- 6);}'
-# assert 4  'int main() { ( 3 + 5) / 2;}'
-# assert 60 'int main() { (1 + 2) * 3 + 4 + (5 + 6 * 7);}'
-# assert 5  'int main() { -1 + 2 * 3;}'
-# assert 5  'int main() { -1 + +2 * 3;}'
-# assert 12 'int main() { -(-1 + -2) * 4;}'
-# assert 0  'int main() { 0==1;}'
-# assert 1  'int main() { 42==42;}'
-# assert 1  'int main() { 0!=1;}'
-# assert 0  'int main() { 42!=42; }'
-# assert 1  'int main() { 0<1;}'
-# assert 0  'int main() { 1<1;}'
-# assert 0  'int main() { 2<1;}'
-# assert 1  'int main() { 0<=1;}'
-# assert 1  'int main() { 1<=1;}'
-# assert 0  'int main() { 2<=1;}'
-# assert 1  'int main() { 1>0;}'
-# assert 0  'int main() { 1>1;}'
-# assert 0  'int main() { 1>2;}'
-# assert 1  'int main() { 1>=0;}'
-# assert 1  'int main() { 1>=1;}'
-# assert 0  'int main() { 1>=2;}'
-# assert 10 'int main() {int a; a=10;}'
-# assert 11 'int main() {int a; int b; a=10;b=a;b+1;}'
-# assert 20 'int main() {int a; int b; a=b=10;a+b;}'
-# assert 15 'int main() {int a; int b; a = 1 + 2; b = 3 * 4; a + b;}'
-# assert 15 'int main() {int foo; int bar; foo = 1 + 2; bar = 3 * 4; foo + bar;}'
-# assert 1  'int main() {int foo; int boo; int a; a=foo=1; boo = a + foo; boo == 2;}'
-# assert 2  'int main() { return 2; }'
-# assert 4  'int main() {int b; int boo; b=boo =1; return b + boo + 2; }'
-# assert 3  'int main() { return 3; return 2;}'
-# 
-# assert 22 "$(cat <<EOS
-# int main() {
-#   int a;
-#   int boo;  int hoge;
-#   a = 10;
-#   boo = 12;
-#   hoge = a + boo;
-#   return hoge;
-# }
-# EOS
-# )"
-# 
-# assert 10 "$(cat <<EOS
-# int main() {
-#   int i;
-#   i = 0;
-#   while (i < 10)
-#     i = i + 1;
-#   return i;
-# }
-# EOS
-# )"
-# 
-# assert 30 "$(cat <<EOS
-# int main() {
-#   int i;
-#   int sum;
-#   i = 0;
-#   sum = 0;
-#   while (i < 10) {
-#     sum = sum + 3;
-#     i = i + 1;
-#   }
-#   return sum;
-# }
-# EOS
-# )"
-# 
-# assert 11 "$(cat <<EOS
-# int main() {
-#   int foo;
-#   foo = 1;
-#   if (foo == 1) {
-#     return 11;
-#   }
-#   return 12;
-# }
-# EOS
-# )"
-# 
-# assert 12 "$(cat <<EOS
-# int main() {
-#   int foo;
-#   foo = 0;
-#   if (foo == 1) {
-#     return 11;
-#   }
-#   return 12;
-# }
-# EOS
-# )"
-# 
-# assert 13 "$(cat <<EOS
-# int main() {
-#   int foo;
-#   foo = 0;
-#   if (foo == 1) {
-#     return 11;
-#   } else {
-#     return 13;
-#   }
-#   return 12;
-# }
-# EOS
-# )"
-# 
-# assert 11 "$(cat <<EOS
-# int main() {
-#   int foo;
-#   foo = 1;
-#   if (foo == 1) {
-#     return 11;
-#   } else {
-#     return 13;
-#   }
-#   return 12;
-# }
-# EOS
-# )"
-# 
-# assert 4 "$(cat <<EOS
-# int main() {
-#   int sum;
-#   int i;
-#   i = 0;
-#   sum = 0;
-#   while (i < 10) {
-#     sum = sum + 2;
-#     i = i + 1;
-#   }
-#   if (sum == 20) {
-#     return 4;
-#   } else {
-#     return 5;
-#   }
-# }
-# EOS
-# )"
-# 
-# assert 5 "$(cat <<EOS
-# int main() {
-#   int i;
-#   int sum;
-# 
-#   i = 0;
-#   sum = 0;
-#   while (i < 10) {
-#     sum = sum + 2;
-#     i = i + 1;
-#   }
-#   if (sum != 20) {
-#     return 4;
-#   } else {
-#     return 5;
-#   }
-# }
-# EOS
-# )"
-# 
-# assert 11 'int main() {int returnx; returnx = 11; return returnx;}'
-# 
-# assert 45 "$(cat <<EOS
-# int main() {
-#   int sum;
-#   int i;
-#   sum = 0;
-#   for (i = 0; i < 10; i = i + 1) {
-#     sum = sum + i;
-#   }
-#   return sum;
-# }
-# EOS
-# )"
-# 
-# assert 45 "$(cat <<EOS
-# int main() {
-#   int sum;
-#   int i;
-#   sum = 0;
-#   i = 0;
-#   for (; i < 10; i = i + 1) {
-#     sum = sum + i;
-#   }
-#   return sum;
-# }
-# EOS
-# )"
-# 
-# assert 45 "$(cat <<EOS
-# int main() {
-#   int sum;
-#   int i;
-#   sum = 0;
-#   i = 0;
-#   for (; i < 10;) {
-#     sum = sum + i;
-#     i = i + 1;
-#   }
-#   return sum;
-# }
-# EOS
-# )"
-# 
-# # 一旦今の時点では 別途gccでコンパイルした test_func.cで定義した foo_return2 を使う
-# assert 2 'int main() { return foo_return2(); }'
-# assert 4 'int main() { return 2 + foo_return2();}'
-# 
-# assert 5 'int main() { return foo_with_args_add(2, 3);}'
-# assert 10 "$(cat <<EOS
-# int main() {
-#   int foo;
-#   int bar;
-#   foo = 1;
-#   bar = 2;
-#   return foo_with_args_add(foo + bar, 3 + 4);
-# }
-# EOS
-# )"
-# 
-# assert 21 "int main() { return foo_with_args_add6(1, 2, 3, 4, 5, 6);}";
-# 
-# assert 15 "$(cat <<EOS
-# int hoge() {
-#   int foo;
-#   int boo;
-#   int baz;
-# 
-#   foo = 1;
-#   boo = 2;
-#   baz = 3;
-#   return foo + boo + baz;
-# }
-# int main() {
-#   int foo;
-#   int bar;
-# 
-#   foo = 4;
-#   bar = 5;
-# 
-#   return hoge() + foo + bar;
-# }
-# EOS
-# )"
-# 
-# assert 10 "$(cat <<EOS
-# int hoge(int foo, int boo) {
-#   int baz;
-#   baz = 4;
-#   return foo - boo - baz;
-# }
-# int main() {
-#   int foo;
-#   int bar;
-#   foo = 1;
-#   bar = 2;
-# 
-#   return hoge(20, 3) - foo - bar;
-# }
-# EOS
-# )"
-# 
-# assert 120 "$(cat <<EOS
-# int fact(int n) {
-#   if (n == 1) {
-#     return 1;
-#   } else {
-#     return fact(n - 1) * n;
-#   }
-# }
-# 
-# int main() {
-#   return fact(5);
-# }
-# EOS
-# )"
-# 
-# assert 55 "$(cat <<EOS
-# int fib(int n) {
-#   if (n == 1) {
-#     return 1;
-#   } else {
-#     if (n == 2) {
-#       return 1;
-#     } else {
-#       return fib(n - 1) + fib(n - 2);
-#     }
-#   }
-# }
-# 
-# int main() {
-#   return fib(10);
-# }
-# EOS
-# )"
-# 
-# 
-# assert 1 "$(cat <<EOS
-# int func(int a, int b) {
-#   int i;
-#   int j;
-#   int a;
-#   int b;
-#   for (i = 0; i < 10; i = i + 1) {
-#     a = a + 1;
-#   }
-#   j = 0;
-#   while (j < 10) {
-#     b = b + 1;
-#     j = j + 1;
-#   }
-#   if (a + b > 0) {
-#     return 1;
-#   } else {
-#     return 0;
-#   }
-# }
-# 
-# int main() {
-#   return func(2, 3);
-# }
-# EOS
-# )"
-# 
-# assert 3 'int main() {int foo; foo = 3; return *&foo;}'
-# assert 3 'int main() {int foo; int boo; foo = 3; boo = &foo; return *boo;}'
-# 
-# # ローカル変数の持ち方として、最初に現れた変数ほどスタックの伸びる方向の端(アドレスの大きい方)にいる(=最初に出てくる変数がローカル変数のアドレスとしては一番大きくなる)にある
-# # main() {a = 1; b = 2; c = 3; }
-# # だと、スタック上のレイアウトとしては(変数が8バイトとして)
-# # addr    変数
-# # 100 ... c
-# #  92 ... b
-# #  84 ... a
-# #   |
-# #   v スタック伸びる方向
-# #
-# # なので、
-# # b のアドレスは aのアドレスからみて +8なので、8バイトのポインタ演算的には+1
-# # b のアドレスは cのアドレスからみて -8なので、8バイトのポインタ演算的には-1
-# assert 5 'int main() {int a; int b;int c;int d; a = 4; b = 5; c = 6; d = &a + 1; return *d; }'
-# assert 5 'int main() {int a; int b; int c; int d; a = 4; b = 5; c = 6; d = &c - 1; return *d; }'
-# assert 12 'int main() {int a; int b; int c; a = 4; b = 5; c = 6; *(&c - 1) = 12; return b; }'
-# 
-# assert 3 'int main() {int x; x=3; return *&x; }'
-# assert 3 'int main() {int x; int y; int z;x=3; y=&x; z=&y; return **z; }'
-# assert 5 'int main() {int x; int y; x=3; y=5; return *(&x+1); }'
-# assert 3 'int main() {int x; int y; x=3; y=5; return *(&y-1); }'
-# assert 5 'int main() {int x; int y; x=3; y=&x; *y=5; return x; }'
-# assert 7 'int main() {int x; int y; x=3; y=5; *(&x+1)=7; return y; }'
-# assert 7 'int main() {int x; int y; x=3; y=5; *(&y-1)=7; return x; }'
-# 
-# assert 23 "$(cat <<EOS
-# int main() {
-#   int x;
-#   int *y;
-#   int **z;
-# 
-#   x = 12;
-#   y = &x;
-#   z = &y;
-# 
-#   **z = 23;
-# 
-#   return x;
-# }
-# EOS
-# )"
+assert 0  'int main() { return 0; }'
+assert 42 'int main() { return 42; }'
+assert 21 'int main() { return 5+20-4;}'
+assert 41 'int main() { return  12 + 34 - 5 ;}'
+assert 47 'int main() { return 5+6*7;}'
+assert 15 'int main() { return 5 * (9- 6);}'
+assert 4  'int main() { return ( 3 + 5) / 2;}'
+assert 60 'int main() { return (1 + 2) * 3 + 4 + (5 + 6 * 7);}'
+assert 5  'int main() { return -1 + 2 * 3;}'
+assert 5  'int main() { return -1 + +2 * 3;}'
+assert 12 'int main() { return -(-1 + -2) * 4;}'
+assert 0  'int main() { return 0==1;}'
+assert 1  'int main() { return 42==42;}'
+assert 1  'int main() { return 0!=1;}'
+assert 0  'int main() { return 42!=42; }'
+assert 1  'int main() { return 0<1;}'
+assert 0  'int main() { return 1<1;}'
+assert 0  'int main() { return 2<1;}'
+assert 1  'int main() { return 0<=1;}'
+assert 1  'int main() { return 1<=1;}'
+assert 0  'int main() { return 2<=1;}'
+assert 1  'int main() { return 1>0;}'
+assert 0  'int main() { return 1>1;}'
+assert 0  'int main() { return 1>2;}'
+assert 1  'int main() { return 1>=0;}'
+assert 1  'int main() { return 1>=1;}'
+assert 0  'int main() { return 1>=2;}'
+assert 10 'int main() {int a; return a=10;}'
+assert 11 'int main() {int a; int b; a=10;b=a; return b+1;}'
+assert 20 'int main() {int a; int b; a=b=10; return a+b;}'
+assert 15 'int main() {int a; int b; a = 1 + 2; b = 3 * 4; return a + b;}'
+assert 15 'int main() {int foo; int bar; foo = 1 + 2; bar = 3 * 4; return foo + bar;}'
+assert 1  'int main() {int foo; int boo; int a; a=foo=1; boo = a + foo; return boo == 2;}'
+assert 2  'int main() { return 2; }'
+assert 4  'int main() {int b; int boo; b=boo =1; return b + boo + 2; }'
+assert 3  'int main() { return 3; return 2;}'
+
+assert 22 "$(cat <<EOS
+int main() {
+  int a;
+  int boo;  int hoge;
+  a = 10;
+  boo = 12;
+  hoge = a + boo;
+  return hoge;
+}
+EOS
+)"
+
+assert 10 "$(cat <<EOS
+int main() {
+  int i;
+  i = 0;
+  while (i < 10)
+    i = i + 1;
+  return i;
+}
+EOS
+)"
+
+assert 30 "$(cat <<EOS
+int main() {
+  int i;
+  int sum;
+  i = 0;
+  sum = 0;
+  while (i < 10) {
+    sum = sum + 3;
+    i = i + 1;
+  }
+  return sum;
+}
+EOS
+)"
+
+assert 11 "$(cat <<EOS
+int main() {
+  int foo;
+  foo = 1;
+  if (foo == 1) {
+    return 11;
+  }
+  return 12;
+}
+EOS
+)"
+
+assert 12 "$(cat <<EOS
+int main() {
+  int foo;
+  foo = 0;
+  if (foo == 1) {
+    return 11;
+  }
+  return 12;
+}
+EOS
+)"
+
+assert 13 "$(cat <<EOS
+int main() {
+  int foo;
+  foo = 0;
+  if (foo == 1) {
+    return 11;
+  } else {
+    return 13;
+  }
+  return 12;
+}
+EOS
+)"
+
+assert 11 "$(cat <<EOS
+int main() {
+  int foo;
+  foo = 1;
+  if (foo == 1) {
+    return 11;
+  } else {
+    return 13;
+  }
+  return 12;
+}
+EOS
+)"
+
+assert 4 "$(cat <<EOS
+int main() {
+  int sum;
+  int i;
+  i = 0;
+  sum = 0;
+  while (i < 10) {
+    sum = sum + 2;
+    i = i + 1;
+  }
+  if (sum == 20) {
+    return 4;
+  } else {
+    return 5;
+  }
+}
+EOS
+)"
+
+assert 5 "$(cat <<EOS
+int main() {
+  int i;
+  int sum;
+
+  i = 0;
+  sum = 0;
+  while (i < 10) {
+    sum = sum + 2;
+    i = i + 1;
+  }
+  if (sum != 20) {
+    return 4;
+  } else {
+    return 5;
+  }
+}
+EOS
+)"
+
+assert 11 'int main() {int returnx; returnx = 11; return returnx;}'
+
+assert 45 "$(cat <<EOS
+int main() {
+  int sum;
+  int i;
+  sum = 0;
+  for (i = 0; i < 10; i = i + 1) {
+    sum = sum + i;
+  }
+  return sum;
+}
+EOS
+)"
+
+assert 45 "$(cat <<EOS
+int main() {
+  int sum;
+  int i;
+  sum = 0;
+  i = 0;
+  for (; i < 10; i = i + 1) {
+    sum = sum + i;
+  }
+  return sum;
+}
+EOS
+)"
+
+assert 45 "$(cat <<EOS
+int main() {
+  int sum;
+  int i;
+  sum = 0;
+  i = 0;
+  for (; i < 10;) {
+    sum = sum + i;
+    i = i + 1;
+  }
+  return sum;
+}
+EOS
+)"
+
+# 一旦今の時点では 別途gccでコンパイルした test_func.cで定義した foo_return2 を使う
+assert 2 'int main() { return foo_return2(); }'
+assert 4 'int main() { return 2 + foo_return2();}'
+
+assert 5 'int main() { return foo_with_args_add(2, 3);}'
+assert 10 "$(cat <<EOS
+int main() {
+  int foo;
+  int bar;
+  foo = 1;
+  bar = 2;
+  return foo_with_args_add(foo + bar, 3 + 4);
+}
+EOS
+)"
+
+assert 21 "int main() { return foo_with_args_add6(1, 2, 3, 4, 5, 6);}";
+
+assert 15 "$(cat <<EOS
+int hoge() {
+  int foo;
+  int boo;
+  int baz;
+
+  foo = 1;
+  boo = 2;
+  baz = 3;
+  return foo + boo + baz;
+}
+int main() {
+  int foo;
+  int bar;
+
+  foo = 4;
+  bar = 5;
+
+  return hoge() + foo + bar;
+}
+EOS
+)"
+
+assert 10 "$(cat <<EOS
+int hoge(int foo, int boo) {
+  int baz;
+  baz = 4;
+  return foo - boo - baz;
+}
+int main() {
+  int foo;
+  int bar;
+  foo = 1;
+  bar = 2;
+
+  return hoge(20, 3) - foo - bar;
+}
+EOS
+)"
+
+assert 120 "$(cat <<EOS
+int fact(int n) {
+  if (n == 1) {
+    return 1;
+  } else {
+    return fact(n - 1) * n;
+  }
+}
+
+int main() {
+  return fact(5);
+}
+EOS
+)"
+
+assert 55 "$(cat <<EOS
+int fib(int n) {
+  if (n == 1) {
+    return 1;
+  } else {
+    if (n == 2) {
+      return 1;
+    } else {
+      return fib(n - 1) + fib(n - 2);
+    }
+  }
+}
+
+int main() {
+  return fib(10);
+}
+EOS
+)"
+
+
+assert 1 "$(cat <<EOS
+int func(int a, int b) {
+  int i;
+  int j;
+  int a;
+  int b;
+  for (i = 0; i < 10; i = i + 1) {
+    a = a + 1;
+  }
+  j = 0;
+  while (j < 10) {
+    b = b + 1;
+    j = j + 1;
+  }
+  if (a + b > 0) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+int main() {
+  return func(2, 3);
+}
+EOS
+)"
+
+assert 3 'int main() {int foo; foo = 3; return *&foo;}'
+assert 3 'int main() {int foo; int boo; foo = 3; boo = &foo; return *boo;}'
+
+# ローカル変数の持ち方として、最初に現れた変数ほどスタックの伸びる方向の端(アドレスの大きい方)にいる(=最初に出てくる変数がローカル変数のアドレスとしては一番大きくなる)にある
+# main() {a = 1; b = 2; c = 3; }
+# だと、スタック上のレイアウトとしては(変数が8バイトとして)
+# addr    変数
+# 100 ... c
+#  92 ... b
+#  84 ... a
+#   |
+#   v スタック伸びる方向
+#
+# なので、
+# b のアドレスは aのアドレスからみて +8なので、8バイトのポインタ演算的には+1
+# b のアドレスは cのアドレスからみて -8なので、8バイトのポインタ演算的には-1
+assert 5 'int main() {int a; int b;int c;int d; a = 4; b = 5; c = 6; d = &a + 1; return *d; }'
+assert 5 'int main() {int a; int b; int c; int d; a = 4; b = 5; c = 6; d = &c - 1; return *d; }'
+assert 12 'int main() {int a; int b; int c; a = 4; b = 5; c = 6; *(&c - 1) = 12; return b; }'
+
+assert 3 'int main() {int x; x=3; return *&x; }'
+assert 3 'int main() {int x; int y; int z;x=3; y=&x; z=&y; return **z; }'
+assert 5 'int main() {int x; int y; x=3; y=5; return *(&x+1); }'
+assert 3 'int main() {int x; int y; x=3; y=5; return *(&y-1); }'
+assert 5 'int main() {int x; int y; x=3; y=&x; *y=5; return x; }'
+assert 7 'int main() {int x; int y; x=3; y=5; *(&x+1)=7; return y; }'
+assert 7 'int main() {int x; int y; x=3; y=5; *(&y-1)=7; return x; }'
+
+assert 23 "$(cat <<EOS
+int main() {
+  int x;
+  int *y;
+  int **z;
+
+  x = 12;
+  y = &x;
+  z = &y;
+
+  **z = 23;
+
+  return x;
+}
+EOS
+)"
 
 # num + ptrのテスト
 assert 3 "int main() { int *p; alloc_3num_ary_8_byte_cell(&p); return *(p + 1);}"

@@ -52,6 +52,8 @@ char *node_kind_to_s(Node *nd) {
       return  "ND_DEREF";
     case  ND_VAR_DECL:
       return  "ND_VAR_DECL";
+    case  ND_EXPR_STMT:
+      return  "ND_EXPR_STMT";
     case  ND_NUM:
       return "ND_NUM  ";
   };
@@ -246,6 +248,7 @@ Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
+Node *read_expr_stmt();
 
 void program() {
   Function head = {};
@@ -338,6 +341,13 @@ Function *function_def() {
   return func;
 }
 
+Node *read_expr_stmt() {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_EXPR_STMT;
+  node->lhs = expr();
+  return node;
+}
+
 Node *stmt() {
   Node *node;
 
@@ -378,7 +388,7 @@ Node *stmt() {
       node->init = NULL;
     } else {
       // ";"でないなら初期化式があるのでパース
-      node->init = expr();
+      node->init = read_expr_stmt();
       expect(";");
     }
     if (consume(";")) {
@@ -394,7 +404,7 @@ Node *stmt() {
       node->inc = NULL;
     } else {
       // ")"でないなら継続式があるのでパース
-      node->inc = expr();
+      node->inc = read_expr_stmt();
       expect(")");
     }
     node->body = stmt();
@@ -414,7 +424,7 @@ Node *stmt() {
     node = var_decl();
     if (!node) {
       // 変数宣言でなかったら式文
-      node = expr();
+      node = read_expr_stmt();
       expect(";");
     }
   }
@@ -913,7 +923,7 @@ char *node_ast(Node *node) {
           char *cond = node_ast(node->cond);
           char *inc = node_ast(node->inc);
           char *body = node_ast(node->body);
-          n = sprintf(buf, "(for (init %s) (cond %s) (inc %s) (body %s))", node_ast(node->init), node_ast(node->inc), node_ast(node->inc), node_ast(node->body));
+          n = sprintf(buf, "(for (init %s) (cond %s) (inc %s) (body %s))", node_ast(node->init), node_ast(node->cond), node_ast(node->inc), node_ast(node->body));
           char *ret = my_strndup(buf, n);
           free(init);
           free(cond);
@@ -961,6 +971,14 @@ char *node_ast(Node *node) {
           n = sprintf(buf, "(decl (%s %s))", ti, node->var->name);
           char *ret = my_strndup(buf, n);
           free(ti);
+          return ret;
+        }
+      case ND_EXPR_STMT:
+        {
+          char *l = node_ast(node->lhs);
+          n = sprintf(buf, "(expr-stmt %s)", l);
+          char *ret = my_strndup(buf, n);
+          free(l);
           return ret;
         }
       case ND_NUM:

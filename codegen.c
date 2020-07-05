@@ -88,8 +88,6 @@ void gen(Node *node) {
       //
       for (Node *n = node->body; n; n = n->next) {
         gen(n);
-        // 最後に演算結果がスタックの先頭にあるので、スタックが溢れないようにそれを1文毎にraxに対比
-        printf("  pop rax\n");
       }
       // このブロックの結果をスタックにpush
       printf("  push rax\n");
@@ -214,9 +212,12 @@ void gen(Node *node) {
       printf("  # ND_DEREF end\n");
       return;
     case ND_VAR_DECL:
-      // 関数の定義の冒頭で、引数＋ローカル変数のサイズ分まとめて確保しているので、変数宣言のNode自体では何もコード生成はしない
-      // ただし、文単位で最後に結果が一つスタックに積まれる想定になっているので、ダミーで0をpushしておく
-      printf("  push 0\n");
+      // ローカル変数の確保は関数の冒頭で行っているので、宣言ノードが来ても特にコードは生成しない
+      return;
+    case ND_EXPR_STMT:
+      // 式文なので、結果を捨てる
+      gen(node->lhs);
+      printf("  add rsp, 8\n");
       return;
   }
 
@@ -315,7 +316,7 @@ void codegen(Function *func) {
   for (Node *n = func->body; n; n = n->next) {
     gen(n);
     // 最後に演算結果がスタックの先頭にあるので、スタックが溢れないようにそれを1文毎にraxに対比
-    printf("  pop rax\n");
+    // printf("  pop rax\n");
   }
 
   // エピローグ

@@ -95,6 +95,7 @@ typedef enum {
   ND_ADDR,     // &演算子でのアドレス取得
   ND_DEREF,    // *演算子でのアドレス参照
   ND_VAR_DECL, // 変数定義
+  ND_EXPR_STMT, // 式文
   ND_NUM,      // 整数
 } NodeKind;
 
