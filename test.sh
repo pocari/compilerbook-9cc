@@ -407,6 +407,14 @@ assert 3 "int main() { int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = p + 3
 # ptr - numのテスト
 assert 4 "int main() { int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = p + 3; return *(q - 1);}"
 
+assert 8  'int main() { return sizeof(1); }'
+assert 8  'int main() { int x; return sizeof(x); }'
+assert 8  'int main() { int x; return sizeof(&x); }'
+assert 8  'int main() { int *x; return sizeof(x); }'
+assert 8  'int main() { return sizeof(1 + 2); }'
+assert 8  'int main() { int **x; return sizeof x; }'
+
+
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 

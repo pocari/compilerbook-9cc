@@ -26,6 +26,7 @@ typedef enum {
   TK_ELSE,     // else
   TK_FOR,      // for
   TK_INT,      // int型
+  TK_SIZEOF,   // sizeof キーワード
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -65,7 +66,9 @@ bool is_integer(Type *t);
 bool is_pointer(Type *t);
 Type *pointer_to(Type *t);
 int pointer_size(Node *node);
+int node_type_size(Node * node);
 Type *new_type(TypeKind kind, Type *ptr_to);
+
 
 
 // parser.c

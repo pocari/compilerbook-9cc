@@ -233,6 +233,7 @@ LVar *find_lvar(Token *token) {
 //               | "-"? primary
 //               | "&" unary
 //               | "*" unary
+//               | "sizeof" unary
 // primary       = num | ident ("(" arg_list? ")")? | "(" expr ")"
 
 void program();
@@ -574,6 +575,10 @@ Node *unary() {
     return new_node(ND_ADDR, unary(), NULL);
   } else if (consume("*")) {
     return new_node(ND_DEREF, unary(), NULL);
+  } else if (consume_kind(TK_SIZEOF)) {
+    Node *n = unary();
+    add_type(n);
+    return new_node_num(node_type_size(n));
   }
   return primary();
 }

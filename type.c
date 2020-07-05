@@ -35,6 +35,17 @@ int pointer_size(Node *node) {
   return 8;
 }
 
+int node_type_size(Node * node) {
+  if (is_integer(node->ty)) {
+    // intを指すポインタの場合
+    // TODO: 4にしたいが今ローカル変数を一括で8byteで割り当ててるので一旦8を返す
+    return 8;
+  }
+  return 8;
+}
+
+
+
 void add_type(Node *node) {
   if (!node || node->ty)
     return;

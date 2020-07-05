@@ -109,6 +109,10 @@ static Keyword keywords[] = {
     "int",
     TK_INT,
   },
+  {
+    "sizeof",
+    TK_SIZEOF,
+  },
 };
 
 Keyword *tokenize_keyword(char *p) {
