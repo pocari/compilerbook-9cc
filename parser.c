@@ -149,7 +149,7 @@ void expect(char *op) {
       token->len != strlen(op) ||
       memcmp(token->str, op, token->len)) {
     dump_token(token);
-    error("'%c'(token->kind: %d, token->len: %d, strlen(op): %d)ではありません", op, token->kind, token->len, strlen(op));
+    error_at(token->str, "'%c'(token->kind: %s, token->len: %d, strlen(op): %d)ではありません", op, token_kind_to_s(token->kind), token->len, strlen(op));
   }
   token = token->next;
 }
