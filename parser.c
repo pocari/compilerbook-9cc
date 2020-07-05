@@ -482,14 +482,27 @@ Node *relational() {
   }
 }
 
+//  ND_ADD,      // num + num
+//  ND_PTR_ADD,  // num + ptr, ptr + num
+Node *new_add_node(Node *lhs, Node *rhs) {
+  return new_node(ND_ADD, lhs, rhs);
+}
+
+//  ND_SUB,      // num - num
+//  ND_PTR_SUB,  // ptr - num
+//  ND_PTR_DIFF, // ptr - ptr
+Node *new_sub_node(Node *lhs, Node *rhs) {
+  return new_node(ND_SUB, lhs, rhs);
+}
+
 Node *add() {
   Node *node = mul();
 
   for (;;) {
     if (consume("+")) {
-      node = new_node(ND_ADD, node, mul());
+      node = new_add_node(node, mul());
     } else if (consume("-")) {
-      node = new_node(ND_SUB, node, mul());
+      node = new_sub_node(node, mul());
     } else {
       return node;
     }
