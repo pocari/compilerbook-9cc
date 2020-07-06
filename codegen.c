@@ -93,8 +93,6 @@ void gen(Node *node) {
       for (Node *n = node->body; n; n = n->next) {
         gen(n);
       }
-      // このブロックの結果をスタックにpush
-      printf("  push rax\n");
       printf("  # ND_BLOCK end\n");
       return;
     case ND_IF:
