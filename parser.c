@@ -300,12 +300,11 @@ void function_params(Function *func) {
 void set_stack_info(Function *f) {
   int offset = 0;
   for (VarList *v = f->locals; v; v = v->next) {
-    offset += 8;
+    offset += v->var->type->size;
     v->var->offset = offset;
   }
   f->stack_size = offset;
 }
-
 
 Function *function_def() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
@@ -434,10 +433,24 @@ Node *stmt() {
   return node;
 }
 
+// int *x[n]
+// のxの直後の[n]をパースする
+Type *read_type_suffix(Type *base) {
+  if (!consume("[")) {
+    return base;
+  }
+  int array_size = expect_number();
+  expect("]");
+  return array_of(base, array_size);
+}
+
 Node *var_decl() {
   if (token->kind == TK_INT) {
     Type *type = type_in_decl();
-    LVar *var = new_lvar(expect_ident(), type);
+    char *ident_name = expect_ident();
+    // 識別子につづく配列用の宣言をパースして型情報を返す
+    type = read_type_suffix(type);
+    LVar *var = new_lvar(ident_name, type);
     expect(";");
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_VAR_DECL;
@@ -509,13 +522,18 @@ Node *new_add_node(Node *lhs, Node *rhs) {
   if (is_integer(lhs->ty) && is_integer(rhs->ty)) {
     // num + num
     return new_node(ND_ADD, lhs, rhs);
-  } else if (is_pointer(lhs->ty)) {
+  } else if (is_pointer(lhs->ty) && is_integer(rhs->ty)) {
     // ptr + num のケース
     return new_node(ND_PTR_ADD, lhs, rhs);
-  } else {
+  } else if (is_integer(lhs->ty) && is_pointer(rhs->ty)){
+    fprintf(stderr, "is_pointer(lhs->ty): %d\n", is_pointer(lhs->ty));
+    fprintf(stderr, "is_pointer(rhs->ty): %d\n", is_pointer(rhs->ty));
     // num + ptrのケースなので、入れ替えてptr + num に正規化する
     return new_node(ND_PTR_ADD, rhs, lhs);
   }
+  // ここに来た場合 ptr + ptr という不正なパターンになるので落とす
+  error_at(token->str, "不正なaddパターンです。");
+  return NULL;
 }
 
 Node *new_sub_node(Node *lhs, Node *rhs) {
@@ -531,11 +549,10 @@ Node *new_sub_node(Node *lhs, Node *rhs) {
   } else if (is_pointer(lhs->ty) && is_integer(rhs->ty)) {
     // ptr - num
     return new_node(ND_PTR_SUB, lhs, rhs);
-  } else {
-    // ここに来た場合 num - ptr になってしまうので、エラーにする
-    error("不正な演算です: num - ptr");
-    return NULL; // error で落ちるので実際にはreturnされない
   }
+  // ここに来た場合 num - ptr になってしまうので、エラーにする
+  error("不正な演算です: num - ptr");
+  return NULL; // error で落ちるので実際にはreturnされない
 }
 
 Node *add() {
@@ -728,6 +745,10 @@ int type_info_helper(char *buf, int offset, Type *type) {
       break;
     case TY_PTR:
       n += sprintf(buf + offset, "*");
+      n += type_info_helper(buf, offset + n, type->ptr_to);
+      break;
+    case TY_ARRAY:
+      n += sprintf(buf + offset, "[%ld]", type->array_size);
       n += type_info_helper(buf, offset + n, type->ptr_to);
       break;
   }

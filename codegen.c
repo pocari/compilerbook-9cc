@@ -57,9 +57,13 @@ void gen(Node *node) {
         printf("  # ND_LVAR start(var_name: none)\n");
       }
       gen_addr(node);
-      printf("  pop rax\n"); // gen_addr(node)で積んだ変数のアドレスをraxにロード
-      printf("  mov rax, [rax]\n"); // 変数のアドレスにある値をraxにロード
-      printf("  push rax\n"); // 変数の値(rax)をスタックに積む
+      if (node->ty->kind != TY_ARRAY) {
+        // 配列以外の場合は、識別子が指すアドレスにある値(がアドレスなので)それをスタックにつむところまでやるが、だが、
+        // 配列の場合は、識別子が指すアドレス自体をスタックにつみたいので、そうする。
+        printf("  pop rax\n"); // gen_addr(node)で積んだ変数のアドレスをraxにロード
+        printf("  mov rax, [rax]\n"); // 変数のアドレスにある値をraxにロード
+        printf("  push rax\n"); // 変数の値(rax)をスタックに積む
+      }
       printf("  # ND_LVAR end\n");
       return;
     case ND_ASSIGN:
@@ -206,9 +210,13 @@ void gen(Node *node) {
     case ND_DEREF:
       printf("  # ND_DEREF start\n");
       gen(node->lhs);
-      printf("  pop rax\n"); // gen_addrでスタックに積んだアドレスを取得
-      printf("  mov rax, [rax]\n"); // raxの値をアドレスとみなして、そのアドレスのにある値をraxにいれる
-      printf("  push rax\n"); // 値をスタックにプッシュ
+      if (node->ty->kind != TY_ARRAY) {
+        // 配列以外の場合は、識別子が指すアドレスにある値(がアドレスなので)それをスタックにつむところまでやるが、だが、
+        // 配列の場合は、識別子が指すアドレス自体をスタックにつみたいので、そうする。
+        printf("  pop rax\n"); // gen_addrでスタックに積んだアドレスを取得
+        printf("  mov rax, [rax]\n"); // raxの値をアドレスとみなして、そのアドレスのにある値をraxにいれる
+        printf("  push rax\n"); // 値をスタックにプッシュ
+      }
       printf("  # ND_DEREF end\n");
       return;
     case ND_VAR_DECL:
@@ -232,14 +240,14 @@ void gen(Node *node) {
       printf("  add rax, rdi\n");
       break;
     case ND_PTR_ADD:
-      printf("  imul rdi, %d\n", pointer_size(node->lhs));
+      printf("  imul rdi, %d\n", node->ty->ptr_to->size);
       printf("  add rax, rdi\n");
       break;
     case ND_SUB:
       printf("  sub rax, rdi\n");
       break;
     case ND_PTR_SUB:
-      printf("  imul rdi, %d\n", pointer_size(node->lhs));
+      printf("  imul rdi, %d\n", node->ty->ptr_to->size);
       printf("  sub rax, rdi\n");
       break;
     case ND_PTR_DIFF:
@@ -257,8 +265,8 @@ void gen(Node *node) {
       // raxをlhsのポインターが指す型のサイズで割った商をraxに入れる。
       // このため、割る数(rdi)に「ポインターが指す方のサイズ」を設定する必要がある
       printf("  sub rax, rdi\n");
-      printf("  mov rdi, %d\n", pointer_size(node->lhs));
       printf("  cqo\n");
+      printf("  mov rdi, %d\n", node->lhs->ty->ptr_to->size);
       printf("  idiv rdi\n");
       break;
     case ND_MUL:
@@ -315,8 +323,6 @@ void codegen(Function *func) {
   // 先頭の文からコード生成
   for (Node *n = func->body; n; n = n->next) {
     gen(n);
-    // 最後に演算結果がスタックの先頭にあるので、スタックが溢れないようにそれを1文毎にraxに対比
-    // printf("  pop rax\n");
   }
 
   // エピローグ

@@ -416,6 +416,17 @@ assert 8  'int main() { int **x; return sizeof x; }'
 assert 8  'int main() { return sizeof(sizeof(0)); }'
 assert 8  'int main() { int x; return sizeof sizeof &x; }'
 
+assert 3 "$(cat <<EOS
+int main() {
+  int a[2];
+  *a = 1;
+  *(a + 1) = 2;
+  int *p;
+  p = a;
+  return *p + *(p + 1);
+}
+EOS
+)"
 
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
