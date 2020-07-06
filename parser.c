@@ -526,8 +526,6 @@ Node *new_add_node(Node *lhs, Node *rhs) {
     // ptr + num のケース
     return new_node(ND_PTR_ADD, lhs, rhs);
   } else if (is_integer(lhs->ty) && is_pointer(rhs->ty)){
-    fprintf(stderr, "is_pointer(lhs->ty): %d\n", is_pointer(lhs->ty));
-    fprintf(stderr, "is_pointer(rhs->ty): %d\n", is_pointer(rhs->ty));
     // num + ptrのケースなので、入れ替えてptr + num に正規化する
     return new_node(ND_PTR_ADD, rhs, lhs);
   }
