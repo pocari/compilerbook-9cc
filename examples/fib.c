@@ -11,7 +11,11 @@ int fib(int n) {
 }
 
 int main() {
-  int x;
-  x = 1 + 9;
-  return fib(x);
+  int x[10];
+  int i;
+
+  for (i = 1; i <= 10; i = i + 1) {
+    *(x + i - 1) = fib(i);
+  }
+  return *(x + 5);
 }
