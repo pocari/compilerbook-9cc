@@ -428,6 +428,18 @@ int main() {
 EOS
 )"
 
+assert 6 "$(cat <<EOS
+int main() {
+  int a[2];
+  a[0] = 1;
+  a[1] = 2;
+  int *p;
+  p = a;
+  return *p + *(p + 1) + a[0] + a[1];
+}
+EOS
+)"
+
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 

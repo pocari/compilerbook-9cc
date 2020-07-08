@@ -638,6 +638,21 @@ Node *parse_call_func(Token *t) {
   return node;
 }
 
+Node *parse_array_ref(Token *ident) {
+  int index = expect_number();
+  expect("]");
+  LVar *var = find_lvar(ident);
+  Node *var_node = calloc(1, sizeof(Node));
+  var_node->kind = ND_LVAR;
+  var_node->var = var;
+
+  Node *index_node = new_node_num(index);
+
+  // hoge[index] が出てきたら *(hoge + index) に読み替える
+  return new_node(ND_DEREF, new_add_node(var_node, index_node), NULL);
+}
+
+
 Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -650,9 +665,13 @@ Node *primary() {
     if (consume("(")) {
       // identに続けて"("があったら関数呼び出し
       return parse_call_func(t);
+    } else if (consume("[")) {
+      // identに続けて"["があったら添字参照
+      return parse_array_ref(t);
     } else {
       // "("がなかったらローカル変数
       return parse_lvar(t);
+
     }
   }
 
