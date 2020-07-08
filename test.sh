@@ -435,7 +435,21 @@ int main() {
   a[1] = 2;
   int *p;
   p = a;
-  return *p + *(p + 1) + a[0] + a[1];
+  return *p + *(p + 1) + a[1 - 1] + a[0 + 1];
+}
+EOS
+)"
+
+# cでは、 a[3]も3[a]も同じ意味らしい
+assert 6 "$(cat <<EOS
+int hoge() { return 2; }
+int main() {
+  int a[2];
+  a[0] = 1;
+  a[1] = 2;
+  int *p;
+  p = a;
+  return *p + *(p + 1) + 0[a] + (-1 + hoge())[a];
 }
 EOS
 )"

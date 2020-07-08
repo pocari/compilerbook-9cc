@@ -229,12 +229,15 @@ LVar *find_lvar(Token *token) {
 // relational    = add ("<" add | "<=" add | ">" add | ">=" add)*
 // add           = mul ("+" mul | "-" mul)*
 // mul           = unary ("*" unary | "/" unary)*
-// unary         = "+"? primary
-//               | "-"? primary
+// unary         = "+"? postfix
+//               | "-"? postfix
 //               | "&" unary
 //               | "*" unary
 //               | "sizeof" unary
-// primary       = num | ident ("(" arg_list? ")")? | "(" expr ")"
+// postfix       = parimary ("[" expr "]")*
+// primary       = num
+//               | ident ("(" arg_list? ")")?
+//               | "(" expr ")"
 
 void program();
 Function *function_def();
@@ -248,6 +251,7 @@ Node *relational();
 Node *add();
 Node *mul();
 Node *unary();
+Node *postfix();
 Node *primary();
 Node *read_expr_stmt();
 
@@ -583,9 +587,9 @@ Node *mul() {
 
 Node *unary() {
   if (consume("+")) {
-    return primary();
+    return postfix();
   } else if (consume("-")) {
-    return new_node(ND_SUB, new_node_num(0), primary());
+    return new_node(ND_SUB, new_node_num(0), postfix());
   } else if (consume("&")) {
     return new_node(ND_ADDR, unary(), NULL);
   } else if (consume("*")) {
@@ -595,8 +599,9 @@ Node *unary() {
     add_type(n);
     return new_node_num(node_type_size(n));
   }
-  return primary();
+  return postfix();
 }
+
 
 Node *parse_lvar(Token *t) {
     LVar *lvar = find_lvar(t);
@@ -607,6 +612,15 @@ Node *parse_lvar(Token *t) {
     node->kind = ND_LVAR;
     node->var = lvar;
     return node;
+}
+
+Node *postfix() {
+  Node *node = primary();
+  while (consume("[")) {
+    node = new_node(ND_DEREF, new_add_node(node, expr()), NULL);
+    expect("]");
+  }
+  return node;
 }
 
 Node *parse_call_func(Token *t) {
@@ -638,21 +652,6 @@ Node *parse_call_func(Token *t) {
   return node;
 }
 
-Node *parse_array_ref(Token *ident) {
-  int index = expect_number();
-  expect("]");
-  LVar *var = find_lvar(ident);
-  Node *var_node = calloc(1, sizeof(Node));
-  var_node->kind = ND_LVAR;
-  var_node->var = var;
-
-  Node *index_node = new_node_num(index);
-
-  // hoge[index] が出てきたら *(hoge + index) に読み替える
-  return new_node(ND_DEREF, new_add_node(var_node, index_node), NULL);
-}
-
-
 Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -665,9 +664,6 @@ Node *primary() {
     if (consume("(")) {
       // identに続けて"("があったら関数呼び出し
       return parse_call_func(t);
-    } else if (consume("[")) {
-      // identに続けて"["があったら添字参照
-      return parse_array_ref(t);
     } else {
       // "("がなかったらローカル変数
       return parse_lvar(t);
