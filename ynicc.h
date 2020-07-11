@@ -156,9 +156,8 @@ struct VarList {
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 void free_functions(Function *function);
-char *function_body_ast(Function *f);
 char *node_kind_to_s(Node *nd);
-
+char *my_strndup(char *str, int len);
 void program();
 
 // 関数達
@@ -166,5 +165,9 @@ extern Function *functions;
 
 // codegen.c
 void codegen(Function *func);
+
+// debug.c
+
+char *function_body_ast(Function *f);
 
 #endif
