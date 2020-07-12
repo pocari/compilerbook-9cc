@@ -454,6 +454,34 @@ int main() {
 EOS
 )"
 
+assert 0 'int main() { int x[2][3]; int *y; y = x; *y=0; return **x; }'
+assert 1 'int main() { int x[2][3]; int *y; y = x; *(y+1)=1; return *(*x+1); }'
+assert 2 'int main() { int x[2][3]; int *y; y = x; *(y+2)=2; return *(*x+2); }'
+assert 3 'int main() { int x[2][3]; int *y; y = x; *(y+3)=3; return **(x+1); }'
+assert 4 'int main() { int x[2][3]; int *y; y = x; *(y+4)=4; return *(*(x+1)+1); }'
+assert 5 'int main() { int x[2][3]; int *y; y = x; *(y+5)=5; return *(*(x+1)+2); }'
+assert 6 'int main() { int x[2][3]; int *y; y = x; *(y+6)=6; return **(x+2); }'
+
+assert 21 "$(cat <<EOS
+int main() {
+  int a[2][3];
+  int *p;
+
+  a[0][0] = 1;
+  a[0][1] = 2;
+  a[0][2] = 3;
+  a[1][0] = 4;
+  a[1][1] = 5;
+  a[1][2] = 6;
+
+  p = a + 1;
+
+  return a[0][0] + a[0][1] + a[0][2] + *p + *(p + 1) + *(p + 2);
+}
+EOS
+)"
+
+
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 

@@ -57,6 +57,8 @@ char *node_kind_to_s(Node *nd) {
 
 int type_info_helper(char *buf, int offset, Type *type) {
   int n = 0;
+
+  #pragma clang diagnostic ignored "-Wswitch"
   switch (type->kind) {
     case TY_INT:
       n += sprintf(buf + offset, "int");
@@ -66,6 +68,15 @@ int type_info_helper(char *buf, int offset, Type *type) {
       n += type_info_helper(buf, offset + n, type->ptr_to);
       break;
     case TY_ARRAY:
+      // int x[2][3]と宣言された配列の場合
+      //
+      // TY_ARRAY
+      // array_size: 2
+      // ptr_to ---------> TY_ARRAY
+      //                   array_size: 3
+      //                   ptr_to   --------> TY_INT
+      //
+      // と、「「intのサイズ3の配列」のサイズ2の配列」という構造になるので、
       n += sprintf(buf + offset, "[%ld]", type->array_size);
       n += type_info_helper(buf, offset + n, type->ptr_to);
       break;

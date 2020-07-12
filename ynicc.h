@@ -51,6 +51,7 @@ extern char *user_input;
 // type.c
 typedef struct Type Type;
 typedef enum {
+  TY_DUMMY,
   TY_INT,
   TY_PTR,
   TY_ARRAY,

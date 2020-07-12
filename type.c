@@ -102,7 +102,7 @@ void add_type(Node *node) {
       }
       return;
     case ND_DEREF:
-      if (node->lhs->ty->kind == TY_PTR) {
+      if (is_pointer(node->lhs->ty)) {
         node->ty = node->lhs->ty->ptr_to;
       } else {
         node->ty = int_type;
