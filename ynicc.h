@@ -11,6 +11,7 @@
 typedef struct Node Node;
 typedef struct LVar LVar;
 typedef struct VarList VarList;
+typedef struct Program Program;
 typedef struct Function Function;
 typedef struct Token Token;
 
@@ -80,33 +81,38 @@ Type *array_of(Type *ptr_to, int array_size);
 
 // ASTのノード種別
 typedef enum {
-  ND_DUMMY,    // dummy
-  ND_ADD,      // num + num
-  ND_PTR_ADD,  // num + ptr, ptr + num
-  ND_SUB,      // num - num
-  ND_PTR_SUB,  // ptr - num
-  ND_PTR_DIFF, // ptr - ptr
-  ND_MUL,      // *
-  ND_DIV,      // /
-  ND_LT,       // <
-  ND_LTE,      // <=
-  ND_EQL,      // ==
-  ND_NOT_EQL,  // !=
-  ND_ASSIGN,   // =
-  ND_LVAR,     // ローカル変数
-  ND_RETURN,   // return
-  ND_WHILE,    // while
-  ND_BLOCK,    // { stmt* } のブロック
-  ND_IF,       // if文
-  ND_FOR,      // for文
-  ND_CALL,     // 関数呼び出し
-  ND_ADDR,     // &演算子でのアドレス取得
-  ND_DEREF,    // *演算子でのアドレス参照
-  ND_VAR_DECL, // 変数定義
+  ND_DUMMY,     // dummy
+  ND_ADD,       // num + num
+  ND_PTR_ADD,   // num + ptr, ptr + num
+  ND_SUB,       // num - num
+  ND_PTR_SUB,   // ptr - num
+  ND_PTR_DIFF,  // ptr - ptr
+  ND_MUL,       // *
+  ND_DIV,       // /
+  ND_LT,        // <
+  ND_LTE,       // <=
+  ND_EQL,       // ==
+  ND_NOT_EQL,   // !=
+  ND_ASSIGN,    // =
+  ND_LVAR,      // ローカル変数
+  ND_RETURN,    // return
+  ND_WHILE,     // while
+  ND_BLOCK,     // { stmt* } のブロック
+  ND_IF,        // if文
+  ND_FOR,       // for文
+  ND_CALL,      // 関数呼び出し
+  ND_ADDR,      // &演算子でのアドレス取得
+  ND_DEREF,     // *演算子でのアドレス参照
+  ND_VAR_DECL,  // 変数定義
   ND_EXPR_STMT, // 式文
-  ND_NUM,      // 整数
+  ND_GVAR,      // グローバル変数
+  ND_NUM,       // 整数
 } NodeKind;
 
+struct Program {
+  VarList *global_var;
+  Function *functions;
+};
 
 struct Function {
   Function *next; //次の関数
@@ -156,13 +162,10 @@ struct VarList {
 
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
-void free_functions(Function *function);
+void free_program(Program *function);
 char *node_kind_to_s(Node *nd);
 char *my_strndup(char *str, int len);
-void program();
-
-// 関数達
-extern Function *functions;
+Program *program();
 
 // codegen.c
 void codegen(Function *func);

@@ -2,7 +2,7 @@
 
 // 今パース中の関数のローカル変数
 static VarList *locals = NULL;
-Function *functions = NULL;
+static VarList *globals = NULL;
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -156,34 +156,39 @@ LVar *find_lvar(Token *token) {
 
 // ynicc BNF
 //
-// program       = function_def*
-// function_def  = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
-// stmt          = expr ";"
-//               | "{" stmt* "}"
-//               | "return" expr ";"
-//               | "if" "(" expr ")" stmt ("else" stmt)?
-//               | "while" "(" expr ")" stmt
-//               | "for" "(" expr? ";" expr? ";" expr? ")" stmt
-//               | var_decl
-// var_decl      = type_in_decl ident ";"
-// type_in_decl  = "int" ("*" *)
-// expr          = assign
-// assign        = equality (= assign)?
-// equality      = relational ("==" relational | "!=" relational)*
-// relational    = add ("<" add | "<=" add | ">" add | ">=" add)*
-// add           = mul ("+" mul | "-" mul)*
-// mul           = unary ("*" unary | "/" unary)*
-// unary         = "+"? postfix
-//               | "-"? postfix
-//               | "&" unary
-//               | "*" unary
-//               | "sizeof" unary
-// postfix       = parimary ("[" expr "]")*
-// primary       = num
-//               | ident ("(" arg_list? ")")?
-//               | "(" expr ")"
+// program          = (
+//                      func_decls
+//                    | global_var_decls
+//                  )*
+// function_def     = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
+// global_var_decls = type_in_decl ident "read_type_suffix" ";"
+// stmt             = expr ";"
+//                  | "{" stmt* "}"
+//                  | "return" expr ";"
+//                  | "if" "(" expr ")" stmt ("else" stmt)?
+//                  | "while" "(" expr ")" stmt
+//                  | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//                  | var_decl
+// var_decl         = type_in_decl ident ";"
+// type_in_decl     = "int" ("*" *)
+// expr             = assign
+// assign           = equality (= assign)?
+// equality         = relational ("==" relational | "!=" relational)*
+// relational       = add ("<" add | "<=" add | ">" add | ">=" add)*
+// add              = mul ("+" mul | "-" mul)*
+// mul              = unary ("*" unary | "/" unary)*
+// unary            = "+"? postfix
+//                  | "-"? postfix
+//                  | "&" unary
+//                  | "*" unary
+//                  | "sizeof" unary
+// postfix          = parimary ("[" expr "]")*
+// primary          = num
+//                  | ident ("(" arg_list? ")")?
+//                  | "(" expr ")"
 
-void program();
+Program *program();
+
 Function *function_def();
 Node *stmt();
 Type *type_in_decl();
@@ -199,14 +204,26 @@ Node *postfix();
 Node *primary();
 Node *read_expr_stmt();
 
-void program() {
+bool is_function_def() {
+  return true;
+}
+
+Program *program() {
   Function head = {};
   Function *cur = &head;
   while (!at_eof()) {
-    cur->next = function_def();
-    cur = cur->next;
+    if (is_function_def()) {
+      cur->next = function_def();
+      cur = cur->next;
+    } else {
+      // 関数じゃない場合はグローバル変数
+    }
   }
-  functions = head.next;
+  Program *program = calloc(1, sizeof(Program));
+  program->global_var = globals;
+  program->functions = head.next;
+
+  return program;
 }
 
 // type_in_decl  = "int" ("*" *)
@@ -693,3 +710,9 @@ void free_functions(Function *func) {
     f = tmp;
   }
 }
+
+void free_program(Program *program) {
+  free_functions(program->functions);
+  free_var_list_deep(program->global_var);
+}
+

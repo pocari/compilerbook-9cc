@@ -41,14 +41,14 @@ int main(int argc, char **argv) {
   // fprintf(stderr, "-------------------------------- tokenized\n");
 
   // パースする(結果は グローバル変数のfunctionsに入る)
-  program();
+  Program *pgm = program();
 
   // fprintf(stderr, "-------------------------------- parsed\n");
   if (!dump_ast_only) {
     printf(".intel_syntax noprefix\n");
   }
 
-  for (Function *f = functions; f; f = f->next) {
+  for (Function *f = pgm->functions; f; f = f->next) {
     if (dump_ast) {
       dump_function(f);
     }
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
   }
 
   free_tokens(head);
-  free_functions(functions);
+  free_program(pgm);
 
   return 0;
 }
