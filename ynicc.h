@@ -9,7 +9,7 @@
 #include <string.h>
 
 typedef struct Node Node;
-typedef struct LVar LVar;
+typedef struct Var Var;
 typedef struct VarList VarList;
 typedef struct Program Program;
 typedef struct Function Function;
@@ -143,13 +143,13 @@ struct Node {
 
   Node *arg; //関数の引数
 
-  LVar *var; //ND_VAR, ND_VAR_DECLのときの変数情報
+  Var *var; //ND_VAR, ND_VAR_DECLのときの変数情報
   int val;    // kindがND_NUMの場合に使う
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
 };
 
-struct LVar {
+struct Var {
   Type *type; // この変数の型
   char *name; // この変数の名前
   int offset; // rbpからのオフセット
@@ -157,7 +157,7 @@ struct LVar {
 
 struct VarList {
   VarList *next; // 次の変数
-  LVar *var; // 変数の実体へのポインタ
+  Var *var; // 変数の実体へのポインタ
 };
 
 void error_at(char *loc, char *fmt, ...);

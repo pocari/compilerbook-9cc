@@ -24,9 +24,10 @@ Node *new_node_num(int val) {
   return node;
 }
 
+
 // ローカル変数の確保＋このfunctionでのローカル変数のリストにも追加
-LVar *new_lvar(char *name, Type *type) {
-  LVar *lvar = calloc(1, sizeof(LVar));
+Var *new_lvar(char *name, Type *type) {
+  Var *lvar = calloc(1, sizeof(Var));
   lvar->type = type;
   lvar->name = name;
 
@@ -143,7 +144,7 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-LVar *find_lvar(Token *token) {
+Var *find_lvar(Token *token) {
   for (VarList *var_list = locals; var_list; var_list = var_list->next) {
     // fprintf(stderr, "var_name: %s\n", var->name);
     if (strlen(var_list-> var->name) == token->len &&
@@ -252,14 +253,14 @@ void function_params(Function *func) {
   }
 
   Type *type = type_in_decl();
-  LVar *var = new_lvar(expect_ident(), type);
+  Var *var = new_lvar(expect_ident(), type);
   VarList *var_list = calloc(1, sizeof(VarList));
   var_list->var = var;
   // fprintf(stderr, "parse func param start\n");
   while (!consume(")")) {
     expect(",");
     type = type_in_decl();
-    LVar *var = new_lvar(expect_ident(), type);
+    Var *var = new_lvar(expect_ident(), type);
     VarList *v = calloc(1, sizeof(VarList));
     v->var = var;
     v->next = var_list;
@@ -424,7 +425,7 @@ Node *var_decl() {
     char *ident_name = expect_ident();
     // 識別子につづく配列用の宣言をパースして型情報を返す
     type = read_type_suffix(type);
-    LVar *var = new_lvar(ident_name, type);
+    Var *var = new_lvar(ident_name, type);
     expect(";");
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_VAR_DECL;
@@ -574,7 +575,7 @@ Node *unary() {
 
 
 Node *parse_lvar(Token *t) {
-    LVar *lvar = find_lvar(t);
+    Var *lvar = find_lvar(t);
     if (!lvar) {
       error_at(t->str, "変数 %s は宣言されていません。", my_strndup(t->str, t->len));
     }
@@ -649,7 +650,7 @@ void free_nodes(Node *node) {
   if (!node) {
     return;
   }
-  // LVar の free は別途VarListのfreeで一緒にする(共有しているため)
+  // Var の free は別途VarListのfreeで一緒にする(共有しているため)
   free_nodes(node->next);
   free_nodes(node->arg);
   free_nodes(node->lhs);
@@ -664,7 +665,7 @@ void free_nodes(Node *node) {
   free(node);
 }
 
-void free_lvar(LVar *var) {
+void free_lvar(Var *var) {
   if (var) {
     Type *t = var->type;
     while (t) {
@@ -702,9 +703,9 @@ void free_var_list_shallow(VarList *var) {
 
 void free_function(Function *f) {
   free(f->name);
-  // var_listの中のLVarは locals にローカル変数も関数の引数も含めて全部もっているので localsのfreeで一緒に削除する
+  // var_listの中のVarは locals にローカル変数も関数の引数も含めて全部もっているので localsのfreeで一緒に削除する
   free_var_list_deep(f->locals);
-  // 引数のvar_listの LVar * はlocalsのfreeでおこなｗれているので、こちらは VarList の freeのみ行う
+  // 引数のvar_listの Var * はlocalsのfreeでおこなｗれているので、こちらは VarList の freeのみ行う
   free_var_list_shallow(f->params);
 
   free_nodes(f->body);
