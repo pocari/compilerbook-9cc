@@ -205,7 +205,16 @@ Node *primary();
 Node *read_expr_stmt();
 
 bool is_function_def() {
-  return true;
+  // 先読みした結果今の位置に戻る用に今のtokenを保存
+  Token *tmp = token;
+
+  type_in_decl();
+  bool is_func = consume_ident() && consume("(");
+
+  // 先読みした結果、関数定義かグローバル変数かわかったので、tokenを元に戻す
+  token = tmp;
+
+  return is_func;
 }
 
 Program *program() {
