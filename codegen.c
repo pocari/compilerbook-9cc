@@ -6,13 +6,13 @@ void gen_addr(Node *node) {
   // switchの警告を消すpragma
   #pragma clang diagnostic ignored "-Wswitch"
   switch(node->kind) {
-    case ND_LVAR:
+    case ND_VAR:
       printf("  # gen_addr start (var_name: %s)\n", node->var->name);
-      printf("  # gen_addr-ND_LVAR start\n");
+      printf("  # gen_addr-ND_VAR start\n");
       printf("  mov rax, rbp\n");
       printf("  sub rax, %d\n", node->var->offset);
       printf("  push rax\n");
-      printf("  # gen_addr-ND_LVAR end\n");
+      printf("  # gen_addr-ND_VAR end\n");
       printf("  # gen_addr end\n");
       return;
     case ND_DEREF:
@@ -50,11 +50,11 @@ void gen(Node *node) {
     case ND_NUM:
       printf("  push %d\n", node->val);
       return ;
-    case ND_LVAR:
+    case ND_VAR:
       if (node->var) {
-        printf("  # ND_LVAR start(var_name: %s)\n", node->var->name);
+        printf("  # ND_VAR start(var_name: %s)\n", node->var->name);
       } else {
-        printf("  # ND_LVAR start(var_name: none)\n");
+        printf("  # ND_VAR start(var_name: none)\n");
       }
       gen_addr(node);
       if (node->ty->kind != TY_ARRAY) {
@@ -64,7 +64,7 @@ void gen(Node *node) {
         printf("  mov rax, [rax]\n"); // 変数のアドレスにある値をraxにロード
         printf("  push rax\n"); // 変数の値(rax)をスタックに積む
       }
-      printf("  # ND_LVAR end\n");
+      printf("  # ND_VAR end\n");
       return;
     case ND_ASSIGN:
       printf("  # ND_ASSIGN start\n");

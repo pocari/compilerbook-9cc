@@ -25,20 +25,38 @@ Node *new_node_num(int val) {
 }
 
 
+Var *new_var(char *name, Type *type, bool is_local) {
+  Var *var = calloc(1, sizeof(Var));
+  var->type = type;
+  var->name = name;
+  var->is_local = is_local;
+
+  return var;
+}
+
 // ローカル変数の確保＋このfunctionでのローカル変数のリストにも追加
 Var *new_lvar(char *name, Type *type) {
-  Var *lvar = calloc(1, sizeof(Var));
-  lvar->type = type;
-  lvar->name = name;
+  Var *var = new_var(name, type, true);
 
   VarList *v = calloc(1, sizeof(VarList));
-  v->var = lvar;
+  v->var = var;
   v->next = locals;
 
   // fprintf(stderr, "new_lvar:next ... %s\n", locals ? "nanika" : "NULL");
   locals = v;
 
-  return lvar;
+  return var;
+}
+
+Var *new_gvar(char *name, Type *type) {
+  Var *var = new_var(name, type, false);
+
+  VarList *v = calloc(1, sizeof(VarList));
+  v->var = var;
+  v->next = globals;
+  globals = v;
+
+  return var;
 }
 
 void error_at(char *loc, char *fmt, ...) {
@@ -144,7 +162,7 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-Var *find_lvar(Token *token) {
+Var *find_var(Token *token) {
   for (VarList *var_list = locals; var_list; var_list = var_list->next) {
     // fprintf(stderr, "var_name: %s\n", var->name);
     if (strlen(var_list-> var->name) == token->len &&
@@ -204,6 +222,7 @@ Node *unary();
 Node *postfix();
 Node *primary();
 Node *read_expr_stmt();
+Type *read_type_suffix(Type *base);
 
 bool is_function_def() {
   // 先読みした結果今の位置に戻る用に今のtokenを保存
@@ -218,6 +237,16 @@ bool is_function_def() {
   return is_func;
 }
 
+// グローバル変数のパース
+void parse_gvar() {
+  Type *type = type_in_decl();
+  char *ident_name = expect_ident();
+  // 識別子につづく配列用の宣言をパースして型情報を返す
+  type = read_type_suffix(type);
+  expect(";");
+  new_gvar(ident_name, type);
+}
+
 Program *program() {
   Function head = {};
   Function *cur = &head;
@@ -226,6 +255,7 @@ Program *program() {
       cur->next = function_def();
       cur = cur->next;
     } else {
+      parse_gvar();
       // 関数じゃない場合はグローバル変数
     }
   }
@@ -574,14 +604,14 @@ Node *unary() {
 }
 
 
-Node *parse_lvar(Token *t) {
-    Var *lvar = find_lvar(t);
-    if (!lvar) {
+Node *parse_var(Token *t) {
+    Var *var = find_var(t);
+    if (!var) {
       error_at(t->str, "変数 %s は宣言されていません。", my_strndup(t->str, t->len));
     }
     Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_LVAR;
-    node->var = lvar;
+    node->kind = ND_VAR;
+    node->var = var;
     return node;
 }
 
@@ -636,8 +666,8 @@ Node *primary() {
       // identに続けて"("があったら関数呼び出し
       return parse_call_func(t);
     } else {
-      // "("がなかったらローカル変数
-      return parse_lvar(t);
+      // "("がなかったら変数参照
+      return parse_var(t);
 
     }
   }

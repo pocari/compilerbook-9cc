@@ -28,8 +28,8 @@ char *node_kind_to_s(Node *nd) {
       return  "ND_NOT_EQ";
     case  ND_ASSIGN:
       return  "ND_ASSIGN";
-    case  ND_LVAR:
-      return  "ND_LVAR";
+    case  ND_VAR:
+      return  "ND_VAR";
     case  ND_RETURN:
       return  "ND_RETURN";
     case  ND_WHILE:
@@ -221,8 +221,8 @@ char *node_ast(Node *node) {
           free(r);
           return ret;
         }
-      case ND_LVAR:
-        n = sprintf(buf, "(lvar %s)", node->var->name);
+      case ND_VAR:
+        n = sprintf(buf, "(%cvar %s)", node->var->is_local ? 'l' : 'g', node->var->name);
         return my_strndup(buf, n);
       case ND_RETURN:
         {

@@ -12,6 +12,17 @@ void dump_function(Function *f) {
   free(ast);
 }
 
+void dump_globals(VarList *vars) {
+  VarList *v = vars;
+  while (v) {
+    Node *dummy = calloc(1, sizeof(Node));
+    dummy->kind = ND_VAR_DECL; // ローカル変数の宣言のダンプを使い回す
+    dummy->var = v->var;
+    printf("## %s\n", node_ast(dummy));
+    v = v->next;
+  }
+}
+
 int main(int argc, char **argv) {
   bool dump_ast = false;
   bool dump_ast_only = false;
@@ -46,6 +57,10 @@ int main(int argc, char **argv) {
   // fprintf(stderr, "-------------------------------- parsed\n");
   if (!dump_ast_only) {
     printf(".intel_syntax noprefix\n");
+  }
+
+  if (dump_ast) {
+    dump_globals(pgm->global_var);
   }
 
   for (Function *f = pgm->functions; f; f = f->next) {

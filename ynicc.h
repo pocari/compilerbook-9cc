@@ -94,7 +94,7 @@ typedef enum {
   ND_EQL,       // ==
   ND_NOT_EQL,   // !=
   ND_ASSIGN,    // =
-  ND_LVAR,      // ローカル変数
+  ND_VAR,      // ローカル変数
   ND_RETURN,    // return
   ND_WHILE,     // while
   ND_BLOCK,     // { stmt* } のブロック
@@ -105,7 +105,6 @@ typedef enum {
   ND_DEREF,     // *演算子でのアドレス参照
   ND_VAR_DECL,  // 変数定義
   ND_EXPR_STMT, // 式文
-  ND_GVAR,      // グローバル変数
   ND_NUM,       // 整数
 } NodeKind;
 
@@ -153,6 +152,7 @@ struct Var {
   Type *type; // この変数の型
   char *name; // この変数の名前
   int offset; // rbpからのオフセット
+  bool is_local; // local、global変数の識別用フラグ
 };
 
 struct VarList {
@@ -165,6 +165,7 @@ void error(char *fmt, ...);
 void free_program(Program *function);
 char *node_kind_to_s(Node *nd);
 char *my_strndup(char *str, int len);
+Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Program *program();
 
 // codegen.c
@@ -173,5 +174,6 @@ void codegen(Function *func);
 // debug.c
 
 char *function_body_ast(Function *f);
+char *node_ast(Node *node);
 
 #endif
