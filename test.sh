@@ -10,7 +10,11 @@ assert() {
   ./ynicc "$input" > tmp.s
   # 関数呼び出しのテスト用にgcc側で正常な関数を作ってリンクする
   gcc -c test_func.c
-  cc -o tmp test_func.o tmp.s
+  
+  # -no-pie オプションをつけないと、グローバル変数が存在する場合になぜか
+  # /usr/bin/ld: /tmp/ccMACvL0.o: relocation R_X86_64_32S against `.data' can not be used when making a PIE object; recompile with -fPIE
+  # のエラーになる。
+  gcc -no-pie -o tmp test_func.o tmp.s
   ./tmp
   actual="$?"
 
@@ -481,6 +485,10 @@ int main() {
 EOS
 )"
 
+assert 0 'int x; int main() { return x; }'
+assert 5 'int x; int func(int num) { x = num; } int main() { func(5); return x; }'
+assert 6 'int x[3]; int main() { x[0] = 1; x[1] = 2; x[2] = 3; int *p; p = x; return *p + *(p + 1) + *(p + 2); }'
+assert 12 'int *x; int main() { int y; y = 12; x = &y; return *x; }'
 
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"

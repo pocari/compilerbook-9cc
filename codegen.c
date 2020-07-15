@@ -7,11 +7,16 @@ void gen_addr(Node *node) {
   #pragma clang diagnostic ignored "-Wswitch"
   switch(node->kind) {
     case ND_VAR:
-      printf("  # gen_addr start (var_name: %s)\n", node->var->name);
+      printf("  # gen_addr start (var_name: %s, var_type: %s)\n", node->var->name, node->var->is_local ? "local" : "global");
       printf("  # gen_addr-ND_VAR start\n");
-      printf("  mov rax, rbp\n");
-      printf("  sub rax, %d\n", node->var->offset);
-      printf("  push rax\n");
+      if (node->var->is_local) {
+        printf("  mov rax, rbp\n");
+        printf("  sub rax, %d\n", node->var->offset);
+        printf("  push rax\n");
+      } else {
+        // global変数の場合は単にそのラベル(=変数名)をpushする
+        printf("  push offset %s\n", node->var->name);
+      }
       printf("  # gen_addr-ND_VAR end\n");
       printf("  # gen_addr end\n");
       return;
@@ -300,7 +305,7 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void codegen_func(Function *func) {
+static void codegen_func(Function *func) {
   printf(".global %s\n", func->name);
   printf("%s:\n", func->name);
   // プロローグ
@@ -331,10 +336,16 @@ void codegen_func(Function *func) {
   printf("  ret\n");
 }
 
-void codegen_data(Program *pgm) {
+static void codegen_data(Program *pgm) {
+  printf(".data\n");
+  for (VarList *v = pgm->global_var; v; v = v->next) {
+    printf("%s:\n", v->var->name);
+    printf("  .zero %d\n", v->var->type->size);
+  }
 }
 
-void codegen_funcs(Program *pgm) {
+static void codegen_text(Program *pgm) {
+  printf(".text\n");
   for (Function *f = pgm->functions; f; f = f->next) {
     codegen_func(f);
   }
@@ -344,5 +355,5 @@ void codegen(Program *pgm) {
   printf(".intel_syntax noprefix\n");
 
   codegen_data(pgm);
-  codegen_funcs(pgm);
+  codegen_text(pgm);
 }

@@ -164,15 +164,29 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-Var *find_var(Token *token) {
-  for (VarList *var_list = locals; var_list; var_list = var_list->next) {
-    // fprintf(stderr, "var_name: %s\n", var->name);
+Var *find_var_helper(Token *token, VarList *vars) {
+  for (VarList *var_list = vars; var_list; var_list = var_list->next) {
     if (strlen(var_list-> var->name) == token->len &&
         memcmp(var_list-> var->name, token->str, token->len) == 0) {
       return var_list->var;
     }
   }
   return NULL;
+}
+
+Var *find_var(Token *token) {
+  Var *v = NULL;
+
+  // local変数から探す
+  v = find_var_helper(token, locals);
+  if (v) {
+    return v;
+  }
+
+  // なかったらglobal変数から探す
+  v = find_var_helper(token, globals);
+
+  return v;
 }
 
 // ynicc BNF
