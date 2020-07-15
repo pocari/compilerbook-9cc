@@ -2,6 +2,8 @@
 
 // 今パース中の関数のローカル変数
 static VarList *locals = NULL;
+
+// グローバル変数
 static VarList *globals = NULL;
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
