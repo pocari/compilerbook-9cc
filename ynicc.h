@@ -169,11 +169,13 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Program *program();
 
 // codegen.c
-void codegen(Function *func);
+void codegen(Program *prg);
 
 // debug.c
 
 char *function_body_ast(Function *f);
 char *node_ast(Node *node);
+void dump_function(Function *f);
+void dump_globals(VarList *vars);
 
 #endif

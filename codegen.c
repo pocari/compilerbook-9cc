@@ -300,7 +300,7 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void codegen(Function *func) {
+void codegen_func(Function *func) {
   printf(".global %s\n", func->name);
   printf("%s:\n", func->name);
   // プロローグ
@@ -329,4 +329,20 @@ void codegen(Function *func) {
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
   printf("  ret\n");
+}
+
+void codegen_data(Program *pgm) {
+}
+
+void codegen_funcs(Program *pgm) {
+  for (Function *f = pgm->functions; f; f = f->next) {
+    codegen_func(f);
+  }
+}
+
+void codegen(Program *pgm) {
+  printf(".intel_syntax noprefix\n");
+
+  codegen_data(pgm);
+  codegen_funcs(pgm);
 }

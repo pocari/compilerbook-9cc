@@ -404,3 +404,21 @@ char *function_body_ast(Function *f) {
 
   return my_strndup(buf, n);
 }
+
+void dump_function(Function *f) {
+  char *ast = function_body_ast(f);
+  printf("## %s\n", ast);
+  free(ast);
+}
+
+void dump_globals(VarList *vars) {
+  VarList *v = vars;
+  while (v) {
+    Node *dummy = calloc(1, sizeof(Node));
+    dummy->kind = ND_VAR_DECL; // ローカル変数の宣言のダンプを使い回す
+    dummy->var = v->var;
+    printf("## %s\n", node_ast(dummy));
+    v = v->next;
+  }
+}
+
