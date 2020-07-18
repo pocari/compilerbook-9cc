@@ -10,42 +10,35 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 }
 
 char *token_kind_to_s(TokenKind kind) {
-  char *kind_str;
   switch (kind) {
-  case TK_RESERVED: // 記号系
-    kind_str = "TK_RESERVED";
-    break;
-  case TK_IDENT: // 識別子
-    kind_str = "TK_IDENT";
-    break;
-  case TK_NUM: // 整数トークン
-    kind_str = "TK_NUM";
-    break;
-  case TK_RETURN: // returnトークン
-    kind_str = "TK_RETURN";
-    break;
-  case TK_WHILE: // while
-    kind_str = "TK_WHILE";
-    break;
-  case TK_IF: // if
-    kind_str = "TK_IF";
-    break;
-  case TK_ELSE: // else
-    kind_str = "TK_ELSE";
-    break;
-  case TK_FOR: // for
-    kind_str = "TK_FOR";
-    break;
-  case TK_INT: // for
-    kind_str = "TK_INT";
-    break;
-  case TK_EOF: // 入力終了
-    kind_str = "TK_EOF";
-    break;
-  default:
-    error("不正なtokenです");
+    case TK_DUMMY: // ダミー
+      return "TK_DUMMY";
+    case TK_RESERVED: // 記号系
+      return "TK_RESERVED";
+    case TK_IDENT: // 識別子
+      return "TK_IDENT";
+    case TK_NUM: // 整数トークン
+      return "TK_NUM";
+    case TK_RETURN: // returnトークン
+      return "TK_RETURN";
+    case TK_WHILE: // while
+      return "TK_WHILE";
+    case TK_IF: // if
+      return "TK_IF";
+    case TK_ELSE: // else
+      return "TK_ELSE";
+    case TK_FOR: // for
+      return "TK_FOR";
+    case TK_INT: // int
+      return "TK_INT";
+    case TK_SIZEOF: // sizeof
+      return "TK_SIZEOF";
+    case TK_EOF: // 入力終了
+      return "TK_EOF";
   }
-  return kind_str;
+  error("不正なtokenです");
+
+  return NULL;
 }
 
 void dump_token(Token *t) {
