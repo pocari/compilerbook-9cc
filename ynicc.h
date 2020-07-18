@@ -27,6 +27,7 @@ typedef enum {
   TK_ELSE,     // else
   TK_FOR,      // for
   TK_INT,      // int型
+  TK_CHAR,     // char型
   TK_SIZEOF,   // sizeof キーワード
   TK_EOF,      // 入力終了
 } TokenKind;
@@ -54,6 +55,7 @@ typedef struct Type Type;
 typedef enum {
   TY_DUMMY,
   TY_INT,
+  TY_CHAR,
   TY_PTR,
   TY_ARRAY,
 } TypeKind;
@@ -66,6 +68,7 @@ struct Type {
 };
 
 extern Type *int_type;
+extern Type *char_type;
 void add_type(Node *node);
 bool is_integer(Type *t);
 bool is_pointer(Type *t);
@@ -177,5 +180,6 @@ char *function_body_ast(Function *f);
 char *node_ast(Node *node);
 void dump_function(Function *f);
 void dump_globals(VarList *vars);
+void dump_tokens(Token *t);
 
 #endif

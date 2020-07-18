@@ -31,6 +31,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_FOR";
     case TK_INT: // int
       return "TK_INT";
+    case TK_CHAR: // char
+      return "TK_CHAR";
     case TK_SIZEOF: // sizeof
       return "TK_SIZEOF";
     case TK_EOF: // 入力終了
@@ -42,7 +44,7 @@ char *token_kind_to_s(TokenKind kind) {
 }
 
 void dump_token(Token *t) {
-  fprintf(stderr, "(Token kind: %s)\n", token_kind_to_s(t->kind));
+  printf("## (Token kind: %*s [%s])\n", 12 ,token_kind_to_s(t->kind), my_strndup(t->str, t->len));
 }
 
 void free_tokens(Token *cur) {
@@ -101,6 +103,10 @@ static Keyword keywords[] = {
   {
     "int",
     TK_INT,
+  },
+  {
+    "char",
+    TK_CHAR,
   },
   {
     "sizeof",

@@ -422,3 +422,10 @@ void dump_globals(VarList *vars) {
   }
 }
 
+void dump_tokens(Token *t) {
+  while (t) {
+    dump_token(t);
+    t = t->next;
+  }
+}
+

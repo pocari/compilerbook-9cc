@@ -1,6 +1,7 @@
 #include "ynicc.h"
 
 Type *int_type = &(Type){ TY_INT, 8 };
+Type *char_type = &(Type){ TY_CHAR, 1 };
 
 Type *new_type(TypeKind kind, Type *ptr_to, int size) {
   Type *t = calloc(1, sizeof(Type));
@@ -21,12 +22,12 @@ Type *array_of(Type *ptr_to, int array_size) {
   return ty;
 }
 
-bool is_integer(Type *t) {
-  return t->kind == TY_INT;
-}
-
 bool is_pointer(Type *t) {
   return t->kind == TY_PTR || t->kind == TY_ARRAY;
+}
+
+bool is_integer(Type *t) {
+  return !is_pointer(t);
 }
 
 int pointer_size(Node *node) {
@@ -34,24 +35,18 @@ int pointer_size(Node *node) {
     error("invalid operation: not pointer");
   }
   if (is_integer(node->ty->ptr_to)) {
-    // intを指すポインタの場合
-    // TODO: 4にしたいが今ローカル変数を一括で8byteで割り当ててるので一旦8を返す
-    return 8;
+    return node->ty->ptr_to->size;
   }
   // それ以外(ポインタへのポインタとか)は8(byte)を返す
   return 8;
 }
 
-int node_type_size(Node * node) {
+int node_type_size(Node *node) {
   if (is_integer(node->ty)) {
-    // intを指すポインタの場合
-    // TODO: 4にしたいが今ローカル変数を一括で8byteで割り当ててるので一旦8を返す
-    return 8;
+    return node->ty->size;
   }
   return 8;
 }
-
-
 
 void add_type(Node *node) {
   if (!node || node->ty)

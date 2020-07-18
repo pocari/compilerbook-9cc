@@ -239,6 +239,17 @@ Var *find_var(Token *token) {
   return v;
 }
 
+bool is_type_token(TokenKind kind) {
+  switch (kind) {
+    case TK_INT:
+    case TK_CHAR:
+      return true;
+    default:
+      return false;
+  }
+}
+
+
 // ynicc BNF
 //
 // program          = (
@@ -332,11 +343,24 @@ Program *program() {
   return program;
 }
 
-// type_in_decl  = "int" ("*" *)
+Type *token_kind_to_type(TokenKind kind) {
+  #pragma clang diagnostic ignored "-Wswitch"
+  switch (kind) {
+    case TK_INT:
+      return int_type;
+    case TK_CHAR:
+      return char_type;
+  }
+  error_at(token->str, "不正なTokenKindです: %s\n", token_kind_to_s(kind));
+  return NULL;
+}
+
+// type_in_decl  = type_keyword ("*" *)
 Type *type_in_decl() {
   Type *t;
-  expect_token(TK_INT);
-  t = int_type;
+  TokenKind tk = token->kind;
+  expect_token(token->kind);
+  t = token_kind_to_type(tk);
   while (consume("*")) {
     t = pointer_to(t);
   }
@@ -516,7 +540,7 @@ Type *read_type_suffix(Type *base) {
 }
 
 Node *var_decl() {
-  if (token->kind == TK_INT) {
+  if (is_type_token(token->kind)) {
     Type *type = type_in_decl();
     char *ident_name = expect_ident();
     // 識別子につづく配列用の宣言をパースして型情報を返す

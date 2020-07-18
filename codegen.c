@@ -2,6 +2,19 @@
 
 void gen(Node *node);
 
+void load(void) {
+  printf("  pop rax\n"); // スタックにつまれている、変数のアドレスをraxにロード
+  printf("  mov rax, [rax]\n"); // 変数のアドレスにある値をraxにロード
+  printf("  push rax\n"); // 変数の値(rax)をスタックに積む
+}
+
+void store(void) {
+  printf("  pop rdi\n"); // rhsの結果
+  printf("  pop rax\n"); // 左辺の変数のアドレス
+  printf("  mov [rax], rdi\n"); // 左辺の変数にrhsの結果を代入
+  printf("  push rdi\n"); // この代入結果自体もスタックに積む(右結合でどんどん左に伝搬していくときの右辺値になる)
+}
+
 void gen_addr(Node *node) {
   // switchの警告を消すpragma
   #pragma clang diagnostic ignored "-Wswitch"
@@ -65,9 +78,7 @@ void gen(Node *node) {
       if (node->ty->kind != TY_ARRAY) {
         // 配列以外の場合は、識別子が指すアドレスにある値(がアドレスなので)それをスタックにつむところまでやるが、だが、
         // 配列の場合は、識別子が指すアドレス自体をスタックにつみたいので、そうする。
-        printf("  pop rax\n"); // gen_addr(node)で積んだ変数のアドレスをraxにロード
-        printf("  mov rax, [rax]\n"); // 変数のアドレスにある値をraxにロード
-        printf("  push rax\n"); // 変数の値(rax)をスタックに積む
+        load();
       }
       printf("  # ND_VAR end\n");
       return;
@@ -76,10 +87,7 @@ void gen(Node *node) {
       gen_addr(node->lhs);
       gen(node->rhs);
       //rhsの結果がスタックの先頭、その次に変数のアドレスが入ってるのでそれをロード
-      printf("  pop rdi\n"); // rhsの結果
-      printf("  pop rax\n"); // 左辺の変数のアドレス
-      printf("  mov [rax], rdi\n"); // 左辺の変数にrhsの結果を代入
-      printf("  push rdi\n"); // この代入結果自体もスタックに積む(右結合でどんどん左に伝搬していくときの右辺値になる)
+      store();
       printf("  # ND_ASSIGN end\n");
       return;
     case ND_RETURN:
@@ -216,9 +224,7 @@ void gen(Node *node) {
       if (node->ty->kind != TY_ARRAY) {
         // 配列以外の場合は、識別子が指すアドレスにある値(がアドレスなので)それをスタックにつむところまでやるが、だが、
         // 配列の場合は、識別子が指すアドレス自体をスタックにつみたいので、そうする。
-        printf("  pop rax\n"); // gen_addrでスタックに積んだアドレスを取得
-        printf("  mov rax, [rax]\n"); // raxの値をアドレスとみなして、そのアドレスのにある値をraxにいれる
-        printf("  push rax\n"); // 値をスタックにプッシュ
+        load();
       }
       printf("  # ND_DEREF end\n");
       return;

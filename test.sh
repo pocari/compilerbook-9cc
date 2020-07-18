@@ -490,6 +490,21 @@ assert 5 'int x; int func(int num) { x = num; } int main() { func(5); return x; 
 assert 6 'int x[3]; int main() { x[0] = 1; x[1] = 2; x[2] = 3; int *p; p = x; return *p + *(p + 1) + *(p + 2); }'
 assert 12 'int *x; int main() { int y; y = 12; x = &y; return *x; }'
 
+assert 1 'int main() { char x; return sizeof(x); }'
+assert 3 "$(cat <<EOS
+int main() {
+  char x[3];
+  x[0] = -1;
+  x[1] = 2;
+  int y;
+  y = 4;
+  return x[0] + y;
+}
+EOS
+)"
+
+assert 5 'char x[2]; int main() { x[0] = 2; x[1] = 3; return x[0] + x[1]; }'
+
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 
