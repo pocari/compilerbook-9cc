@@ -391,6 +391,22 @@ void function_params(Function *func) {
   func->params = var_list;
 }
 
+int align_to(int n, int align) {
+  // chibicc では、
+  //   return (n + align - 1) & ~(align - 1);
+  // という速そうなコードだった。
+  // https://github.com/rui314/chibicc/commit/b6d512ee69ea455031cf57612437e238f233a293#diff-2045016cb90d1e65d71c2407a2570927R4
+
+  // 取り敢えず挙動としては、
+  //  0     -> 0
+  //  1.. 8 -> 8
+  //  9..16 -> 16
+  // 17..24 -> 24
+  // ....
+  // となれば良さそうなのでそうなるように計算する
+  return ((n / 8) + (n % 8 == 0 ? 0 : 1)) * 8;
+}
+
 // 関数のスタックサイズ関連を計算
 void set_stack_info(Function *f) {
   int offset = 0;
@@ -398,7 +414,7 @@ void set_stack_info(Function *f) {
     offset += v->var->type->size;
     v->var->offset = offset;
   }
-  f->stack_size = offset;
+  f->stack_size = align_to(offset, 8);
 }
 
 Function *function_def() {

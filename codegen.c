@@ -1,4 +1,5 @@
 #include "ynicc.h"
+#include <assert.h>
 
 static void gen(Node *node);
 
@@ -13,16 +14,30 @@ static int printfln(char *fmt, ...) {
 }
 
 
-static void load(void) {
+static void load(Type *t) {
   printfln("  pop rax"); // スタックにつまれている、変数のアドレスをraxにロード
-  printfln("  mov rax, [rax]"); // 変数のアドレスにある値をraxにロード
+  // 変数のアドレスにある値をraxにロード
+  int sz = t->size;
+  if (sz == 1) {
+    printfln("  movzx rax, BYTE PTR [rax]");
+  } else {
+    assert(sz == 8);
+    printfln("  mov rax, [rax]");
+  }
+
   printfln("  push rax"); // 変数の値(rax)をスタックに積む
 }
 
-static void store(void) {
+static void store(Type *t) {
   printfln("  pop rdi"); // rhsの結果
   printfln("  pop rax"); // 左辺の変数のアドレス
-  printfln("  mov [rax], rdi"); // 左辺の変数にrhsの結果を代入
+  int sz = t->size;
+  if (sz == 1) {
+    printfln("  mov [rax], dil"); // 左辺の変数にrhsの結果を代入
+  } else {
+    assert(sz == 8);
+    printfln("  mov [rax], rdi"); // 左辺の変数にrhsの結果を代入
+  }
   printfln("  push rdi"); // この代入結果自体もスタックに積む(右結合でどんどん左に伝搬していくときの右辺値になる)
 }
 
@@ -63,13 +78,12 @@ static int next_label_key() {
 
 // 引数に渡す時用のレジスタ
 // ND_CALLの実装参照
-static char *ARGUMENT_REGISTERS[] = {
-  "rdi",
-  "rsi",
-  "rdx",
-  "rcx",
-  "r8",
-  "r9",
+static char *ARGUMENT_REGISTERS_SIZE8[] = {
+    "rdi", "rsi", "rdx", "rcx", "r8", "r9",
+};
+
+static char *ARGUMENT_REGISTERS_SIZE1[] = {
+    "dil", "sil", "dl", "cl", "rb8", "rb9",
 };
 
 static void gen(Node *node) {
@@ -89,7 +103,7 @@ static void gen(Node *node) {
       if (node->ty->kind != TY_ARRAY) {
         // 配列以外の場合は、識別子が指すアドレスにある値(がアドレスなので)それをスタックにつむところまでやるが、だが、
         // 配列の場合は、識別子が指すアドレス自体をスタックにつみたいので、そうする。
-        load();
+        load(node->ty);
       }
       printfln("  # ND_VAR end");
       return;
@@ -98,7 +112,7 @@ static void gen(Node *node) {
       gen_addr(node->lhs);
       gen(node->rhs);
       //rhsの結果がスタックの先頭、その次に変数のアドレスが入ってるのでそれをロード
-      store();
+      store(node->ty);
       printfln("  # ND_ASSIGN end");
       return;
     case ND_RETURN:
@@ -216,7 +230,7 @@ static void gen(Node *node) {
           // スタックから引数用のレジスタに値をロード
           for (int i = 0; i < node->funcarg_num; i++) {
             printfln("  # load argument %d to register", i + 1);
-            printfln("  pop %s", ARGUMENT_REGISTERS[i]);
+            printfln("  pop %s", ARGUMENT_REGISTERS_SIZE8[i]);
           }
         }
         printfln("  call %s", node->funcname);
@@ -235,7 +249,7 @@ static void gen(Node *node) {
       if (node->ty->kind != TY_ARRAY) {
         // 配列以外の場合は、識別子が指すアドレスにある値(がアドレスなので)それをスタックにつむところまでやるが、だが、
         // 配列の場合は、識別子が指すアドレス自体をスタックにつみたいので、そうする。
-        load();
+        load(node->ty);
       }
       printfln("  # ND_DEREF end");
       return;
@@ -335,7 +349,13 @@ static void codegen_func(Function *func) {
   // レジスタから引数の情報をスタックに確保
   int i = 0;
   for (VarList *v = func->params; v; v = v->next) {
-    printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS[i]);
+    int sz = v->var->type->size;
+    if (sz == 1) {
+      printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE1[i]);
+    } else {
+      assert(sz == 8);
+      printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE8[i]);
+    }
     i++;
   }
 

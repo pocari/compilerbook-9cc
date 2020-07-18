@@ -30,22 +30,8 @@ bool is_integer(Type *t) {
   return !is_pointer(t);
 }
 
-int pointer_size(Node *node) {
-  if (!is_pointer(node->ty)) {
-    error("invalid operation: not pointer");
-  }
-  if (is_integer(node->ty->ptr_to)) {
-    return node->ty->ptr_to->size;
-  }
-  // それ以外(ポインタへのポインタとか)は8(byte)を返す
-  return 8;
-}
-
 int node_type_size(Node *node) {
-  if (is_integer(node->ty)) {
-    return node->ty->size;
-  }
-  return 8;
+  return node->ty->size;
 }
 
 void add_type(Node *node) {

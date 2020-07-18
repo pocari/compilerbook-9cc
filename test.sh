@@ -505,6 +505,15 @@ EOS
 
 assert 5 'char x[2]; int main() { x[0] = 2; x[1] = 3; return x[0] + x[1]; }'
 
+assert 1 'int main() { char x; x=1; return x; }'
+assert 1 'int main() { char x; x=1; char y; y=2; return x; }'
+assert 2 'int main() { char x; x=1; char y; y=2; return y; }'
+
+assert 1 'int main() { char x; return sizeof(x); }'
+assert 10 'int main() { char x[10]; return sizeof(x); }'
+assert 1 'int main() { return sub_char(7, 3, 3); } int sub_char(char a, char b, char c) { return a-b-c; }'
+
+
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 

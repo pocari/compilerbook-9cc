@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 typedef struct Node Node;
 typedef struct Var Var;
@@ -73,7 +74,6 @@ void add_type(Node *node);
 bool is_integer(Type *t);
 bool is_pointer(Type *t);
 Type *pointer_to(Type *t);
-int pointer_size(Node *node);
 int node_type_size(Node * node);
 Type *new_type(TypeKind kind, Type *ptr_to, int size);
 Type *array_of(Type *ptr_to, int array_size);
