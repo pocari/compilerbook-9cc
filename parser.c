@@ -61,13 +61,63 @@ Var *new_gvar(char *name, Type *type) {
   return var;
 }
 
+int error_at_line_num(char *loc) {
+  // user_input から loc までの間に何個改行があったか計算
+  char *p = user_input;
+  int num_lines = 0;
+
+  while (p != loc) {
+    if (*p == '\n') {
+      num_lines++;
+    }
+    p++;
+  }
+
+  return num_lines;
+}
+
+int get_pos_by_line(char *loc) {
+  // locがその行で何桁目か返す
+  char *p = user_input;
+  int column = 0;
+
+  while (p != loc) {
+    if (*p == '\n') {
+      column = 0;
+    } else {
+      column++;
+    }
+    p++;
+  }
+
+  return column;
+}
+
+char *get_error_lines(char *loc) {
+  //エラーが出た行までの文字列を返す
+  int pos = 0;
+  char *p = user_input;
+
+  while (p++ != loc) {
+    pos++;
+  }
+
+  // locまできたら、その行の行末または文字列の最後まですすめる
+  while (*p && *p != '\n') {
+    pos++;
+    p++;
+  }
+
+  return my_strndup(user_input, pos);
+}
+
 void error_at(char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
 
-  int pos = loc - user_input;
-  fprintf(stderr, "%s\n", user_input);
-  fprintf(stderr, "%*s", pos, "");
+  int column = get_pos_by_line(loc);
+  fprintf(stderr, "%s\n", get_error_lines(loc));
+  fprintf(stderr, "%*s", column, "");
   fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
