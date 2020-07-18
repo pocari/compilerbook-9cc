@@ -1,6 +1,8 @@
 #include "ynicc.h"
 
-int printfln(char *fmt, ...) {
+static void gen(Node *node);
+
+static int printfln(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
 
@@ -11,23 +13,20 @@ int printfln(char *fmt, ...) {
 }
 
 
-
-void gen(Node *node);
-
-void load(void) {
+static void load(void) {
   printfln("  pop rax"); // スタックにつまれている、変数のアドレスをraxにロード
   printfln("  mov rax, [rax]"); // 変数のアドレスにある値をraxにロード
   printfln("  push rax"); // 変数の値(rax)をスタックに積む
 }
 
-void store(void) {
+static void store(void) {
   printfln("  pop rdi"); // rhsの結果
   printfln("  pop rax"); // 左辺の変数のアドレス
   printfln("  mov [rax], rdi"); // 左辺の変数にrhsの結果を代入
   printfln("  push rdi"); // この代入結果自体もスタックに積む(右結合でどんどん左に伝搬していくときの右辺値になる)
 }
 
-void gen_addr(Node *node) {
+static void gen_addr(Node *node) {
   // switchの警告を消すpragma
   #pragma clang diagnostic ignored "-Wswitch"
   switch(node->kind) {
@@ -57,7 +56,7 @@ void gen_addr(Node *node) {
  error("代入の左辺値が変数ではありません");
 }
 
-int next_label_key() {
+static int next_label_key() {
   static int label_index = 0;
   return label_index++;
 }
@@ -73,7 +72,7 @@ static char *ARGUMENT_REGISTERS[] = {
   "r9",
 };
 
-void gen(Node *node) {
+static void gen(Node *node) {
   // switchの警告を消すpragma
   #pragma clang diagnostic ignored "-Wswitch"
   switch (node->kind) {
