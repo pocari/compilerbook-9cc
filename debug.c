@@ -63,6 +63,9 @@ int type_info_helper(char *buf, int offset, Type *type) {
     case TY_INT:
       n += sprintf(buf + offset, "int");
       break;
+    case TY_CHAR:
+      n += sprintf(buf + offset, "char");
+      break;
     case TY_PTR:
       n += sprintf(buf + offset, "*");
       n += type_info_helper(buf, offset + n, type->ptr_to);

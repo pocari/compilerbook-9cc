@@ -144,12 +144,15 @@ bool consume(char *op) {
   return true;
 }
 
-bool consume_kind(TokenKind kind) {
+Token *consume_kind(TokenKind kind) {
   if (token->kind != kind) {
-    return false;
+    return NULL;
   }
+
+  Token *t = token;
   token = token->next;
-  return true;
+
+  return t;
 }
 
 Token *consume_ident() {
@@ -282,6 +285,7 @@ bool is_type_token(TokenKind kind) {
 // primary          = num
 //                  | ident ("(" arg_list? ")")?
 //                  | "(" expr ")"
+//                  | str
 
 Program *program();
 
@@ -709,16 +713,20 @@ Node *unary() {
   return postfix();
 }
 
+Node *new_var_node(Var *var) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_VAR;
+  node->var = var;
+
+  return node;
+}
 
 Node *parse_var(Token *t) {
     Var *var = find_var(t);
     if (!var) {
       error_at(t->str, "変数 %s は宣言されていません。", my_strndup(t->str, t->len));
     }
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_VAR;
-    node->var = var;
-    return node;
+    return new_var_node(var);
 }
 
 Node *postfix() {
@@ -759,6 +767,22 @@ Node *parse_call_func(Token *t) {
   return node;
 }
 
+static char *next_data_label() {
+  static int label_index = 0;
+  char buf[100];
+  int n = sprintf(buf, ".L.data.%03d", label_index++);
+  return my_strndup(buf, n);
+}
+
+Node *parse_string_literal(Token *str_token) {
+  Type *ty = array_of(char_type, str_token->content_length);
+  Var *var = new_gvar(next_data_label(), ty);
+  var->contents = str_token->contents;
+  var->content_length = str_token->content_length;
+
+  return new_var_node(var);;
+}
+
 Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -774,8 +798,12 @@ Node *primary() {
     } else {
       // "("がなかったら変数参照
       return parse_var(t);
-
     }
+  }
+
+  t = consume_kind(TK_STR);
+  if (t) {
+    return parse_string_literal(t);
   }
 
   // () でも ident でもなければ 整数

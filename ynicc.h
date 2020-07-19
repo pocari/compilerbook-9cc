@@ -30,6 +30,7 @@ typedef enum {
   TK_INT,      // int型
   TK_CHAR,     // char型
   TK_SIZEOF,   // sizeof キーワード
+  TK_STR,      // 文字列リテラル
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -39,6 +40,11 @@ struct Token {
   int val;        // kindがTK_NUMの場合、その数値
   char *str;      // トークン文字列
   int len;        // str の長さ
+
+  // 文字列リテラル
+  char *contents;
+  // 文字列リテラルの長さ
+  int content_length;
 };
 
 Token * tokenize(char *p);
@@ -156,6 +162,10 @@ struct Var {
   char *name; // この変数の名前
   int offset; // rbpからのオフセット
   bool is_local; // local、global変数の識別用フラグ
+
+  //文字列リテラル用の変数
+  char *contents;
+  int content_length;
 };
 
 struct VarList {

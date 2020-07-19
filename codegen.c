@@ -233,6 +233,9 @@ static void gen(Node *node) {
             printfln("  pop %s", ARGUMENT_REGISTERS_SIZE8[i]);
           }
         }
+        // printfを呼ぶときは、 al レジスタに浮動小数点の可変長引数の数をalレジスタに入れておく必要があるが
+        // 現状は浮動小数点が無いので、固定で0をいれておく
+        printfln("  xor al, al");
         printfln("  call %s", node->funcname);
         printfln("  push rax"); // 関数の戻り値をスタックに積む
         printfln("  # ND_CALL end");
@@ -376,8 +379,14 @@ static void codegen_func(Function *func) {
 static void codegen_data(Program *pgm) {
   printfln(".data");
   for (VarList *v = pgm->global_var; v; v = v->next) {
-    printfln("%s:", v->var->name);
-    printfln("  .zero %d", v->var->type->size);
+    Var *var = v->var;
+
+    printfln("%s:", var->name);
+    if (var->contents) {
+      printfln("  .string \"%s\"", var->contents);
+    } else {
+      printfln("  .zero %d", var->type->size);
+    }
   }
 }
 

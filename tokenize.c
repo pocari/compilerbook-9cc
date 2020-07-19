@@ -35,6 +35,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_CHAR";
     case TK_SIZEOF: // sizeof
       return "TK_SIZEOF";
+    case TK_STR: // 文字列リテラル
+      return "TK_STR";
     case TK_EOF: // 入力終了
       return "TK_EOF";
   }
@@ -44,7 +46,20 @@ char *token_kind_to_s(TokenKind kind) {
 }
 
 void dump_token(Token *t) {
-  printf("## (Token kind: %*s [%s])\n", 12 ,token_kind_to_s(t->kind), my_strndup(t->str, t->len));
+  printf("## (Token kind: %*s ", 12 ,token_kind_to_s(t->kind));
+
+  switch (t->kind) {
+    case TK_NUM:
+      printf("[%d]", t->val);
+      break;
+    case TK_STR:
+      printf("[contents: [%s], length(includes \\0): %d", t->contents, t->content_length);
+      break;
+    default:
+      printf("[%s]", my_strndup(t->str, t->len));
+      break;
+  }
+  printf(")\n");
 }
 
 void free_tokens(Token *cur) {
@@ -125,6 +140,40 @@ Keyword *tokenize_keyword(char *p) {
   return NULL;
 };
 
+// 文字列リテラルをトークナイズした結果を返す
+// また、トークナイズした結果でポインタもすすめる
+static Token *tokenize_string_literal(Token *current_token, char **current_pointer) {
+  char *p = *current_pointer;
+
+  char *s = p++;
+  while (*p && (*p != '"')) {
+    p++;
+  }
+  if (!(*p)) {
+    error_at(s, "文字列が終了していません。");
+  }
+  // *p がここで閉じる " を指してるので一つすすめる
+  p++;
+
+  Token *tok = new_token(TK_STR, current_token, s, p - s);
+  // この時点でs, p はそれぞれ
+  //   "abc"
+  //   ^    ^
+  //   |    |
+  //   s    p
+  // を指しているので、文字列として確保する部分は
+  // "a"の部分(s + 1) から、 "c"までの長さ((p - s) - 2))
+  // をstrndupで個別に確保(abcの部分)
+  //
+  tok->contents = my_strndup(s + 1, (p - s) - 2);
+  // \0まで含めた長さ
+  tok->content_length = (p - s) - 1;
+
+  *current_pointer = p;
+
+  return tok;
+}
+
 Token *tokenize(char *p) {
   Token head;
   head.next = NULL;
@@ -137,6 +186,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    // fprintf(stderr, "c ... %c\n", *p);
     Keyword *key = tokenize_keyword(p);
     if (key) {
       int keyword_len = strlen(key->keyword);
@@ -152,11 +202,38 @@ Token *tokenize(char *p) {
     }
 
     if (is_ident_first_char(*p)) {
+      // fprintf(stderr, "tokenize ident(%c)\n", *p);
       char *s = p; // 識別子の先頭
       while (is_alnum(*p)) {
         p++;
       }
       cur = new_token(TK_IDENT, cur, s, p - s); //p - s で文字列長さになる
+      continue;
+    }
+
+    if (*p == '"') {
+      cur = tokenize_string_literal(cur, &p);
+      // // fprintf(stderr, "tokenize string\n");
+      // char *s = p++;
+      // while (*p && *p++ != '"') {
+      //   // noop
+      // }
+      // if (!(*p)) {
+      //   error_at(s, "文字列が終了していません。");
+      // }
+      // cur = new_token(TK_STR, cur, s, p - s);
+      // // この時点でs, p はそれぞれ
+      // //   "abc"
+      // //   ^    ^
+      // //   |    |
+      // //   s    p
+      // // を指しているので、文字列として確保する部分は
+      // // "a"の部分(s + 1) から、 "c"までの長さ((p - s) - 2))
+      // // をstrndupで個別に確保(abcの部分)
+      // //
+      // cur->contents = my_strndup(s + 1, (p - s) - 2);
+      // // \0まで含めた長さ
+      // cur->content_length = (p - s) - 1;
       continue;
     }
 
@@ -170,6 +247,7 @@ Token *tokenize(char *p) {
       cur->val = strtol(p, &p, 10);
       continue;
     }
+
 
     error_at(p, "トークナイズできません");
   }
