@@ -117,6 +117,38 @@ EOS
 assert 12 "$(cat <<EOS
 int main() {
   int foo;
+  foo = 2;
+  if (foo == 1) {
+    return 11;
+  } else if (foo == 2) {
+    return 12;
+  } else {
+    return 13;
+  }
+  return 14;
+}
+EOS
+)"
+
+assert 13 "$(cat <<EOS
+int main() {
+  int foo;
+  foo = 3;
+  if (foo == 1) {
+    return 11;
+  } else if (foo == 2) {
+    return 12;
+  } else {
+    return 13;
+  }
+  return 14;
+}
+EOS
+)"
+
+assert 12 "$(cat <<EOS
+int main() {
+  int foo;
   foo = 0;
   if (foo == 1) {
     return 11;
