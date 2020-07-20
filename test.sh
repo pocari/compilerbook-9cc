@@ -524,6 +524,10 @@ assert 9 'int main() { return "\t"[0]; } '
 assert 34 'int main() { return "\""[0]; } '
 assert 92 'int main() { return "\\"[0]; } '
 
+assert 0 'int main() { return 4 % 2; } '
+assert 1 'int main() { return 4 % 3; } '
+assert 2 'int main() { return 5 % 3; } '
+
 echo "---------------------------------"
 echo "total case: $count, ok: $count_ok"
 

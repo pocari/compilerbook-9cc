@@ -313,6 +313,11 @@ static void gen(Node *node) {
       printfln("  cqo");
       printfln("  idiv rdi");
       break;
+    case ND_MOD:
+      printfln("  cqo");
+      printfln("  idiv rdi");
+      printfln("  mov rax, rdx");
+      break;
     case ND_LT:
       printfln("  cmp rax, rdi");
       printfln("  setl al");

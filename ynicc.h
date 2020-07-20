@@ -98,6 +98,7 @@ typedef enum {
   ND_PTR_DIFF,  // ptr - ptr
   ND_MUL,       // *
   ND_DIV,       // /
+  ND_MOD,       // %
   ND_LT,        // <
   ND_LTE,       // <=
   ND_EQL,       // ==
