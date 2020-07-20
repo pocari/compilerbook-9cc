@@ -228,7 +228,7 @@ static void gen(Node *node) {
           }
 
           // スタックから引数用のレジスタに値をロード
-          for (int i = 0; i < node->funcarg_num; i++) {
+          for (int i = node->funcarg_num - 1; i >= 0; i--) {
             printfln("  # load argument %d to register", i + 1);
             printfln("  pop %s", ARGUMENT_REGISTERS_SIZE8[i]);
           }
@@ -354,8 +354,15 @@ static void codegen_func(Function *func) {
   // 使用されているローカル変数の数分、領域確保(ここに引数の値を保存する領域も確保される)
   printfln("  sub rsp, %d", func->stack_size);
 
+
+  // paramsが引数を逆順に保持しているので、ロードするレジスタも逆順にする。そのため一度引数の数を数える
+  int param_len = 0;
+  for (VarList *v = func->params; v; v = v->next) {
+    param_len++;
+  }
+
   // レジスタから引数の情報をスタックに確保
-  int i = 0;
+  int i = param_len - 1;
   for (VarList *v = func->params; v; v = v->next) {
     int sz = v->var->type->size;
     if (sz == 1) {
@@ -364,7 +371,7 @@ static void codegen_func(Function *func) {
       assert(sz == 8);
       printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE8[i]);
     }
-    i++;
+    i--;
   }
 
   // fprintfln(stderr, "func: %s, stack_size: %d", node->name, node->stack_size);
