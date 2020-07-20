@@ -143,10 +143,34 @@ Keyword *tokenize_keyword(char *p) {
 // 文字列リテラルをトークナイズした結果を返す
 // また、トークナイズした結果でポインタもすすめる
 static Token *tokenize_string_literal(Token *current_token, char **current_pointer) {
+  StringBuffer *sb = sb_init();
   char *p = *current_pointer;
 
   char *s = p++;
   while (*p && (*p != '"')) {
+    if (*p == '\\') {
+      p++;
+      switch (*p) {
+        case 'n':
+          sb_append_char(sb, '\n');
+          break;
+        case 't':
+          sb_append_char(sb, '\t');
+          break;
+        case '\\':
+          sb_append_char(sb, '\\');
+          break;
+        case '"':
+          sb_append_char(sb, '"');
+          break;
+        default:
+          // エスケープシーケンス以外に\がついてたら無視してその文字そのものとする
+          sb_append_char(sb, *p);
+          break;
+      }
+    } else {
+      sb_append_char(sb, *p);
+    }
     p++;
   }
   if (!(*p)) {
@@ -156,18 +180,11 @@ static Token *tokenize_string_literal(Token *current_token, char **current_point
   p++;
 
   Token *tok = new_token(TK_STR, current_token, s, p - s);
-  // この時点でs, p はそれぞれ
-  //   "abc"
-  //   ^    ^
-  //   |    |
-  //   s    p
-  // を指しているので、文字列として確保する部分は
-  // "a"の部分(s + 1) から、 "c"までの長さ((p - s) - 2))
-  // をstrndupで個別に確保(abcの部分)
-  //
-  tok->contents = my_strndup(s + 1, (p - s) - 2);
+  tok->contents = my_strndup(sb_str(sb), sb_str_len(sb));
   // \0まで含めた長さ
-  tok->content_length = (p - s) - 1;
+  tok->content_length = sb_str_len(sb) + 1;
+
+  sb_free(sb);
 
   *current_pointer = p;
 

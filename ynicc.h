@@ -192,4 +192,13 @@ void dump_function(Function *f);
 void dump_globals(VarList *vars);
 void dump_tokens(Token *t);
 
+// string_buffer.c
+typedef struct StringBuffer StringBuffer;
+
+StringBuffer *sb_init();
+void sb_append_char(StringBuffer *sb, char ch);
+void sb_free(StringBuffer *sb);
+char *sb_str(StringBuffer *sb);
+int sb_str_len(StringBuffer *sb);
+
 #endif

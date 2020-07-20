@@ -383,7 +383,14 @@ static void codegen_data(Program *pgm) {
 
     printfln("%s:", var->name);
     if (var->contents) {
-      printfln("  .string \"%s\"", var->contents);
+      printf("  .byte");
+      for (int i = 0; i < var->content_length; i++) {
+        printf(" %d", var->contents[i]);
+        if (i + 1 < var->content_length) {
+          printf(",");
+        }
+      }
+      printfln("");
     } else {
       printfln("  .zero %d", var->type->size);
     }
