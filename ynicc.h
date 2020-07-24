@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 typedef struct Node Node;
 typedef struct Var Var;
@@ -47,13 +48,16 @@ struct Token {
   int content_length;
 };
 
-Token * tokenize(char *p);
+Token *tokenize(char *p);
 void free_tokens(Token *cur);
 void dump_token(Token *token);
 char *token_kind_to_s(TokenKind kind);
+char *read_file(char *path);
 
 // 現在着目しているトークン
 extern Token *token;
+// 入力プログラム
+extern char *filename;
 // 入力プログラム
 extern char *user_input;
 

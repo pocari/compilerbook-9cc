@@ -1,4 +1,6 @@
 #include "ynicc.h"
+#include <stdio.h>
+#include <string.h>
 
 Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   Token *tok = calloc(1, sizeof(Token));
@@ -250,5 +252,36 @@ Token *tokenize(char *p) {
   new_token(TK_EOF, cur, p, 0);
 
   return head.next;
+}
+
+char *read_file(char *path) {
+  FILE *fp = fopen(path, "r");
+  if (!fp) {
+    error("cannot open %s: %s", path, strerror(errno));
+  }
+
+  // ファイルの最後の位置を調べてサイズ計算
+  if (fseek(fp, 0, SEEK_END) == -1) {
+    error("%s: fseek: %s", path, strerror(errno));
+  }
+  size_t file_size = ftell(fp);
+
+  // 読むために先頭に戻す
+  if (fseek(fp, 0, SEEK_SET) == -1) {
+    error("%s: fseek: %s", path, strerror(errno));
+  }
+
+  // \n\0で終わらせるための2バイト追加で確保
+  char *buf = calloc(1, file_size + 2);
+  fread(buf, file_size, 1, fp);
+
+
+  if (file_size == 0 || buf[file_size - 1] != '\n') {
+    buf[file_size++] = '\n';
+  }
+  buf[file_size] = '\0';
+  fclose(fp);
+
+  return buf;
 }
 

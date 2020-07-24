@@ -3,6 +3,8 @@
 // 現在着目しているトークン
 Token *token;
 
+// 入力ファイル名
+char *filename;
 // 入力プログラム
 char *user_input;
 
@@ -32,10 +34,12 @@ int main(int argc, char **argv) {
   }
 
   // プログラム全体を保存
-  user_input = argv[argc - 1];
+  filename = argv[argc - 1];
+  user_input = read_file(filename);
 
   // head はfree用
   Token *head = token = tokenize(user_input);
+  // fprintf(stderr, "-------------------------------- tokenized\n");
   if (f_dump_tokens) {
     printf("##-----------------------------\n");
     printf("## tokens\n");

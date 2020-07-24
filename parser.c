@@ -98,8 +98,9 @@ char *get_error_lines(char *loc) {
   int pos = 0;
   char *p = user_input;
 
-  while (p++ != loc) {
+  while (p != loc) {
     pos++;
+    p++;
   }
 
   // locまできたら、その行の行末または文字列の最後まですすめる
@@ -116,6 +117,7 @@ void error_at(char *loc, char *fmt, ...) {
   va_start(ap, fmt);
 
   int column = get_pos_by_line(loc);
+  fprintf(stderr, "file: %s\n", filename);
   fprintf(stderr, "%s\n", get_error_lines(loc));
   fprintf(stderr, "%*s", column, "");
   fprintf(stderr, "^ ");

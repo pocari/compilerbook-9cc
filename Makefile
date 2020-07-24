@@ -10,7 +10,10 @@ $(OBJS): ynicc.h
 
 
 test: ynicc
-	./test.sh
+	./ynicc tests > tmp.s
+	gcc -c test_func.c
+	gcc -no-pie -o tmp test_func.o tmp.s
+	./tmp
 
 clean:
 	rm -f ynicc *.o *~ tmp*
