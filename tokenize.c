@@ -205,6 +205,23 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    if (starts_with(p, "//")) {
+      p += 2;
+      while (*p != '\n') {
+        p++;
+      }
+      continue;
+    }
+
+    if (starts_with(p, "/*")) {
+      char *q = strstr(p + 2, "*/");
+      if (!q) {
+        error_at(p, "ブロックコメントが閉じられていません");
+      }
+      p = q + 2;
+      continue;
+    }
+
     // fprintf(stderr, "c ... %c\n", *p);
     Keyword *key = tokenize_keyword(p);
     if (key) {

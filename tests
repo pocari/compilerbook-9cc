@@ -451,6 +451,16 @@ int main() {
   assert(1, 4 % 3, "4 % 3");
   assert(2, 5 % 3, "5 % 3");
 
+  // this line is single line comment
+  /*
+    this
+    area
+    is
+    block
+    comment
+    */
+  assert(3, 1 + 2, "1 + 2");
+
   printf("total: %d tests, %d ok\n", test_count, ok_count);
   if (test_count == ok_count) {
     return 0;
