@@ -230,27 +230,6 @@ Token *tokenize(char *p) {
 
     if (*p == '"') {
       cur = tokenize_string_literal(cur, &p);
-      // // fprintf(stderr, "tokenize string\n");
-      // char *s = p++;
-      // while (*p && *p++ != '"') {
-      //   // noop
-      // }
-      // if (!(*p)) {
-      //   error_at(s, "文字列が終了していません。");
-      // }
-      // cur = new_token(TK_STR, cur, s, p - s);
-      // // この時点でs, p はそれぞれ
-      // //   "abc"
-      // //   ^    ^
-      // //   |    |
-      // //   s    p
-      // // を指しているので、文字列として確保する部分は
-      // // "a"の部分(s + 1) から、 "c"までの長さ((p - s) - 2))
-      // // をstrndupで個別に確保(abcの部分)
-      // //
-      // cur->contents = my_strndup(s + 1, (p - s) - 2);
-      // // \0まで含めた長さ
-      // cur->content_length = (p - s) - 1;
       continue;
     }
 
