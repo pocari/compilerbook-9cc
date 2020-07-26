@@ -477,7 +477,7 @@ static Function *function_def() {
 }
 
 static Node *read_expr_stmt() {
-  Node *node = calloc(1, sizeof(Node));
+  Node *node = new_node(ND_EXPR_STMT);
   node->kind = ND_EXPR_STMT;
   node->lhs = expr();
   return node;
