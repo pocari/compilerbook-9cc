@@ -329,7 +329,18 @@ int f29_initialize_local_var() {
   int x = 10;
   int *y = &x;
   int z = f29_helper();
-  return x + *y + z + 2;
+  int hoge[2] = {2, 3};
+  int foo[2][3] = {{1, 2, 3}, {4, 5, 6}};
+  int boo[2] = {hoge[0], hoge[1]};
+  return x + *y + z + 2 + hoge[0] + hoge[1]
+  + foo[0][0]
+  + foo[0][1]
+  + foo[0][2]
+  + foo[1][0]
+  + foo[1][1]
+  + foo[1][2]
+  + boo[0]
+  + boo[1];
 }
 
 int main() {
@@ -471,7 +482,7 @@ int main() {
     comment
     */
   assert(3, 1 + 2, "1 + 2");
-  assert(25, f29_initialize_local_var(), "f29_initialize_local_var()");
+  assert(56, f29_initialize_local_var(), "f29_initialize_local_var()");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

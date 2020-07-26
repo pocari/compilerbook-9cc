@@ -22,6 +22,12 @@ static Node *new_bin_node(NodeKind kind, Node *lhs, Node *rhs) {
   return node;
 }
 
+static Node *new_unary_node(NodeKind kind, Node *lhs) {
+  Node *node = new_node(kind);
+  node->lhs = lhs;
+  return node;
+}
+
 static Node *new_num_node(int val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
@@ -138,10 +144,17 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
-static bool consume(char *op) {
+static bool peek_token(char *op) {
   if (token->kind != TK_RESERVED ||
       token->len != strlen(op) ||
       memcmp(token->str, op, token->len)) {
+    return false;
+  }
+  return true;
+}
+
+static bool consume(char *op) {
+  if (!peek_token(op)) {
     return false;
   }
   token = token->next;
@@ -273,7 +286,9 @@ static bool is_type_token(TokenKind kind) {
 //                       | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //                       | var_decl
 // var_decl              = type_in_decl ident ( "=" local_var_initializer)? ";"
-// local_var_initializer = expr
+// local_var_initializer = brace_expr
+// brace_expr            = "{" brace_expr ("," brace_expr)* "}"
+//                       | expr
 // type_in_decl          = ("int" | "char") ("*" *)
 // expr                  = assign
 // assign                = equality (= assign)?
@@ -309,6 +324,7 @@ static Node *postfix();
 static Node *primary();
 static Node *read_expr_stmt();
 static Type *read_type_suffix(Type *base);
+static Node *new_add_node(Node *lhs, Node *rhs);
 
 static bool is_function_def() {
   // 先読みした結果今の位置に戻る用に今のtokenを保存
@@ -352,7 +368,7 @@ Program *program() {
   return program;
 }
 
-static Type *token_kind_to_type(TokenKind kind) {
+Type *token_kind_to_type(TokenKind kind) {
   #pragma clang diagnostic ignored "-Wswitch"
   switch (kind) {
     case TK_INT:
@@ -559,8 +575,107 @@ static Type *read_type_suffix(Type *base) {
   return array_of(base, array_size);
 }
 
-static Node *local_var_initializer() {
-  return expr();
+static Node *brace_expr(Var *var) {
+  if (consume("{")) {
+    Node *n = brace_expr(var);
+    if (consume(",")) {
+      do {
+        Node *e = brace_expr(var);
+      } while (consume(","));
+    }
+    return NULL;
+  } else {
+    return expr();
+  }
+}
+
+// https://github.com/rui314/chibicc/blob/e1b12f2c3d0e4389f327fcaa7484b5e439d4a716/parse.c#L679
+// 配列の初期化式の書く要素の位置を表す構造体
+// int x[2][3] = {{1, 2, 3}, {4, 5, 6}};
+// みたいな式があった場合各次元のindexがリンクリストでつながっていて、
+// 例えば、 x[1][2] の要素を指す Designator は下記のようになる
+//
+// 1次元目のindex ... 1
+// 2次元目のindex ... 2
+// 
+// 2次元目         1次元目
+// +---------+     +---------+
+// | next ---|---->| next ---|---> NULL
+// +---------+     +---------+
+// | idx: 2  |     | idx: 1  |
+// +---------+     +---------+
+//
+// 一番深い次元からみて浅い次元の方に向かってリンクリストが作られる。
+// 正確には、浅い次元は深い次元のすべての要素のnextになる。
+// 例えば、 x[1][2]とx[1][3] の関係は、下記のようになる
+//
+// 2次元目         1次元目
+// +---------+     +---------+
+// | next ---|--+->| next ---|---> NULL
+// +---------+  |  +---------+
+// | idx: 2  |  |  | idx: 1  |
+// +---------+  |  +---------+
+//              |
+// 2次元目      |
+// +---------+  |
+// | next ---|--+
+// +---------+
+// | idx: 3  |
+// +---------+
+// 
+// なお、初期化式が配列じゃない場合は Designator は NULL になる。
+typedef struct Designator Designator;
+struct Designator {
+  Designator *next;
+  int idx;
+};
+
+static Node *new_desg_node_sub(Var *var, Designator *desg) {
+  if (!desg) {
+    return new_var_node(var);
+  }
+  Node *prev = new_desg_node_sub(var, desg->next);
+  Node *node = new_add_node(prev, new_num_node(desg->idx));
+  return new_unary_node(ND_DEREF, node);
+}
+
+static Node *new_desg_node(Var *var, Designator *desg, Node *rhs) {
+  Node *lhs = new_desg_node_sub(var, desg);
+  Node *assign = new_bin_node(ND_ASSIGN, lhs, rhs);
+  return new_unary_node(ND_EXPR_STMT, assign);
+}
+
+static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator *desg) {
+  static int count = 0;
+  // fprintf(stdout, "count: %d, type: %d\n", count++, ty->kind);
+  if (ty->kind == TY_ARRAY) {
+    expect("{");
+    int i = 0;
+
+    do {
+      Designator desg2 = {desg, i++};
+      cur = local_var_initializer_sub(cur, var, ty->ptr_to, &desg2);
+    } while(!peek_token("}") && consume(","));
+
+    expect("}");
+
+    return cur;
+  }
+
+  Node *e = expr();
+  // fprintf(stdout, "val: %d\n", e->val);
+  cur->next = new_desg_node(var, desg, e);
+  return cur->next;
+}
+
+static Node *local_var_initializer(Var *var) {
+  Node head = {};
+  local_var_initializer_sub(&head, var, var->type, NULL);
+
+  Node *node = new_node(ND_BLOCK);
+  node->body = head.next;
+
+  return node;
 }
 
 static Node *var_decl() {
@@ -575,7 +690,7 @@ static Node *var_decl() {
     // 初期化式があるかどうかチェック
     if (consume("=")) {
       // 今作ったlocal変数に初期化式の値を代入するノードを設定
-      node->initializer = new_bin_node(ND_ASSIGN, new_var_node(var), local_var_initializer());
+      node->initializer = local_var_initializer(var);
     }
     expect(";");
 
@@ -713,9 +828,9 @@ static Node *unary() {
   } else if (consume("-")) {
     return new_bin_node(ND_SUB, new_num_node(0), postfix());
   } else if (consume("&")) {
-    return new_bin_node(ND_ADDR, unary(), NULL);
+    return new_unary_node(ND_ADDR, unary());
   } else if (consume("*")) {
-    return new_bin_node(ND_DEREF, unary(), NULL);
+    return new_unary_node(ND_DEREF, unary());
   } else if (consume_kind(TK_SIZEOF)) {
     Node *n = unary();
     add_type(n);

@@ -50,6 +50,8 @@ char *node_kind_to_s(Node *nd) {
       return  "ND_VAR_DECL";
     case  ND_EXPR_STMT:
       return  "ND_EXPR_STMT";
+    case  ND_MOD:
+      return  "ND_MOD";
     case  ND_NUM:
       return "ND_NUM  ";
   };
@@ -216,6 +218,8 @@ char *node_ast(Node *node) {
         }
       case ND_ASSIGN:
         {
+          assert(node->lhs);
+          assert(node->rhs);
           char *l = node_ast(node->lhs);
           char *r = node_ast(node->rhs);
           n = sprintf(buf, "(let %s %s)", l, r);
@@ -326,7 +330,11 @@ char *node_ast(Node *node) {
       case ND_VAR_DECL:
         {
           char *ti = type_info(node->var->type);
-          n = sprintf(buf, "(decl (%s %s))", ti, node->var->name);
+          n += sprintf(buf, "(decl (%s %s)", ti, node->var->name);
+          if (node->initializer) {
+            n += sprintf(buf + n, " (init %s)", node_ast(node->initializer));
+          }
+          n += sprintf(buf + n, ")");
           char *ret = my_strndup(buf, n);
           free(ti);
           return ret;
@@ -334,13 +342,13 @@ char *node_ast(Node *node) {
       case ND_EXPR_STMT:
         {
           char *l = node_ast(node->lhs);
-          n = sprintf(buf, "(expr-stmt %s)", l);
+          n += sprintf(buf, "(expr-stmt %s)", l);
           char *ret = my_strndup(buf, n);
           free(l);
           return ret;
         }
       case ND_NUM:
-        n = sprintf(buf, "(num %d)", node->val);
+        n += sprintf(buf, "(num %d)", node->val);
         return my_strndup(buf, n);
   }
   return NULL;
