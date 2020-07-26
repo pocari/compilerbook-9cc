@@ -154,6 +154,8 @@ struct Node {
   Node *init; // forの初期化式
   Node *inc; // forの継続式
 
+  Node *initializer; // 変数の初期化式
+
   Node *arg; //関数の引数
 
   Var *var; //ND_VAR, ND_VAR_DECLのときの変数情報
@@ -183,6 +185,7 @@ void error(char *fmt, ...);
 void free_program(Program *function);
 char *node_kind_to_s(Node *nd);
 char *my_strndup(char *str, int len);
+Node *new_var_node(Var *var);
 Program *program();
 
 // codegen.c

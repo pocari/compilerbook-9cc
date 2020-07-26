@@ -259,37 +259,38 @@ static bool is_type_token(TokenKind kind) {
 
 // ynicc BNF
 //
-// program          = (
-//                      func_decls
-//                    | global_var_decls
-//                  )*
-// function_def     = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
-// global_var_decls = type_in_decl ident "read_type_suffix" ";"
-// stmt             = expr ";"
-//                  | "{" stmt* "}"
-//                  | "return" expr ";"
-//                  | "if" "(" expr ")" stmt ("else" stmt)?
-//                  | "while" "(" expr ")" stmt
-//                  | "for" "(" expr? ";" expr? ";" expr? ")" stmt
-//                  | var_decl
-// var_decl         = type_in_decl ident ";"
-// type_in_decl     = "int" ("*" *)
-// expr             = assign
-// assign           = equality (= assign)?
-// equality         = relational ("==" relational | "!=" relational)*
-// relational       = add ("<" add | "<=" add | ">" add | ">=" add)*
-// add              = mul ("+" mul | "-" mul)*
-// mul              = unary ("*" unary | "/" unary)*
-// unary            = "+"? postfix
-//                  | "-"? postfix
-//                  | "&" unary
-//                  | "*" unary
-//                  | "sizeof" unary
-// postfix          = parimary ("[" expr "]")*
-// primary          = num
-//                  | ident ("(" arg_list? ")")?
-//                  | "(" expr ")"
-//                  | str
+// program               = (
+//                           func_decls
+//                         | global_var_decls
+//                       )*
+// function_def          = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
+// global_var_decls      = type_in_decl ident "read_type_suffix" ";"
+// stmt                  = expr ";"
+//                       | "{" stmt* "}"
+//                       | "return" expr ";"
+//                       | "if" "(" expr ")" stmt ("else" stmt)?
+//                       | "while" "(" expr ")" stmt
+//                       | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//                       | var_decl
+// var_decl              = type_in_decl ident ( "=" local_var_initializer)? ";"
+// local_var_initializer = expr
+// type_in_decl          = ("int" | "char") ("*" *)
+// expr                  = assign
+// assign                = equality (= assign)?
+// equality              = relational ("==" relational | "!=" relational)*
+// relational            = add ("<" add | "<=" add | ">" add | ">=" add)*
+// add                   = mul ("+" mul | "-" mul)*
+// mul                   = unary ("*" unary | "/" unary)*
+// unary                 = "+"? postfix
+//                       | "-"? postfix
+//                       | "&" unary
+//                       | "*" unary
+//                       | "sizeof" unary
+// postfix               = parimary ("[" expr "]")*
+// primary               = num
+//                       | ident ("(" arg_list? ")")?
+//                       | "(" expr ")"
+//                       | str
 
 Program *program();
 
@@ -558,6 +559,10 @@ static Type *read_type_suffix(Type *base) {
   return array_of(base, array_size);
 }
 
+static Node *local_var_initializer() {
+  return expr();
+}
+
 static Node *var_decl() {
   if (is_type_token(token->kind)) {
     Type *type = type_in_decl();
@@ -565,9 +570,15 @@ static Node *var_decl() {
     // 識別子につづく配列用の宣言をパースして型情報を返す
     type = read_type_suffix(type);
     Var *var = new_lvar(ident_name, type);
-    expect(";");
     Node *node = new_node(ND_VAR_DECL);
     node->var = var;
+    // 初期化式があるかどうかチェック
+    if (consume("=")) {
+      // 今作ったlocal変数に初期化式の値を代入するノードを設定
+      node->initializer = new_bin_node(ND_ASSIGN, new_var_node(var), local_var_initializer());
+    }
+    expect(";");
+
     return node;
   }
   return NULL;
@@ -713,7 +724,7 @@ static Node *unary() {
   return postfix();
 }
 
-static Node *new_var_node(Var *var) {
+Node *new_var_node(Var *var) {
   Node *node = new_node(ND_VAR);
   node->var = var;
   return node;
@@ -777,7 +788,7 @@ static Node *parse_string_literal(Token *str_token) {
   var->contents = str_token->contents;
   var->content_length = str_token->content_length;
 
-  return new_var_node(var);;
+  return new_var_node(var);
 }
 
 static Node *primary() {
@@ -822,6 +833,7 @@ static void free_nodes(Node *node) {
   free_nodes(node->els);
   free_nodes(node->init);
   free_nodes(node->inc);
+  free_nodes(node->initializer);
   free(node->funcname);
   free(node);
 }

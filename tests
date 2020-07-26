@@ -321,6 +321,17 @@ int f28_sub_char(char a, char b, char c) {
   return a - b - c;
 }
 
+int f29_helper() {
+  return 3;
+}
+
+int f29_initialize_local_var() {
+  int x = 10;
+  int *y = &x;
+  int z = f29_helper();
+  return x + *y + z + 2;
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -460,7 +471,10 @@ int main() {
     comment
     */
   assert(3, 1 + 2, "1 + 2");
+  assert(25, f29_initialize_local_var(), "f29_initialize_local_var()");
 
+  //------------------------------------------------------------------------
+  // ここより上にテストを書く
   printf("total: %d tests, %d ok\n", test_count, ok_count);
   if (test_count == ok_count) {
     return 0;

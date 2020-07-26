@@ -83,7 +83,7 @@ static char *ARGUMENT_REGISTERS_SIZE8[] = {
 };
 
 static char *ARGUMENT_REGISTERS_SIZE1[] = {
-    "dil", "sil", "dl", "cl", "rb8", "rb9",
+    "dil", "sil", "dl", "cl", "r8b", "r9b",
 };
 
 static void gen(Node *node) {
@@ -257,7 +257,9 @@ static void gen(Node *node) {
       printfln("  # ND_DEREF end");
       return;
     case ND_VAR_DECL:
-      // ローカル変数の確保は関数の冒頭で行っているので、宣言ノードが来ても特にコードは生成しない
+      if (node->initializer) {
+        gen(node->initializer);
+      }
       return;
     case ND_EXPR_STMT:
       // 式文なので、結果を捨てる
