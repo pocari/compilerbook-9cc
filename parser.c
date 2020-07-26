@@ -272,40 +272,40 @@ static bool is_type_token(TokenKind kind) {
 
 // ynicc BNF
 //
-// program               = (
-//                           func_decls
-//                         | global_var_decls
-//                       )*
-// function_def          = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
-// global_var_decls      = type_in_decl ident "read_type_suffix" ";"
-// stmt                  = expr ";"
-//                       | "{" stmt* "}"
-//                       | "return" expr ";"
-//                       | "if" "(" expr ")" stmt ("else" stmt)?
-//                       | "while" "(" expr ")" stmt
-//                       | "for" "(" expr? ";" expr? ";" expr? ")" stmt
-//                       | var_decl
-// var_decl              = type_in_decl ident ( "=" local_var_initializer)? ";"
-// local_var_initializer = brace_expr
-// brace_expr            = "{" brace_expr ("," brace_expr)* "}"
-//                       | expr
-// type_in_decl          = ("int" | "char") ("*" *)
-// expr                  = assign
-// assign                = equality (= assign)?
-// equality              = relational ("==" relational | "!=" relational)*
-// relational            = add ("<" add | "<=" add | ">" add | ">=" add)*
-// add                   = mul ("+" mul | "-" mul)*
-// mul                   = unary ("*" unary | "/" unary)*
-// unary                 = "+"? postfix
-//                       | "-"? postfix
-//                       | "&" unary
-//                       | "*" unary
-//                       | "sizeof" unary
-// postfix               = parimary ("[" expr "]")*
-// primary               = num
-//                       | ident ("(" arg_list? ")")?
-//                       | "(" expr ")"
-//                       | str
+// program                   = (
+//                               func_decls
+//                             | global_var_decls
+//                           )*
+// function_def              = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
+// global_var_decls          = type_in_decl ident "read_type_suffix" ";"
+// stmt                      = expr ";"
+//                           | "{" stmt* "}"
+//                           | "return" expr ";"
+//                           | "if" "(" expr ")" stmt ("else" stmt)?
+//                           | "while" "(" expr ")" stmt
+//                           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//                           | var_decl
+// var_decl                  = type_in_decl ident ( "=" local_var_initializer)? ";"
+// local_var_initializer     = local_var_initializer_sub
+// local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
+//                           | expr
+// type_in_decl              = ("int" | "char") ("*" *)
+// expr                      = assign
+// assign                    = equality (= assign)?
+// equality                  = relational ("==" relational | "!=" relational)*
+// relational                = add ("<" add | "<=" add | ">" add | ">=" add)*
+// add                       = mul ("+" mul | "-" mul)*
+// mul                       = unary ("*" unary | "/" unary)*
+// unary                     = "+"? postfix
+//                           | "-"? postfix
+//                           | "&" unary
+//                           | "*" unary
+//                           | "sizeof" unary
+// postfix                   = parimary ("[" expr "]")*
+// primary                   = num
+//                           | ident ("(" arg_list? ")")?
+//                           | "(" expr ")"
+//                           | str
 
 Program *program();
 
@@ -573,20 +573,6 @@ static Type *read_type_suffix(Type *base) {
   expect("]");
   base = read_type_suffix(base);
   return array_of(base, array_size);
-}
-
-static Node *brace_expr(Var *var) {
-  if (consume("{")) {
-    Node *n = brace_expr(var);
-    if (consume(",")) {
-      do {
-        Node *e = brace_expr(var);
-      } while (consume(","));
-    }
-    return NULL;
-  } else {
-    return expr();
-  }
 }
 
 // https://github.com/rui314/chibicc/blob/e1b12f2c3d0e4389f327fcaa7484b5e439d4a716/parse.c#L679
