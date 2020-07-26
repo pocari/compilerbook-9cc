@@ -6,28 +6,30 @@ static VarList *locals = NULL;
 // グローバル変数
 static VarList *globals = NULL;
 
-Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
+static Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
-
   node->kind = kind;
+  return node;
+}
+
+static Node *new_bin_node(NodeKind kind, Node *lhs, Node *rhs) {
+  Node *node = new_node(kind);
   node->lhs = lhs;
   node->rhs = rhs;
 
   add_type(node);
+
   return node;
 }
 
-Node *new_node_num(int val) {
-  Node *node = calloc(1, sizeof(Node));
-
-  node->kind = ND_NUM;
+static Node *new_num_node(int val) {
+  Node *node = new_node(ND_NUM);
   node->val = val;
 
   return node;
 }
 
-
-Var *new_var(char *name, Type *type, bool is_local) {
+static Var *new_var(char *name, Type *type, bool is_local) {
   Var *var = calloc(1, sizeof(Var));
   var->type = type;
   var->name = name;
@@ -37,7 +39,7 @@ Var *new_var(char *name, Type *type, bool is_local) {
 }
 
 // ローカル変数の確保＋このfunctionでのローカル変数のリストにも追加
-Var *new_lvar(char *name, Type *type) {
+static Var *new_lvar(char *name, Type *type) {
   Var *var = new_var(name, type, true);
 
   VarList *v = calloc(1, sizeof(VarList));
@@ -50,7 +52,7 @@ Var *new_lvar(char *name, Type *type) {
   return var;
 }
 
-Var *new_gvar(char *name, Type *type) {
+static Var *new_gvar(char *name, Type *type) {
   Var *var = new_var(name, type, false);
 
   VarList *v = calloc(1, sizeof(VarList));
@@ -61,7 +63,7 @@ Var *new_gvar(char *name, Type *type) {
   return var;
 }
 
-int error_at_line_num(char *loc) {
+static int error_at_line_num(char *loc) {
   // user_input から loc までの間に何個改行があったか計算
   char *p = user_input;
   int num_lines = 0;
@@ -76,7 +78,7 @@ int error_at_line_num(char *loc) {
   return num_lines;
 }
 
-int get_pos_by_line(char *loc) {
+static int get_pos_by_line(char *loc) {
   // locがその行で何桁目か返す
   char *p = user_input;
   int column = 0;
@@ -93,7 +95,7 @@ int get_pos_by_line(char *loc) {
   return column;
 }
 
-char *get_error_lines(char *loc) {
+static char *get_error_lines(char *loc) {
   //エラーが出た行までの文字列を返す
   int pos = 0;
   char *p = user_input;
@@ -136,7 +138,7 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
-bool consume(char *op) {
+static bool consume(char *op) {
   if (token->kind != TK_RESERVED ||
       token->len != strlen(op) ||
       memcmp(token->str, op, token->len)) {
@@ -146,7 +148,7 @@ bool consume(char *op) {
   return true;
 }
 
-Token *consume_kind(TokenKind kind) {
+static Token *consume_kind(TokenKind kind) {
   if (token->kind != kind) {
     return NULL;
   }
@@ -157,7 +159,7 @@ Token *consume_kind(TokenKind kind) {
   return t;
 }
 
-Token *consume_ident() {
+static Token *consume_ident() {
   if (token->kind == TK_IDENT) {
     Token *ret = token;
     token = token->next;
@@ -167,7 +169,7 @@ Token *consume_ident() {
   return NULL;
 }
 
-void expect(char *op) {
+static void expect(char *op) {
   if (token->kind != TK_RESERVED ||
       token->len != strlen(op) ||
       memcmp(token->str, op, token->len)) {
@@ -176,7 +178,7 @@ void expect(char *op) {
   token = token->next;
 }
 
-int expect_number() {
+static int expect_number() {
   if (token->kind != TK_NUM) {
     error_at(token->str, "数ではありません。");
   }
@@ -199,7 +201,7 @@ char *my_strndup(char *str, int len) {
   return buf;
 }
 
-char *expect_ident() {
+static char *expect_ident() {
   if (token->kind != TK_IDENT) {
     error_at(token->str, "識別子ではありません。");
   }
@@ -208,18 +210,18 @@ char *expect_ident() {
   return s;
 }
 
-void expect_token(TokenKind kind) {
+static void expect_token(TokenKind kind) {
   if (token->kind != kind) {
     error_at(token->str, "トークンが %s ではありません。", token_kind_to_s(kind));
   }
   token = token->next;
 }
 
-bool at_eof() {
+static bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-Var *find_var_helper(Token *token, VarList *vars) {
+static Var *find_var_helper(Token *token, VarList *vars) {
   for (VarList *var_list = vars; var_list; var_list = var_list->next) {
     if (strlen(var_list-> var->name) == token->len &&
         memcmp(var_list-> var->name, token->str, token->len) == 0) {
@@ -229,7 +231,7 @@ Var *find_var_helper(Token *token, VarList *vars) {
   return NULL;
 }
 
-Var *find_var(Token *token) {
+static Var *find_var(Token *token) {
   Var *v = NULL;
 
   // local変数から探す
@@ -244,7 +246,7 @@ Var *find_var(Token *token) {
   return v;
 }
 
-bool is_type_token(TokenKind kind) {
+static bool is_type_token(TokenKind kind) {
   switch (kind) {
     case TK_INT:
     case TK_CHAR:
@@ -291,23 +293,23 @@ bool is_type_token(TokenKind kind) {
 
 Program *program();
 
-Function *function_def();
-Node *stmt();
-Type *type_in_decl();
-Node *var_decl();
-Node *expr();
-Node *assign();
-Node *equality();
-Node *relational();
-Node *add();
-Node *mul();
-Node *unary();
-Node *postfix();
-Node *primary();
-Node *read_expr_stmt();
-Type *read_type_suffix(Type *base);
+static Function *function_def();
+static Node *stmt();
+static Type *type_in_decl();
+static Node *var_decl();
+static Node *expr();
+static Node *assign();
+static Node *equality();
+static Node *relational();
+static Node *add();
+static Node *mul();
+static Node *unary();
+static Node *postfix();
+static Node *primary();
+static Node *read_expr_stmt();
+static Type *read_type_suffix(Type *base);
 
-bool is_function_def() {
+static bool is_function_def() {
   // 先読みした結果今の位置に戻る用に今のtokenを保存
   Token *tmp = token;
 
@@ -321,7 +323,7 @@ bool is_function_def() {
 }
 
 // グローバル変数のパース
-void parse_gvar() {
+static void parse_gvar() {
   Type *type = type_in_decl();
   char *ident_name = expect_ident();
   // 識別子につづく配列用の宣言をパースして型情報を返す
@@ -349,7 +351,7 @@ Program *program() {
   return program;
 }
 
-Type *token_kind_to_type(TokenKind kind) {
+static Type *token_kind_to_type(TokenKind kind) {
   #pragma clang diagnostic ignored "-Wswitch"
   switch (kind) {
     case TK_INT:
@@ -362,7 +364,7 @@ Type *token_kind_to_type(TokenKind kind) {
 }
 
 // type_in_decl  = type_keyword ("*" *)
-Type *type_in_decl() {
+static Type *type_in_decl() {
   Type *t;
   TokenKind tk = token->kind;
   expect_token(token->kind);
@@ -373,7 +375,7 @@ Type *type_in_decl() {
   return t;
 }
 
-void function_params(Function *func) {
+static void function_params(Function *func) {
   if (consume(")")) {
     return;
   }
@@ -397,7 +399,7 @@ void function_params(Function *func) {
   func->params = var_list;
 }
 
-int align_to(int n, int align) {
+static int align_to(int n, int align) {
   // chibicc では、
   //   return (n + align - 1) & ~(align - 1);
   // という速そうなコードだった。
@@ -414,7 +416,7 @@ int align_to(int n, int align) {
 }
 
 // 関数のスタックサイズ関連を計算
-void set_stack_info(Function *f) {
+static void set_stack_info(Function *f) {
   int offset = 0;
   for (VarList *v = f->locals; v; v = v->next) {
     offset += v->var->type->size;
@@ -423,7 +425,7 @@ void set_stack_info(Function *f) {
   f->stack_size = align_to(offset, 8);
 }
 
-Function *function_def() {
+static Function *function_def() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
 
@@ -457,24 +459,22 @@ Function *function_def() {
   return func;
 }
 
-Node *read_expr_stmt() {
+static Node *read_expr_stmt() {
   Node *node = calloc(1, sizeof(Node));
   node->kind = ND_EXPR_STMT;
   node->lhs = expr();
   return node;
 }
 
-Node *stmt() {
+static Node *stmt() {
   Node *node;
 
   if (consume_kind(TK_RETURN)) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_RETURN;
+    node = new_node(ND_RETURN);
     node->lhs = expr();
     expect(";");
   } else if (consume_kind(TK_IF)) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_IF;
+    node = new_node(ND_IF);
 
     expect("(");
     node->cond = expr();
@@ -488,16 +488,14 @@ Node *stmt() {
       node->els = NULL;
     }
   } else if (consume_kind(TK_WHILE)) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_WHILE;
+    node = new_node(ND_WHILE);
 
     expect("(");
     node->cond = expr();
     expect(")");
     node->body = stmt();
   } else if (consume_kind(TK_FOR)) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_FOR;
+    node = new_node(ND_FOR);
     expect("(");
     if (consume(";")) {
       //次が";"なら初期化式なしなのでNULL入れる
@@ -525,8 +523,7 @@ Node *stmt() {
     }
     node->body = stmt();
   } else if (consume("{")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_BLOCK;
+    node = new_node(ND_BLOCK);
     int i = 0;
     Node head = {};
     Node *cur = &head;
@@ -551,7 +548,7 @@ Node *stmt() {
 
 // int *x[n]
 // のxの直後の[n]をパースする
-Type *read_type_suffix(Type *base) {
+static Type *read_type_suffix(Type *base) {
   if (!consume("[")) {
     return base;
   }
@@ -561,7 +558,7 @@ Type *read_type_suffix(Type *base) {
   return array_of(base, array_size);
 }
 
-Node *var_decl() {
+static Node *var_decl() {
   if (is_type_token(token->kind)) {
     Type *type = type_in_decl();
     char *ident_name = expect_ident();
@@ -569,61 +566,60 @@ Node *var_decl() {
     type = read_type_suffix(type);
     Var *var = new_lvar(ident_name, type);
     expect(";");
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_VAR_DECL;
+    Node *node = new_node(ND_VAR_DECL);
     node->var = var;
     return node;
   }
   return NULL;
 }
 
-Node *expr() {
+static Node *expr() {
   return assign();
 }
 
-Node *assign() {
+static Node *assign() {
   Node *node = equality();
 
   if (consume("=")) {
-    return new_node(ND_ASSIGN, node, assign());
+    return new_bin_node(ND_ASSIGN, node, assign());
   }
 
   return node;
 }
 
-Node *equality() {
+static Node *equality() {
   Node *node = relational();
 
   for (;;) {
     if (consume("==")) {
-      node = new_node(ND_EQL, node, relational());
+      node = new_bin_node(ND_EQL, node, relational());
     } else if (consume("!=")) {
-      node = new_node(ND_NOT_EQL, node, relational());
+      node = new_bin_node(ND_NOT_EQL, node, relational());
     } else {
       return node;
     }
   }
 }
 
-Node *relational() {
+static Node *relational() {
   Node *node = add();
 
   for (;;) {
     if (consume("<=")) {
-      node = new_node(ND_LTE, node, add());
+      node = new_bin_node(ND_LTE, node, add());
     } else if (consume(">=")) {
-      node = new_node(ND_LTE, add(), node);
+      node = new_bin_node(ND_LTE, add(), node);
     } else if (consume("<")) {
-      node = new_node(ND_LT, node, add());
+      node = new_bin_node(ND_LT, node, add());
     } else if (consume(">")) {
-      node = new_node(ND_LT, add(), node);
+      node = new_bin_node(ND_LT, add(), node);
     } else {
       return node;
     }
   }
 }
 
-Node *new_add_node(Node *lhs, Node *rhs) {
+static Node *new_add_node(Node *lhs, Node *rhs) {
   add_type(lhs);
   add_type(rhs);
 
@@ -638,39 +634,39 @@ Node *new_add_node(Node *lhs, Node *rhs) {
   // => & に intのポインタのサイズ(8) * 2 => zのアドレスの 16byte先
   if (is_integer(lhs->ty) && is_integer(rhs->ty)) {
     // num + num
-    return new_node(ND_ADD, lhs, rhs);
+    return new_bin_node(ND_ADD, lhs, rhs);
   } else if (is_pointer(lhs->ty) && is_integer(rhs->ty)) {
     // ptr + num のケース
-    return new_node(ND_PTR_ADD, lhs, rhs);
+    return new_bin_node(ND_PTR_ADD, lhs, rhs);
   } else if (is_integer(lhs->ty) && is_pointer(rhs->ty)){
     // num + ptrのケースなので、入れ替えてptr + num に正規化する
-    return new_node(ND_PTR_ADD, rhs, lhs);
+    return new_bin_node(ND_PTR_ADD, rhs, lhs);
   }
   // ここに来た場合 ptr + ptr という不正なパターンになるので落とす
   error_at(token->str, "不正なaddパターンです。");
   return NULL;
 }
 
-Node *new_sub_node(Node *lhs, Node *rhs) {
+static Node *new_sub_node(Node *lhs, Node *rhs) {
   add_type(lhs);
   add_type(rhs);
 
   if (is_integer(lhs->ty) && is_integer(rhs->ty)) {
     // num - num
-    return new_node(ND_SUB, lhs, rhs);
+    return new_bin_node(ND_SUB, lhs, rhs);
   } else if (is_pointer(lhs->ty) && is_pointer(rhs->ty)) {
     //  ptr - ptr
-    return new_node(ND_PTR_DIFF, lhs, rhs);
+    return new_bin_node(ND_PTR_DIFF, lhs, rhs);
   } else if (is_pointer(lhs->ty) && is_integer(rhs->ty)) {
     // ptr - num
-    return new_node(ND_PTR_SUB, lhs, rhs);
+    return new_bin_node(ND_PTR_SUB, lhs, rhs);
   }
   // ここに来た場合 num - ptr になってしまうので、エラーにする
   error("不正な演算です: num - ptr");
   return NULL; // error で落ちるので実際にはreturnされない
 }
 
-Node *add() {
+static Node *add() {
   Node *node = mul();
 
   for (;;) {
@@ -684,48 +680,46 @@ Node *add() {
   }
 }
 
-Node *mul() {
+static Node *mul() {
   Node *node = unary();
 
   for (;;) {
     if (consume("*")) {
-      node = new_node(ND_MUL, node, unary());
+      node = new_bin_node(ND_MUL, node, unary());
     } else if (consume("/")) {
-      node = new_node(ND_DIV, node, unary());
+      node = new_bin_node(ND_DIV, node, unary());
     } else if (consume("%")) {
-      node = new_node(ND_MOD, node, unary());
+      node = new_bin_node(ND_MOD, node, unary());
     } else {
       return node;
     }
   }
 }
 
-Node *unary() {
+static Node *unary() {
   if (consume("+")) {
     return postfix();
   } else if (consume("-")) {
-    return new_node(ND_SUB, new_node_num(0), postfix());
+    return new_bin_node(ND_SUB, new_num_node(0), postfix());
   } else if (consume("&")) {
-    return new_node(ND_ADDR, unary(), NULL);
+    return new_bin_node(ND_ADDR, unary(), NULL);
   } else if (consume("*")) {
-    return new_node(ND_DEREF, unary(), NULL);
+    return new_bin_node(ND_DEREF, unary(), NULL);
   } else if (consume_kind(TK_SIZEOF)) {
     Node *n = unary();
     add_type(n);
-    return new_node_num(node_type_size(n));
+    return new_num_node(node_type_size(n));
   }
   return postfix();
 }
 
-Node *new_var_node(Var *var) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_VAR;
+static Node *new_var_node(Var *var) {
+  Node *node = new_node(ND_VAR);
   node->var = var;
-
   return node;
 }
 
-Node *parse_var(Token *t) {
+static Node *parse_var(Token *t) {
     Var *var = find_var(t);
     if (!var) {
       error_at(t->str, "変数 %s は宣言されていません。", my_strndup(t->str, t->len));
@@ -733,18 +727,17 @@ Node *parse_var(Token *t) {
     return new_var_node(var);
 }
 
-Node *postfix() {
+static Node *postfix() {
   Node *node = primary();
   while (consume("[")) {
-    node = new_node(ND_DEREF, new_add_node(node, expr()), NULL);
+    node = new_bin_node(ND_DEREF, new_add_node(node, expr()), NULL);
     expect("]");
   }
   return node;
 }
 
-Node *parse_call_func(Token *t) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_CALL;
+static Node *parse_call_func(Token *t) {
+  Node *node = new_node(ND_CALL);
   node->funcname = my_strndup(t->str, t->len);
 
   if (consume(")")) {
@@ -778,7 +771,7 @@ static char *next_data_label() {
   return my_strndup(buf, n);
 }
 
-Node *parse_string_literal(Token *str_token) {
+static Node *parse_string_literal(Token *str_token) {
   Type *ty = array_of(char_type, str_token->content_length);
   Var *var = new_gvar(next_data_label(), ty);
   var->contents = str_token->contents;
@@ -787,7 +780,7 @@ Node *parse_string_literal(Token *str_token) {
   return new_var_node(var);;
 }
 
-Node *primary() {
+static Node *primary() {
   if (consume("(")) {
     Node *node = expr();
     expect(")");
@@ -811,10 +804,10 @@ Node *primary() {
   }
 
   // () でも ident でもなければ 整数
-  return new_node_num(expect_number());
+  return new_num_node(expect_number());
 }
 
-void free_nodes(Node *node) {
+static void free_nodes(Node *node) {
   if (!node) {
     return;
   }
@@ -833,7 +826,7 @@ void free_nodes(Node *node) {
   free(node);
 }
 
-void free_lvar(Var *var) {
+static void free_lvar(Var *var) {
   if (var) {
     Type *t = var->type;
     while (t) {
@@ -849,7 +842,7 @@ void free_lvar(Var *var) {
   free(var);
 }
 
-void free_var_list_deep(VarList *var) {
+static void free_var_list_deep(VarList *var) {
   VarList *v = var;
   while (v) {
     VarList *tmp = v->next;
@@ -860,7 +853,7 @@ void free_var_list_deep(VarList *var) {
   }
 }
 
-void free_var_list_shallow(VarList *var) {
+static void free_var_list_shallow(VarList *var) {
   VarList *v = var;
   while (v) {
     VarList *tmp = v->next;
@@ -869,7 +862,7 @@ void free_var_list_shallow(VarList *var) {
   }
 }
 
-void free_function(Function *f) {
+static void free_function(Function *f) {
   free(f->name);
   // var_listの中のVarは locals にローカル変数も関数の引数も含めて全部もっているので localsのfreeで一緒に削除する
   free_var_list_deep(f->locals);
@@ -880,7 +873,7 @@ void free_function(Function *f) {
   free(f);
 }
 
-void free_functions(Function *func) {
+static void free_functions(Function *func) {
   Function *f = func;
   while (f) {
     Function *tmp = f->next;
