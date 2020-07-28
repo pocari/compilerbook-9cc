@@ -1,3 +1,4 @@
+// vim:set ft=c:
 int test_count;
 int ok_count;
 
