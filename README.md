@@ -24,7 +24,7 @@ int main() {
   }
   return *(x + 5);
 }
-$ ./ynicc "$(cat examples/fib.c)" > tmp.s
+$ ./ynicc examples/fib.c > tmp.s
 $ gcc -o tmp tmp.s
 $ ./tmp
 $ echo $?
@@ -49,7 +49,7 @@ int main() {
     fizz_buzz(i);
   }
 }
-$ ./ynicc "$(cat examples/fizzbuzz.c)" > tmp.s
+$ ./ynicc examples/fizzbuzz.c > tmp.s
 $ gcc -no-pie -otmp tmp.s
 $ ./tmp
     1   1
