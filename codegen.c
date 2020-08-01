@@ -1,12 +1,14 @@
 #include "ynicc.h"
 #include <assert.h>
 
+// 今コード生成厨の関数名
+static char *funcname;
+
 static void gen(Node *node);
 
 static int printfln(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-
   int n = vprintf(fmt, ap);
   putchar('\n');
 
@@ -140,9 +142,7 @@ static void gen(Node *node) {
       printfln("  # ND_RETURN start");
       gen(node->lhs);
       printfln("  pop rax");
-      printfln("  mov rsp, rbp");
-      printfln("  pop rbp");
-      printfln("  ret");
+      printfln("  jmp .L.return.%s", funcname);
       printfln("  # ND_RETURN end");
       return;
     case ND_BLOCK:
@@ -368,6 +368,7 @@ static void gen(Node *node) {
 }
 
 static void codegen_func(Function *func) {
+  funcname = func->name;
   printfln(".global %s", func->name);
   printfln("%s:", func->name);
   // プロローグ
@@ -406,6 +407,7 @@ static void codegen_func(Function *func) {
   // エピローグ
   // rbpの復元と戻り値設定
   // 最後の演算結果が、rax(forの最後でpopしてるやつ)にロードされてるのでそれをmainの戻り値として返す
+  printfln(".L.return.%s:", func->name);
   printfln("  mov rsp, rbp");
   printfln("  pop rbp");
   printfln("  ret");
