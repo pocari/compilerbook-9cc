@@ -372,20 +372,6 @@ Program *program() {
   return program;
 }
 
-static Type *token_kind_to_type(TokenKind kind) {
-  #pragma clang diagnostic ignored "-Wswitch"
-  switch (kind) {
-    case TK_INT:
-      return int_type;
-    case TK_CHAR:
-      return char_type;
-    case TK_STRUCT:
-      return char_type;
-  }
-  error_at(token->str, "不正なTokenKindです: %s\n", token_kind_to_s(kind));
-  return NULL;
-}
-
 // type_in_decl  = type_keyword ("*" *)
 static Type *type_in_decl() {
   Type *t;
