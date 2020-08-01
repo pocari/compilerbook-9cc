@@ -14,6 +14,12 @@ static void expand_buffer(StringBuffer *sb) {
   sb->buf = realloc(sb->buf, sb->buf_len);
 }
 
+static void ensure_buffer(StringBuffer *sb) {
+  if (sb->str_len >= sb->buf_len) {
+    expand_buffer(sb);
+  }
+}
+
 StringBuffer *sb_init() {
   StringBuffer *sb = calloc(1, sizeof(StringBuffer));
 
@@ -25,9 +31,7 @@ StringBuffer *sb_init() {
 }
 
 void sb_append_char(StringBuffer *sb, char ch) {
-  if (sb->str_len >= sb->buf_len) {
-    expand_buffer(sb);
-  }
+  ensure_buffer(sb);
   sb->buf[sb->str_len++] = ch;
 }
 
