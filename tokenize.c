@@ -35,6 +35,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_INT";
     case TK_CHAR: // char
       return "TK_CHAR";
+    case TK_STRUCT: // struct
+      return "TK_STRUCT";
     case TK_SIZEOF: // sizeof
       return "TK_SIZEOF";
     case TK_STR: // 文字列リテラル
@@ -124,6 +126,10 @@ static Keyword keywords[] = {
   {
     "char",
     TK_CHAR,
+  },
+  {
+    "struct",
+    TK_STRUCT,
   },
   {
     "sizeof",

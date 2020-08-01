@@ -344,6 +344,30 @@ int f29_initialize_local_var() {
   + boo[1];
 }
 
+int f30_struct_member() {
+  struct {
+    int m1;
+    char m2;
+    int m3[2];
+    int *m4;
+  } x;
+  int y = 5;
+
+  x.m1 = 1;
+  x.m2 = 2;
+  x.m3[0] = 3;
+  x.m3[1] = 4;
+  x.m4 = &y;
+
+  return
+    x.m1 +
+    x.m2 +
+    x.m3[0] +
+    x.m3[1] +
+    *x.m4
+    ;
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -484,6 +508,7 @@ int main() {
     */
   assert(3, 1 + 2, "1 + 2");
   assert(56, f29_initialize_local_var(), "f29_initialize_local_var()");
+  assert(15, f30_struct_member(), "f30_struct_member()");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

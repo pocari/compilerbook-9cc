@@ -66,6 +66,20 @@ static void gen_addr(Node *node) {
       printfln("  # gen_addr-ND_DEREF stop");
       printfln("  # gen_addr end");
       return;
+    case ND_MEMBER:
+      printfln("  # gen_addr start (struct-member: %s)", node->member->name);
+      printfln("  # gen_addr-ND_MEMBER start");
+      printfln("  # struct var ref start");
+      gen_addr(node->lhs);
+      printfln("  # struct var ref end");
+      printfln("  # struct member ref start");
+      printfln("  pop rax"); // 構造体変数のアドレス
+      printfln("  add rax, %d", node->member->offset); //構造体のアドレスを元にそのメンバーの位置(オフセットを設定)
+      printfln("  push rax"); // 構造体メンバーのアドレスをpush
+      printfln("  # struct member ref end");
+      printfln("  # gen_addr-ND_MEMBER stop");
+      printfln("  # gen_addr end");
+      return;
   }
 
  error("代入の左辺値が変数ではありません");
@@ -87,17 +101,24 @@ static char *ARGUMENT_REGISTERS_SIZE1[] = {
 };
 
 static void gen(Node *node) {
+  assert(node);
   // switchの警告を消すpragma
   #pragma clang diagnostic ignored "-Wswitch"
   switch (node->kind) {
     case ND_NUM:
       printfln("  push %d", node->val);
       return ;
+    case ND_MEMBER:
     case ND_VAR:
-      if (node->var) {
-        printfln("  # ND_VAR start(var_name: %s)", node->var->name);
+      if (node->kind == ND_VAR) {
+        if (node->var) {
+          printfln("  # ND_VAR start(var_name: %s)", node->var->name);
+        } else {
+          printfln("  # ND_VAR start(var_name: none)");
+        }
       } else {
-        printfln("  # ND_VAR start(var_name: none)");
+        assert(node->kind == ND_MEMBER);
+        printfln("  # ND_VAR start(struct_var_name: %s, member_name: %s)", node->lhs->var->name, node->member->name);
       }
       gen_addr(node);
       if (node->ty->kind != TY_ARRAY) {

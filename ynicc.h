@@ -30,6 +30,7 @@ typedef enum {
   TK_FOR,      // for
   TK_INT,      // int型
   TK_CHAR,     // char型
+  TK_STRUCT,   // 構造体
   TK_SIZEOF,   // sizeof キーワード
   TK_STR,      // 文字列リテラル
   TK_EOF,      // 入力終了
@@ -63,19 +64,31 @@ extern char *user_input;
 
 // type.c
 typedef struct Type Type;
+typedef struct Member Member;
+
 typedef enum {
   TY_DUMMY,
   TY_INT,
   TY_CHAR,
   TY_PTR,
   TY_ARRAY,
+  TY_STRUCT,
 } TypeKind;
 
 struct Type {
   TypeKind kind;
   int size; //この方のサイズ(TY_ARRAYの場合は sizeof(要素) * array_size, それ以外の場合はsizeof(要素))
-  Type *ptr_to;
+  Type *ptr_to; // arrayかpointerの場合の型
   size_t array_size; // kind が TY_ARRAY のときに配列サイズがセットされる
+  Member *members; // 構造体のフィールド達
+};
+
+struct Member {
+  Member *next;
+
+  Type *ty;
+  char *name;
+  int offset; // 構造体の変数自体からこのメンバーへのオフセット
 };
 
 extern Type *int_type;
@@ -108,7 +121,7 @@ typedef enum {
   ND_EQL,       // ==
   ND_NOT_EQL,   // !=
   ND_ASSIGN,    // =
-  ND_VAR,      // ローカル変数
+  ND_VAR,       // ローカル変数
   ND_RETURN,    // return
   ND_WHILE,     // while
   ND_BLOCK,     // { stmt* } のブロック
@@ -120,6 +133,7 @@ typedef enum {
   ND_VAR_DECL,  // 変数定義
   ND_EXPR_STMT, // 式文
   ND_NUM,       // 整数
+  ND_MEMBER,    // 構造体のメンバーへの参照
 } NodeKind;
 
 struct Program {
@@ -162,6 +176,8 @@ struct Node {
   int val;    // kindがND_NUMの場合に使う
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
+
+  Member *member; // 構造体のメンバーへのアクセス時の対象のメンバー
 };
 
 struct Var {

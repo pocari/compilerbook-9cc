@@ -1,4 +1,5 @@
 #include "ynicc.h"
+#include <stdlib.h>
 
 // 今パース中の関数のローカル変数
 static VarList *locals = NULL;
@@ -186,7 +187,7 @@ static void expect(char *op) {
   if (token->kind != TK_RESERVED ||
       token->len != strlen(op) ||
       memcmp(token->str, op, token->len)) {
-    error_at(token->str, "'%c'(token->kind: %s, token->len: %d, strlen(op): %d)ではありません", op, token_kind_to_s(token->kind), token->len, strlen(op));
+    error_at(token->str, "'%c'(token->kind: %s, token->len: %d, strlen(op): %d, op: %s)ではありません", op, token_kind_to_s(token->kind), token->len, strlen(op), op);
   }
   token = token->next;
 }
@@ -263,6 +264,7 @@ static bool is_type_token(TokenKind kind) {
   switch (kind) {
     case TK_INT:
     case TK_CHAR:
+    case TK_STRUCT:
       return true;
     default:
       return false;
@@ -289,7 +291,9 @@ static bool is_type_token(TokenKind kind) {
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | expr
-// type_in_decl              = ("int" | "char") ("*" *)
+// type_in_decl              = ("int" | "char" | struct_decl) ("*" *)
+// struct_decl               = "struct" "{" struct_member* "}"
+// struct_member             = type_in_decl ident
 // expr                      = assign
 // assign                    = equality (= assign)?
 // equality                  = relational ("==" relational | "!=" relational)*
@@ -301,7 +305,7 @@ static bool is_type_token(TokenKind kind) {
 //                           | "&" unary
 //                           | "*" unary
 //                           | "sizeof" unary
-// postfix                   = parimary ("[" expr "]")*
+// postfix                   = parimary ("[" expr "]" | "." ident)*
 // primary                   = num
 //                           | ident ("(" arg_list? ")")?
 //                           | "(" expr ")"
@@ -324,6 +328,7 @@ static Node *postfix();
 static Node *primary();
 static Node *read_expr_stmt();
 static Type *read_type_suffix(Type *base);
+static Type *struct_decl();
 static Node *new_add_node(Node *lhs, Node *rhs);
 
 static bool is_function_def() {
@@ -368,12 +373,14 @@ Program *program() {
   return program;
 }
 
-Type *token_kind_to_type(TokenKind kind) {
+static Type *token_kind_to_type(TokenKind kind) {
   #pragma clang diagnostic ignored "-Wswitch"
   switch (kind) {
     case TK_INT:
       return int_type;
     case TK_CHAR:
+      return char_type;
+    case TK_STRUCT:
       return char_type;
   }
   error_at(token->str, "不正なTokenKindです: %s\n", token_kind_to_s(kind));
@@ -383,13 +390,61 @@ Type *token_kind_to_type(TokenKind kind) {
 // type_in_decl  = type_keyword ("*" *)
 static Type *type_in_decl() {
   Type *t;
-  TokenKind tk = token->kind;
-  expect_token(token->kind);
-  t = token_kind_to_type(tk);
+  if (!is_type_token(token->kind)) {
+    error_at(token->str, "typename expected");
+  }
+  if (token->kind == TK_INT) {
+      t = int_type;
+      expect_token(token->kind);
+  } else if (token->kind == TK_CHAR) {
+      t = char_type;
+      expect_token(token->kind);
+  } else if (token->kind == TK_STRUCT) {
+      t = struct_decl();
+  }
   while (consume("*")) {
     t = pointer_to(t);
   }
   return t;
+}
+
+static Member *struct_member() {
+  Type *type = type_in_decl();
+  char *ident = expect_ident();
+  type = read_type_suffix(type);
+  expect(";");
+
+  Member *m = calloc(1, sizeof(Member));
+  m->name = ident;
+  m->ty = type;
+
+  return m;
+}
+
+static Type *struct_decl() {
+  expect_token(TK_STRUCT);
+  expect("{");
+
+  Member head = {};
+  Member *cur = &head;
+
+  while (!consume("}")) {
+    cur->next = struct_member();
+    cur = cur->next;
+  }
+
+  Type *type = calloc(1, sizeof(Type));
+  type->kind = TY_STRUCT;
+  type->members = head.next;
+
+  int offset = 0;
+  for (Member *m = type->members; m; m = m->next) {
+    m->offset = offset;
+    offset += m->ty->size;
+  }
+  type->size = offset;
+
+  return type;
 }
 
 static void function_params(Function *func) {
@@ -839,11 +894,50 @@ static Node *parse_var(Token *t) {
     return new_var_node(var);
 }
 
+static Member *find_member(Type *type, char *name) {
+  assert(type->kind == TY_STRUCT);
+
+  for (Member *m = type->members; m ; m = m->next) {
+    if (strcmp(m->name, name) == 0) {
+      return m;
+    }
+  }
+  return NULL;
+}
+
+static Node *struct_ref(Node *lhs) {
+  add_type(lhs);
+
+  if (lhs->ty->kind != TY_STRUCT) {
+    error_at(token->str, "not a struct");
+  }
+
+  Token *tok = token;
+  Member *m = find_member(lhs->ty, expect_ident());
+  if (!m) {
+    error_at(tok->str, "no such member");
+  }
+
+  Node *n = new_unary_node(ND_MEMBER, lhs);
+  n->member = m;
+
+  return n;
+}
+
 static Node *postfix() {
   Node *node = primary();
-  while (consume("[")) {
-    node = new_bin_node(ND_DEREF, new_add_node(node, expr()), NULL);
-    expect("]");
+  for (;;) {
+    if (consume("[")) {
+      node = new_bin_node(ND_DEREF, new_add_node(node, expr()), NULL);
+      expect("]");
+      continue;
+    }
+
+    if (consume(".")) {
+      node = struct_ref(node);
+      continue;
+    }
+    break;
   }
   return node;
 }

@@ -54,6 +54,8 @@ char *node_kind_to_s(Node *nd) {
       return  "ND_MOD";
     case  ND_NUM:
       return "ND_NUM  ";
+    case  ND_MEMBER:
+      return "ND_MEMBER  ";
   };
 }
 
@@ -84,6 +86,17 @@ int type_info_helper(char *buf, int offset, Type *type) {
       // と、「「intのサイズ3の配列」のサイズ2の配列」という構造になるので、
       n += sprintf(buf + offset, "[%ld]", type->array_size);
       n += type_info_helper(buf, offset + n, type->ptr_to);
+      break;
+    case TY_STRUCT:
+      n += sprintf(buf + offset, "struct (size %d) {", type->size);
+      for (Member *m = type->members; m; m = m->next) {
+        n += type_info_helper(buf, offset + n, m->ty);
+        n += sprintf(buf + offset + n, " %s (offset %d)", m->name, m->offset);
+        if (m->next) {
+          n += sprintf(buf + offset + n, " ");
+        }
+      }
+      n += sprintf(buf + offset + n, "}");
       break;
   }
   return n;
@@ -350,6 +363,14 @@ char *node_ast(Node *node) {
       case ND_NUM:
         n += sprintf(buf, "(num %d)", node->val);
         return my_strndup(buf, n);
+      case ND_MEMBER:
+        {
+          char *l = node_ast(node->lhs);
+          n += sprintf(buf, "(member %s %s)", l, node->member->name);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          return ret;
+        }
   }
   return NULL;
 }
