@@ -510,6 +510,32 @@ int main() {
   assert(56, f29_initialize_local_var(), "f29_initialize_local_var()");
   assert(15, f30_struct_member(), "f30_struct_member()");
 
+  struct {
+    int x;
+    char y;
+  } s1;
+  assert(9, sizeof(s1), "sizeof(s1)");
+
+  struct {
+    char x;
+    int y;
+  } s2;
+  assert(9, sizeof(s2), "sizeof(s2)");
+
+  struct {
+    char x;
+    char y;
+  } s3;
+  assert(2, sizeof(s3), "sizeof(s3)");
+
+  struct {
+    int x;
+    int y;
+  } s4;
+  assert(16, sizeof(s4), "sizeof(s4)");
+
+
+
   //------------------------------------------------------------------------
   // ここより上にテストを書く
   printf("total: %d tests, %d ok\n", test_count, ok_count);
