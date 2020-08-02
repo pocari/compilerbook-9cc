@@ -368,6 +368,17 @@ int f30_struct_member() {
     ;
 }
 
+int f31_local_variable_alignment() {
+  char x;
+  int y;
+
+  char *a = &x;
+  char *b = &y;
+
+  return b - a;
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -536,7 +547,7 @@ int main() {
   } s4;
   assert(16, sizeof(s4), "sizeof(s4)");
 
-
+  assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
