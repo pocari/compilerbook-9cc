@@ -510,17 +510,19 @@ int main() {
   assert(56, f29_initialize_local_var(), "f29_initialize_local_var()");
   assert(15, f30_struct_member(), "f30_struct_member()");
 
+  // 型のサイズだけでいうと9バイトだが、int(現状8バイト)とcharが混在しているため、
+  // int側のアラインメントに合わされて構造体
   struct {
     int x;
     char y;
   } s1;
-  assert(9, sizeof(s1), "sizeof(s1)");
+  assert(16, sizeof(s1), "sizeof(s1)");
 
   struct {
     char x;
     int y;
   } s2;
-  assert(9, sizeof(s2), "sizeof(s2)");
+  assert(16, sizeof(s2), "sizeof(s2)");
 
   struct {
     char x;

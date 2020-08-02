@@ -77,10 +77,11 @@ typedef enum {
 
 struct Type {
   TypeKind kind;
-  int size; //この方のサイズ(TY_ARRAYの場合は sizeof(要素) * array_size, それ以外の場合はsizeof(要素))
+  int size; //サイズ(TY_ARRAYの場合は sizeof(要素) * array_size, それ以外の場合はsizeof(要素))
+  int align; // アラインされるバイト数
   Type *ptr_to; // arrayかpointerの場合の型
   size_t array_size; // kind が TY_ARRAY のときに配列サイズがセットされる
-  Member *members; // 構造体のフィールド達
+  Member *members; // 構造体の場合のフィールド達
 };
 
 struct Member {
@@ -98,9 +99,8 @@ bool is_integer(Type *t);
 bool is_pointer(Type *t);
 Type *pointer_to(Type *t);
 int node_type_size(Node * node);
-Type *new_type(TypeKind kind, Type *ptr_to, int size);
+Type *new_type(TypeKind kind, Type *ptr_to, int size, int align);
 Type *array_of(Type *ptr_to, int array_size);
-
 
 
 // parser.c

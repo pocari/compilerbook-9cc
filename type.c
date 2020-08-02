@@ -1,23 +1,24 @@
 #include "ynicc.h"
 
-Type *int_type = &(Type){ TY_INT, 8 };
-Type *char_type = &(Type){ TY_CHAR, 1 };
+Type *int_type = &(Type){ TY_INT, 8, 8};
+Type *char_type = &(Type){ TY_CHAR, 1, 1};
 
-Type *new_type(TypeKind kind, Type *ptr_to, int size) {
+Type *new_type(TypeKind kind, Type *ptr_to, int size, int align) {
   Type *t = calloc(1, sizeof(Type));
   t->kind = kind;
   t->size = size;
+  t->align = align;
   t->ptr_to = ptr_to;
 
   return t;
 }
 
 Type *pointer_to(Type *ptr_to) {
-  return new_type(TY_PTR, ptr_to, 8);
+  return new_type(TY_PTR, ptr_to, 8, 8);
 }
 
 Type *array_of(Type *ptr_to, int array_size) {
-  Type *ty = new_type(TY_ARRAY, ptr_to, ptr_to->size * array_size);
+  Type *ty = new_type(TY_ARRAY, ptr_to, ptr_to->size * array_size, ptr_to->align);
   ty->array_size = array_size;
   return ty;
 }

@@ -144,6 +144,22 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
+static int align_to(int n, int align) {
+  // chibicc では、
+  //   return (n + align - 1) & ~(align - 1);
+  // という速そうなコードだった。
+  // https://github.com/rui314/chibicc/commit/b6d512ee69ea455031cf57612437e238f233a293#diff-2045016cb90d1e65d71c2407a2570927R4
+
+  // 取り敢えず挙動としては、align = 8 の場合
+  //  0     -> 0
+  //  1.. 8 -> 8
+  //  9..16 -> 16
+  // 17..24 -> 24
+  // ....
+  // となれば良さそうなのでそうなるように計算する
+  return ((n / align) + (n % align == 0 ? 0 : 1)) * align;
+}
+
 static bool peek_token(char *op) {
   if (token->kind != TK_RESERVED ||
       token->len != strlen(op) ||
@@ -424,10 +440,28 @@ static Type *struct_decl() {
 
   int offset = 0;
   for (Member *m = type->members; m; m = m->next) {
-    m->offset = offset;
+    m->offset = align_to(offset, m->ty->align);
     offset += m->ty->size;
+
+    if (type->align < m->ty->align) {
+      // 構造体自身のアラインメントは、構造体のメンバーの中の最大のアラインメントに合わせる
+      // 構造体自体のサイズの割当(ループの外)で効いてくるらしい
+      type->align = m->ty->align;
+    }
   }
-  type->size = offset;
+  // アラインメント(このコメントを書いているときのintはまだ8バイト)
+  // int, charが混在しているstructを定義すると下記のようになる
+  //
+  // struct {
+  //   char x;
+  //   int y;
+  // } s1;
+  //
+  // の場合、アラインメントが考慮されていない場合
+  // char 1バイト、int 8バイトの合計9バイトの構造体になるが、
+  // アラインメントを考慮する場合、8バイト境界に置かれることになるので、
+  // xの直後からyが始まるのではなく、7バイト後からyの8バイトが始まり合計16バイトの構造体になる
+  type->size = align_to(offset, type->align);
 
   return type;
 }
@@ -454,22 +488,6 @@ static void function_params(Function *func) {
   // fprintf(stderr, "parse func param end\n");
 
   func->params = var_list;
-}
-
-static int align_to(int n, int align) {
-  // chibicc では、
-  //   return (n + align - 1) & ~(align - 1);
-  // という速そうなコードだった。
-  // https://github.com/rui314/chibicc/commit/b6d512ee69ea455031cf57612437e238f233a293#diff-2045016cb90d1e65d71c2407a2570927R4
-
-  // 取り敢えず挙動としては、align = 8 の場合
-  //  0     -> 0
-  //  1.. 8 -> 8
-  //  9..16 -> 16
-  // 17..24 -> 24
-  // ....
-  // となれば良さそうなのでそうなるように計算する
-  return ((n / align) + (n % align == 0 ? 0 : 1)) * align;
 }
 
 // 関数のスタックサイズ関連を計算
