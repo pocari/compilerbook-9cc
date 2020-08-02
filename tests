@@ -372,12 +372,23 @@ int f31_local_variable_alignment() {
   char x;
   int y;
 
-  char *a = &x;
-  char *b = &y;
+  // テスト用に無理やりアドレスをint型にいれる
+  int a = &x;
+  int b = &y;
 
   return b - a;
 }
 
+int f32_local_variable_alignment() {
+  int x;
+  char y;
+
+  // テスト用に無理やりアドレスをint型にいれる
+  int a = &x;
+  int b = &y;
+
+  return b - a;
+}
 
 int main() {
   test_count = 0;
@@ -548,6 +559,7 @@ int main() {
   assert(16, sizeof(s4), "sizeof(s4)");
 
   assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
+  assert(15, f32_local_variable_alignment(), "f32_local_variable_alignment()");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

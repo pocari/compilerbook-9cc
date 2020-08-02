@@ -494,8 +494,10 @@ static void function_params(Function *func) {
 static void set_stack_info(Function *f) {
   int offset = 0;
   for (VarList *v = f->locals; v; v = v->next) {
-    offset += v->var->type->size;
-    v->var->offset = offset;
+    Var *var = v->var;
+    offset = align_to(offset, var->type->align);
+    offset += var->type->size;
+    var->offset = offset;
   }
   f->stack_size = align_to(offset, 8);
 }
