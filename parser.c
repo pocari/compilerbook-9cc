@@ -1,6 +1,42 @@
 #include "ynicc.h"
 
-// 今パース中の関数のローカル変数
+/*
+ * chibiccのスコープ管理の実装メモ
+ *
+ * locals ... 現在パース中の関数内のローカル変数のみを管理(ただし関数の仮引数もローカル変数として確保している)
+ *            関数を管理しているFunction構造体には仮引数用のfunc->paramもあるが、これらの変数(Var型)も含めて重複して
+ *            ローカル変数、仮引数まとめて全部このlocalsで管理されている。
+ *            なぜかというと、ローカル変数用のスタック領域の確保時に、ローカル変数用＋仮引数用両方をみなくてもこのlocals
+ *            で管理している分のサイズを全部合計してスタック領域として確保できて楽なため。
+ *
+ * globals ... 現在パース中のグローバル変数(たぶんstatic含む)を管理する。
+ *
+ * Scope ... 変数(ローカル、グローバル含む)と構造体のタグ名のスコープを管理する
+ *           変数がlocalsと重複しているが、このScopeの方はなまえの通りScopeの管理もしていて、ブロックスコープの管理をするために、
+ *           localsの中の各変数(＋グローバル変数) に関して、その時点でのスコープにある変数のみ保持している。
+ *           なので、 locals >= Scopeのvar_scope という関係になる
+ */
+
+typedef struct TagScope TagScope;
+struct TagScope {
+  TagScope *next;
+  char *name; // 構造体のタグ名
+  Type *ty; // 構造体の型自身
+};
+
+typedef struct Scope Scope;
+struct Scope {
+  VarList *var_scope;
+  TagScope *tag_scope;
+};
+
+// 現在パース中のスコープにある変数(ローカル、グローバル含む)を管理する
+VarList *var_scoep;
+
+// 現在パース中のスコープにある構造体のタグ名を管理する
+TagScope *tag_scope;
+
+// 今パース中の関数のローカル変数(+仮引数)
 static VarList *locals = NULL;
 
 // グローバル変数
