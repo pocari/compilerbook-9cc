@@ -151,7 +151,7 @@ Keyword *tokenize_keyword(char *p) {
 // 文字列リテラルをトークナイズした結果を返す
 // また、トークナイズした結果でポインタもすすめる
 static Token *tokenize_string_literal(Token *current_token, char **current_pointer) {
-  StringBuffer *sb = sb_init();
+  string_buffer *sb = sb_init();
   char *p = *current_pointer;
 
   char *s = p++;

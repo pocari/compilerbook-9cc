@@ -216,12 +216,12 @@ void dump_globals(VarList *vars);
 void dump_tokens(Token *t);
 
 // string_buffer.c
-typedef struct StringBuffer StringBuffer;
+typedef struct string_buffer string_buffer;
 
-StringBuffer *sb_init();
-void sb_append_char(StringBuffer *sb, char ch);
-void sb_free(StringBuffer *sb);
-char *sb_str(StringBuffer *sb);
-int sb_str_len(StringBuffer *sb);
+string_buffer *sb_init();
+void sb_append_char(string_buffer *sb, char ch);
+void sb_free(string_buffer *sb);
+char *sb_str(string_buffer *sb);
+int sb_str_len(string_buffer *sb);
 
 #endif
