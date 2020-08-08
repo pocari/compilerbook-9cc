@@ -11,7 +11,6 @@ int assert(int expected, int actual, char *code) {
     printf("%s => %d expected, but got %d\n", code, expected, actual);
   }
 }
-
 int f1_while() {
   int i;
   i = 0;
@@ -390,6 +389,32 @@ int f32_local_variable_alignment() {
   return b - a;
 }
 
+int f33_use_struct_tag() {
+  struct tag1 {
+    int x;
+    int y;
+  } o;
+
+  struct tag2 {
+    int m;
+    int n;
+  } p;
+
+  struct tag1 tag1_var;
+  struct tag2 tag2_var;
+
+  o.x = 1;
+  o.y = 2;
+  p.m = 3;
+  p.n = 4;
+  tag1_var.x = 5;
+  tag1_var.y = 6;
+  tag2_var.m = 7;
+  tag2_var.n = 8;
+
+  return o.x + o.y + p.m + p.n + tag1_var.x + tag1_var.y + tag2_var.m + tag2_var.n;
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -560,6 +585,7 @@ int main() {
 
   assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
   assert(15, f32_local_variable_alignment(), "f32_local_variable_alignment()");
+  assert(36, f33_use_struct_tag(), "f33_use_struct_tag()");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

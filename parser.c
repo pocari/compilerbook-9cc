@@ -57,6 +57,25 @@ static void leave_scope(Scope *prev_scope) {
   tag_scope = prev_scope->tag_scope;
 }
 
+static void push_tag_scope(Token *struct_tag_tok, Type *struct_type) {
+  TagScope *sc = calloc(1, sizeof(TagScope));
+
+  sc->name = my_strndup(struct_tag_tok->str, struct_tag_tok->len);
+  sc->ty = struct_type;
+  sc->next = tag_scope;
+
+  tag_scope = sc;
+}
+
+static Type *find_struct_tag(Token *tk) {
+  for (TagScope *sc = tag_scope; sc; sc = sc->next) {
+    if (strncmp(sc->name, tk->str, tk->len) == 0) {
+      return sc->ty;
+    }
+  }
+  return NULL;
+}
+
 static Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -361,7 +380,7 @@ static bool is_type_token(TokenKind kind) {
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | expr
 // type_in_decl              = ("int" | "char" | struct_decl) ("*" *)
-// struct_decl               = "struct" "{" struct_member* "}"
+// struct_decl               = "struct" ident? "{" struct_member* "}"
 // struct_member             = type_in_decl ident
 // expr                      = assign
 // assign                    = equality (= assign)?
@@ -478,6 +497,22 @@ static Member *struct_member() {
 
 static Type *struct_decl() {
   expect_token(TK_STRUCT);
+
+  Token *bak = token;
+  Token *tk = consume_ident();
+
+  // struct ident の後に {がなければ 既存の構造体の変数定義になるので、
+  // tkをタグ名として構造体の定義を探して返す
+  if (tk) {
+    if (!peek_token("{")) {
+      Type *st = find_struct_tag(tk);
+      if (!st) {
+        error_at(bak->str, "構造体: %s が見つかりません", my_strndup(tk->str, tk->len));
+      }
+      return st;
+    }
+  }
+
   expect("{");
 
   Member head = {};
@@ -516,6 +551,11 @@ static Type *struct_decl() {
   // アラインメントを考慮する場合、8バイト境界に置かれることになるので、
   // xの直後からyが始まるのではなく、7バイト後からyの8バイトが始まり合計16バイトの構造体になる
   type->size = align_to(offset, type->align);
+
+  // 構造体のタグが存在していたら、今パースした構造体の定義をタグ名をキーに登録
+  if (tk) {
+    push_tag_scope(tk, type);
+  }
 
   return type;
 }
