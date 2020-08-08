@@ -380,7 +380,8 @@ static bool is_type_token(TokenKind kind) {
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | expr
 // type_in_decl              = ("int" | "char" | struct_decl) ("*" *)
-// struct_decl               = "struct" ident? "{" struct_member* "}"
+// struct_decl               = "struct" ident
+//                           | "struct" ident? "{" struct_member* "}"
 // struct_member             = type_in_decl ident
 // expr                      = assign
 // assign                    = equality (= assign)?
