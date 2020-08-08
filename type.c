@@ -39,6 +39,7 @@ void add_type(Node *node) {
   if (!node || node->ty)
     return;
 
+  assert(node);
   add_type(node->lhs);
   add_type(node->rhs);
   add_type(node->cond);

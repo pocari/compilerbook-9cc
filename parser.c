@@ -394,7 +394,7 @@ static bool is_type_token(TokenKind kind) {
 //                           | "&" unary
 //                           | "*" unary
 //                           | "sizeof" unary
-// postfix                   = parimary ("[" expr "]" | "." ident)*
+// postfix                   = parimary ("[" expr "]" | "." ident | "->" ident)*
 // primary                   = num
 //                           | ident ("(" arg_list? ")")?
 //                           | "(" expr ")"
@@ -1038,6 +1038,13 @@ static Node *postfix() {
     }
 
     if (consume(".")) {
+      node = struct_ref(node);
+      continue;
+    }
+
+    if (consume("->")) {
+      // x->y == (*x).y なので nodeをderefしたうえで . と同じ結果を返す
+      node = new_unary_node(ND_DEREF, node);
       node = struct_ref(node);
       continue;
     }

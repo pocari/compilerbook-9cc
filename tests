@@ -415,6 +415,20 @@ int f33_use_struct_tag() {
   return o.x + o.y + p.m + p.n + tag1_var.x + tag1_var.y + tag2_var.m + tag2_var.n;
 }
 
+int f34_arrow_operator() {
+  struct tag {
+    int x;
+    int y;
+  } m;
+
+  struct tag *n = &m;
+
+  m.x = 2;
+  n->y = 3;
+
+  return m.x + m.y + n->x + n->y;
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -586,6 +600,7 @@ int main() {
   assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
   assert(15, f32_local_variable_alignment(), "f32_local_variable_alignment()");
   assert(36, f33_use_struct_tag(), "f33_use_struct_tag()");
+  assert(10, f34_arrow_operator(), "f34_arrow_operator");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

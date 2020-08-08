@@ -120,7 +120,15 @@ static void gen(Node *node) {
         }
       } else {
         assert(node->kind == ND_MEMBER);
-        printfln("  # ND_VAR start(struct_var_name: %s, member_name: %s)", node->lhs->var->name, node->member->name);
+        // .  の ND_MEMBER の場合はそのまま node->lhs->var->nameでいいが
+        // -> の ND_MEMBER の場合は、node->lhsが構造体へのポインタになってるのでそれも考慮する
+        if (node->lhs->kind == ND_DEREF) {
+          // -> の場合は、node->lhs->lhsが構造体への変数
+          printfln("  # ND_VAR start(struct_var_name: %s, member_name: %s)", node->lhs->lhs->var->name, node->member->name);
+        } else {
+          // . の場合は、node->lhsが構造体の変数
+          printfln("  # ND_VAR start(struct_var_name: %s, member_name: %s)", node->lhs->var->name, node->member->name);
+        }
       }
       gen_addr(node);
       if (node->ty->kind != TY_ARRAY) {
