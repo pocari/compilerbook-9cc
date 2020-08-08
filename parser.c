@@ -1,4 +1,5 @@
 #include "ynicc.h"
+#include <stdlib.h>
 
 /*
  * chibiccのスコープ管理の実装メモ
@@ -31,7 +32,7 @@ struct Scope {
 };
 
 // 現在パース中のスコープにある変数(ローカル、グローバル含む)を管理する
-VarList *var_scoep;
+VarList *var_scope;
 
 // 現在パース中のスコープにある構造体のタグ名を管理する
 TagScope *tag_scope;
@@ -41,6 +42,20 @@ static VarList *locals = NULL;
 
 // グローバル変数
 static VarList *globals = NULL;
+
+static Scope *enter_scope(void) {
+  Scope *new_scope = calloc(1, sizeof(Scope));
+
+  new_scope->var_scope = var_scope;
+  new_scope->tag_scope = tag_scope;
+
+  return new_scope;
+}
+
+static void leave_scope(Scope *prev_scope) {
+  var_scope = prev_scope->var_scope;
+  tag_scope = prev_scope->tag_scope;
+}
 
 static Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
@@ -76,6 +91,12 @@ static Var *new_var(char *name, Type *type, bool is_local) {
   var->type = type;
   var->name = name;
   var->is_local = is_local;
+
+  // 今のscopeにこの変数を追加
+  VarList *vl = calloc(1, sizeof(VarList));
+  vl->var = var;
+  vl->next = var_scope;
+  var_scope = vl;
 
   return var;
 }
@@ -299,14 +320,11 @@ static Var *find_var_helper(Token *token, VarList *vars) {
 static Var *find_var(Token *token) {
   Var *v = NULL;
 
-  // local変数から探す
-  v = find_var_helper(token, locals);
+  // local+global変数から探す
+  v = find_var_helper(token, var_scope);
   if (v) {
     return v;
   }
-
-  // なかったらglobal変数から探す
-  v = find_var_helper(token, globals);
 
   return v;
 }
@@ -541,6 +559,7 @@ static void set_stack_info(Function *f) {
 static Function *function_def() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
+  Scope *sc = enter_scope();
 
   Type *ret_type = type_in_decl();
   Token *t = consume_ident();
@@ -569,6 +588,7 @@ static Function *function_def() {
   func->locals = locals;
   set_stack_info(func);
 
+  leave_scope(sc);
   return func;
 }
 
@@ -637,6 +657,7 @@ static Node *stmt() {
     node->body = stmt();
   } else if (consume("{")) {
     node = new_node(ND_BLOCK);
+    Scope *sc = enter_scope();
     int i = 0;
     Node head = {};
     Node *cur = &head;
@@ -645,6 +666,7 @@ static Node *stmt() {
       cur = cur->next;
     }
     node->body = head.next;
+    leave_scope(sc);
   } else {
     // キーワードじゃなかったら 変数宣言かどうかチェック
     node = var_decl();
