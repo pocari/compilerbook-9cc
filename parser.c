@@ -468,7 +468,6 @@ static Node *read_expr_stmt();
 static Type *read_type_suffix(Type *base);
 static Type *struct_decl();
 static Node *new_add_node(Node *lhs, Node *rhs);
-static void pserse_typedef();
 
 typedef enum {
   NEXT_DECL_DUMMY,
