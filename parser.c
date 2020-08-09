@@ -25,17 +25,24 @@ struct TagScope {
   Type *ty; // 構造体の型自身
 };
 
+typedef struct VarScope VarScope;
+struct VarScope {
+  VarScope *next;
+  char *name;
+  Var *var;
+};
+
 typedef struct Scope Scope;
 struct Scope {
-  VarList *var_scope;
+  VarScope *var_scope;
   TagScope *tag_scope;
 };
 
 // 現在パース中のスコープにある変数(ローカル、グローバル含む)を管理する
-VarList *var_scope;
+static VarScope *var_scope;
 
 // 現在パース中のスコープにある構造体のタグ名を管理する
-TagScope *tag_scope;
+static TagScope *tag_scope;
 
 // 今パース中の関数のローカル変数(+仮引数)
 static VarList *locals = NULL;
@@ -65,6 +72,16 @@ static void push_tag_scope(Token *struct_tag_tok, Type *struct_type) {
   sc->next = tag_scope;
 
   tag_scope = sc;
+}
+
+static void push_var_scope(char *name, Var *var) {
+  VarScope *sc = calloc(1, sizeof(VarScope));
+
+  sc->name = name;
+  sc->var = var;
+  sc->next = var_scope;
+
+  var_scope = sc;
 }
 
 static Type *find_struct_tag(Token *tk) {
@@ -112,10 +129,7 @@ static Var *new_var(char *name, Type *type, bool is_local) {
   var->is_local = is_local;
 
   // 今のscopeにこの変数を追加
-  VarList *vl = calloc(1, sizeof(VarList));
-  vl->var = var;
-  vl->next = var_scope;
-  var_scope = vl;
+  push_var_scope(name, var);
 
   return var;
 }
@@ -326,11 +340,11 @@ static bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-static Var *find_var_helper(Token *token, VarList *vars) {
-  for (VarList *var_list = vars; var_list; var_list = var_list->next) {
-    if (strlen(var_list-> var->name) == token->len &&
-        memcmp(var_list-> var->name, token->str, token->len) == 0) {
-      return var_list->var;
+static Var *find_var_helper(Token *token, VarScope *scope) {
+  for (VarScope *sc = scope; sc; sc = sc->next) {
+    if (strlen(sc->var->name) == token->len &&
+        strncmp(sc->name, token->str, token->len) == 0) {
+      return sc->var;
     }
   }
   return NULL;
