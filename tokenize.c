@@ -52,6 +52,11 @@ char *token_kind_to_s(TokenKind kind) {
 }
 
 void dump_token(Token *t) {
+  if (!t) {
+    printf("## (NULL token)");
+    return;
+  }
+
   printf("## (Token kind: %*s ", 12 ,token_kind_to_s(t->kind));
 
   switch (t->kind) {

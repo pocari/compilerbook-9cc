@@ -92,6 +92,10 @@ static void push_var_scope(char *name, Var *var) {
 
 static void push_typedef_scope(char *name, Type *type_def) {
   push_var_scope_helper(name)->type_def = type_def;
+
+  // fprintf(stderr, "push_typedef\n");
+  // fprintf(stderr, "name: %s\n" ,name);
+  // fprintf(stderr, "%s\n", type_info(type_def));
 }
 
 static Type *find_struct_tag(Token *tk) {
@@ -357,7 +361,8 @@ static Var *find_var_helper(Token *token, VarScope *scope) {
       continue;
     }
 
-    if (strncmp(sc->name, token->str, token->len) == 0) {
+    if (strlen(sc->name) == token->len &&
+        strncmp(sc->name, token->str, token->len) == 0) {
       return sc->var;
     }
   }
@@ -383,7 +388,8 @@ static Type *find_typedef(Token *tk) {
       continue;
     }
 
-    if (strncmp(sc->name, tk->str, tk->len) == 0) {
+    if (strlen(sc->name) == tk->len &&
+        strncmp(sc->name, tk->str, tk->len) == 0) {
       return sc->type_def;
     }
   }
@@ -406,6 +412,7 @@ static bool is_type(Token *tk) {
 // program                   = (
 //                               func_decls
 //                             | global_var_decls
+//                             | "typedef" type_in_decl ident read_type_suffix ";"
 //                           )*
 // function_def              = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
 // global_var_decls          = type_in_decl ident read_type_suffix ";"
@@ -462,17 +469,43 @@ static Type *read_type_suffix(Type *base);
 static Type *struct_decl();
 static Node *new_add_node(Node *lhs, Node *rhs);
 
-static bool is_function_def() {
+typedef enum {
+  NEXT_DECL_DUMMY,
+  NEXT_DECL_FUNCTION_DEF,
+  NEXT_DECL_GLOBAL_VAR,
+  NEXT_DECL_TYPEDEF,
+} next_decl_type;
+
+static next_decl_type next_decl() {
   // 先読みした結果今の位置に戻る用に今のtokenを保存
   Token *tmp = token;
+  bool is_func, is_global_var, is_typedef;
 
-  type_in_decl();
-  bool is_func = consume_ident() && consume("(");
+  if (consume_kind(TK_TYPEDEF)) {
+    is_typedef = true;
+  }
+
+  if (!is_typedef) {
+    type_in_decl();
+    is_func = consume_ident() && consume("(");
+
+    if (!is_func) {
+      is_global_var = true;
+    }
+  }
 
   // 先読みした結果、関数定義かグローバル変数かわかったので、tokenを元に戻す
   token = tmp;
 
-  return is_func;
+  if (is_typedef)
+    return NEXT_DECL_TYPEDEF;
+  if (is_func)
+    return NEXT_DECL_FUNCTION_DEF;
+  if (is_global_var)
+    return NEXT_DECL_GLOBAL_VAR;
+
+  error_at(token->str, "想定しない宣言です");
+  assert(false);
 }
 
 // グローバル変数のパース
@@ -489,12 +522,27 @@ Program *program() {
   Function head = {};
   Function *cur = &head;
   while (!at_eof()) {
-    if (is_function_def()) {
-      cur->next = function_def();
-      cur = cur->next;
-    } else {
-      parse_gvar();
-      // 関数じゃない場合はグローバル変数
+    switch(next_decl()) {
+      case NEXT_DECL_FUNCTION_DEF:
+        cur->next = function_def();
+        cur = cur->next;
+        break;
+      case NEXT_DECL_GLOBAL_VAR:
+        parse_gvar();
+        break;
+      case NEXT_DECL_TYPEDEF:
+        {
+          consume_kind(TK_TYPEDEF);
+          Type *ty = type_in_decl();
+          char *name = expect_ident();
+          ty = read_type_suffix(ty);
+          expect(";");
+          push_typedef_scope(name, ty);
+        }
+        break;
+      default:
+        // ここには来ないはず
+        assert(false);
     }
   }
   Program *program = calloc(1, sizeof(Program));

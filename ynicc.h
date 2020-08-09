@@ -216,6 +216,7 @@ char *node_ast(Node *node);
 void dump_function(Function *f);
 void dump_globals(VarList *vars);
 void dump_tokens(Token *t);
+char *type_info(Type *type);
 
 // string_buffer.c
 typedef struct string_buffer string_buffer;
