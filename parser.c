@@ -468,6 +468,7 @@ static Node *read_expr_stmt();
 static Type *read_type_suffix(Type *base);
 static Type *struct_decl();
 static Node *new_add_node(Node *lhs, Node *rhs);
+static void pserse_typedef();
 
 typedef enum {
   NEXT_DECL_DUMMY,
@@ -508,6 +509,14 @@ static next_decl_type next_decl() {
   assert(false);
 }
 
+static void parse_typedef() {
+  Type *ty = type_in_decl();
+  char *name = expect_ident();
+  ty = read_type_suffix(ty);
+  expect(";");
+  push_typedef_scope(name, ty);
+}
+
 // グローバル変数のパース
 static void parse_gvar() {
   Type *type = type_in_decl();
@@ -531,14 +540,8 @@ Program *program() {
         parse_gvar();
         break;
       case NEXT_DECL_TYPEDEF:
-        {
-          consume_kind(TK_TYPEDEF);
-          Type *ty = type_in_decl();
-          char *name = expect_ident();
-          ty = read_type_suffix(ty);
-          expect(";");
-          push_typedef_scope(name, ty);
-        }
+        consume_kind(TK_TYPEDEF);
+        parse_typedef();
         break;
       default:
         // ここには来ないはず
@@ -807,11 +810,7 @@ static Node *stmt() {
     node->body = head.next;
     leave_scope(sc);
   } else if (consume_kind(TK_TYPEDEF)) {
-    Type *ty = type_in_decl();
-    char *name = expect_ident();
-    ty = read_type_suffix(ty);
-    expect(";");
-    push_typedef_scope(name, ty);
+    parse_typedef();
     node = new_node(ND_NULL);
   } else {
     // キーワードじゃなかったら 変数宣言かどうかチェック
