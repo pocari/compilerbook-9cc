@@ -33,6 +33,7 @@ typedef enum {
   TK_STRUCT,   // 構造体
   TK_SIZEOF,   // sizeof キーワード
   TK_STR,      // 文字列リテラル
+  TK_TYPEDEF,  // typedef キーワード
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -134,6 +135,7 @@ typedef enum {
   ND_EXPR_STMT, // 式文
   ND_NUM,       // 整数
   ND_MEMBER,    // 構造体のメンバーへの参照
+  ND_NULL,      // 何もしないノード
 } NodeKind;
 
 struct Program {

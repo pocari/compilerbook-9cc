@@ -56,6 +56,8 @@ char *node_kind_to_s(Node *nd) {
       return "ND_NUM  ";
     case  ND_MEMBER:
       return "ND_MEMBER  ";
+    case  ND_NULL:
+      return "ND_NULL  ";
   };
 }
 
@@ -371,6 +373,8 @@ char *node_ast(Node *node) {
           free(l);
           return ret;
         }
+      case ND_NULL:
+        return "(ND_NULL)";
   }
   return NULL;
 }

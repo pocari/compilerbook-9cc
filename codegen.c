@@ -295,6 +295,10 @@ static void gen(Node *node) {
       gen(node->lhs);
       printfln("  add rsp, 8");
       return;
+    case ND_NULL:
+      // typedef でパース時のみ発生し具体的なコード生成が無いノード
+      printfln("  # ND_NULL ");
+      return;
   }
 
   gen(node->lhs);

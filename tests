@@ -429,6 +429,16 @@ int f34_arrow_operator() {
   return m.x + m.y + n->x + n->y;
 }
 
+int f35_typedef_stmt() {
+  int x = 10;
+  typedef int hoge;
+  typedef int foo;
+  hoge y = 20;
+  foo z = 30;
+
+  return x + y + z;
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -600,7 +610,8 @@ int main() {
   assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
   assert(15, f32_local_variable_alignment(), "f32_local_variable_alignment()");
   assert(36, f33_use_struct_tag(), "f33_use_struct_tag()");
-  assert(10, f34_arrow_operator(), "f34_arrow_operator");
+  assert(10, f34_arrow_operator(), "f34_arrow_operator()");
+  assert(60, f35_typedef_stmt(), "f35_typedef_stmt()");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

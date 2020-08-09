@@ -30,6 +30,7 @@ struct VarScope {
   VarScope *next;
   char *name;
   Var *var;
+  Type *type_def;
 };
 
 typedef struct Scope Scope;
@@ -74,14 +75,23 @@ static void push_tag_scope(Token *struct_tag_tok, Type *struct_type) {
   tag_scope = sc;
 }
 
-static void push_var_scope(char *name, Var *var) {
+static VarScope *push_var_scope_helper(char *name) {
   VarScope *sc = calloc(1, sizeof(VarScope));
 
   sc->name = name;
-  sc->var = var;
   sc->next = var_scope;
-
   var_scope = sc;
+
+  return sc;
+}
+
+static void push_var_scope(char *name, Var *var) {
+  push_var_scope_helper(name)->var = var;
+
+}
+
+static void push_typedef_scope(char *name, Type *type_def) {
+  push_var_scope_helper(name)->type_def = type_def;
 }
 
 static Type *find_struct_tag(Token *tk) {
@@ -342,8 +352,12 @@ static bool at_eof() {
 
 static Var *find_var_helper(Token *token, VarScope *scope) {
   for (VarScope *sc = scope; sc; sc = sc->next) {
-    if (strlen(sc->var->name) == token->len &&
-        strncmp(sc->name, token->str, token->len) == 0) {
+    if (sc->type_def) {
+      // typedef は変数じゃないので無視
+      continue;
+    }
+
+    if (strncmp(sc->name, token->str, token->len) == 0) {
       return sc->var;
     }
   }
@@ -362,17 +376,30 @@ static Var *find_var(Token *token) {
   return v;
 }
 
-static bool is_type_token(TokenKind kind) {
-  switch (kind) {
+static Type *find_typedef(Token *tk) {
+  for (VarScope *sc = var_scope; sc; sc = sc->next) {
+    if (sc->var) {
+      // var はtypedefじゃないので無視
+      continue;
+    }
+
+    if (strncmp(sc->name, tk->str, tk->len) == 0) {
+      return sc->type_def;
+    }
+  }
+  return NULL;
+}
+
+static bool is_type(Token *tk) {
+  switch (tk->kind) {
     case TK_INT:
     case TK_CHAR:
     case TK_STRUCT:
       return true;
     default:
-      return false;
+      return find_typedef(tk);
   }
 }
-
 
 // ynicc BNF
 //
@@ -381,7 +408,7 @@ static bool is_type_token(TokenKind kind) {
 //                             | global_var_decls
 //                           )*
 // function_def              = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
-// global_var_decls          = type_in_decl ident "read_type_suffix" ";"
+// global_var_decls          = type_in_decl ident read_type_suffix ";"
 // stmt                      = expr ";"
 //                           | "{" stmt* "}"
 //                           | "return" expr ";"
@@ -389,6 +416,7 @@ static bool is_type_token(TokenKind kind) {
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
+//                           | "typedef" type_in_decl ident read_type_suffix ";"
 // var_decl                  = type_in_decl ident ( "=" local_var_initializer)? ";"
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
@@ -479,7 +507,7 @@ Program *program() {
 // type_in_decl  = type_keyword ("*" *)
 static Type *type_in_decl() {
   Type *t;
-  if (!is_type_token(token->kind)) {
+  if (!is_type(token)) {
     error_at(token->str, "typename expected");
   }
   if (token->kind == TK_INT) {
@@ -490,6 +518,14 @@ static Type *type_in_decl() {
       expect_token(token->kind);
   } else if (token->kind == TK_STRUCT) {
       t = struct_decl();
+  } else {
+    // どの方でもない場合はtypedefされてるものの中から探す
+    t = find_typedef(token);
+    if (!t) {
+      error_at(token->str, "型 %s が見つかりません", my_strndup(token->str, token->len));
+    }
+    // 型が見つかったので読み飛ばす
+    expect_ident();
   }
   while (consume("*")) {
     t = pointer_to(t);
@@ -655,7 +691,7 @@ static Node *read_expr_stmt() {
 }
 
 static Node *stmt() {
-  Node *node;
+  Node *node = NULL;
 
   if (consume_kind(TK_RETURN)) {
     node = new_node(ND_RETURN);
@@ -722,6 +758,13 @@ static Node *stmt() {
     }
     node->body = head.next;
     leave_scope(sc);
+  } else if (consume_kind(TK_TYPEDEF)) {
+    Type *ty = type_in_decl();
+    char *name = expect_ident();
+    ty = read_type_suffix(ty);
+    expect(";");
+    push_typedef_scope(name, ty);
+    node = new_node(ND_NULL);
   } else {
     // キーワードじゃなかったら 変数宣言かどうかチェック
     node = var_decl();
@@ -838,7 +881,7 @@ static Node *local_var_initializer(Var *var) {
 }
 
 static Node *var_decl() {
-  if (is_type_token(token->kind)) {
+  if (is_type(token)) {
     Type *type = type_in_decl();
     char *ident_name = expect_ident();
     // 識別子につづく配列用の宣言をパースして型情報を返す

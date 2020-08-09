@@ -41,6 +41,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_SIZEOF";
     case TK_STR: // 文字列リテラル
       return "TK_STR";
+    case TK_TYPEDEF: // typedef
+      return "TK_TYPEDEF";
     case TK_EOF: // 入力終了
       return "TK_EOF";
   }
@@ -134,6 +136,10 @@ static Keyword keywords[] = {
   {
     "sizeof",
     TK_SIZEOF,
+  },
+  {
+    "typedef",
+    TK_TYPEDEF,
   },
 };
 
