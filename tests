@@ -454,6 +454,14 @@ int f36_global_typedef() {
   return x.x + x.y;
 }
 
+int f37_fix_char_mov() {
+  char x = -1;
+  char y = 3;
+
+  return x + y;
+
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -628,6 +636,7 @@ int main() {
   assert(10, f34_arrow_operator(), "f34_arrow_operator()");
   assert(60, f35_typedef_stmt(), "f35_typedef_stmt()");
   assert(3, f36_global_typedef(), "f36_global_typedef()");
+  assert(2, f37_fix_char_mov(), "f37_fix_char_mov()");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

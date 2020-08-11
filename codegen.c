@@ -21,7 +21,7 @@ static void load(Type *t) {
   // 変数のアドレスにある値をraxにロード
   int sz = t->size;
   if (sz == 1) {
-    printfln("  movzx rax, BYTE PTR [rax]");
+    printfln("  movsx rax, BYTE PTR [rax]");
   } else {
     assert(sz == 8);
     printfln("  mov rax, [rax]");
