@@ -402,6 +402,7 @@ static bool is_type(Token *tk) {
     case TK_INT:
     case TK_CHAR:
     case TK_LONG:
+    case TK_SHORT:
     case TK_STRUCT:
       return true;
     default:
@@ -570,6 +571,9 @@ static Type *type_in_decl() {
       expect_token(token->kind);
   } else if (token->kind == TK_LONG) {
       t = long_type;
+      expect_token(token->kind);
+  } else if (token->kind == TK_SHORT) {
+      t = short_type;
       expect_token(token->kind);
   } else if (token->kind == TK_STRUCT) {
       t = struct_decl();

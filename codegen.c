@@ -22,6 +22,8 @@ static void load(Type *t) {
   int sz = t->size;
   if (sz == 1) {
     printfln("  movsx rax, BYTE PTR [rax]");
+  } else if (sz == 2) {
+    printfln("  movsx rax, WORD PTR [rax]");
   } else if (sz == 4) {
     printfln("  movsxd rax, DWORD PTR [rax]");
   } else if (sz == 8) {
@@ -40,6 +42,8 @@ static void store(Type *t) {
   // 左辺の変数にrhsの結果を代入
   if (sz == 1) {
     printfln("  mov [rax], dil");
+  } else if (sz == 2) {
+    printfln("  mov [rax], di");
   } else if (sz == 4) {
     printfln("  mov [rax], edi");
   } else if (sz == 8) {
@@ -107,6 +111,10 @@ static char *ARGUMENT_REGISTERS_SIZE8[] = {
 
 static char *ARGUMENT_REGISTERS_SIZE4[] = {
     "edi", "esi", "edx", "ecx", "r8d", "r9d",
+};
+
+static char *ARGUMENT_REGISTERS_SIZE2[] = {
+    "di", "si", "dx", "cx", "r8w", "r9w",
 };
 
 static char *ARGUMENT_REGISTERS_SIZE1[] = {
@@ -414,6 +422,8 @@ static void codegen_func(Function *func) {
     int sz = v->var->type->size;
     if (sz == 1) {
       printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE1[i]);
+    } else if (sz == 2) {
+      printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE2[i]);
     } else if (sz == 4) {
       printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE4[i]);
     } else if (sz == 8) {

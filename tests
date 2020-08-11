@@ -530,6 +530,10 @@ int f39_struct_included_long() {
   return sizeof(s);
 }
 
+int f41_long_short_int_char_args(long a, short b, int c, char d) {
+  return a + b + c + d;
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -710,6 +714,9 @@ int main() {
   assert(8, sizeof(f38_val), "sizeof(f38_val)");
   assert(16, f39_struct_included_long(), "f39_struct_included_long()");
 
+  short f40_val;
+  assert(2, sizeof(f40_val), "sizeof(f40_val)");
+  assert(34, f41_long_short_int_char_args(10, 9, 8, 7), "f41_long_short_int_char_args(10, 9, 8, 7)");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

@@ -37,6 +37,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_CHAR";
     case TK_LONG: // long
       return "TK_LONG";
+    case TK_SHORT: // short
+      return "TK_SHORT";
     case TK_STRUCT: // struct
       return "TK_STRUCT";
     case TK_SIZEOF: // sizeof
@@ -139,6 +141,10 @@ static Keyword keywords[] = {
   {
     "long",
     TK_LONG,
+  },
+  {
+    "short",
+    TK_SHORT,
   },
   {
     "struct",
