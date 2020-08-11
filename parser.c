@@ -563,28 +563,22 @@ static Type *basetype() {
   if (!is_type(token)) {
     error_at(token->str, "typename expected");
   }
-  if (token->kind == TK_INT) {
+  if (consume_kind(TK_INT)) {
       t = int_type;
-      expect_token(token->kind);
-  } else if (token->kind == TK_CHAR) {
+  } else if (consume_kind(TK_CHAR)) {
       t = char_type;
-      expect_token(token->kind);
-  } else if (token->kind == TK_LONG) {
+  } else if (consume_kind(TK_LONG)) {
       t = long_type;
-      expect_token(token->kind);
-  } else if (token->kind == TK_SHORT) {
+  } else if (consume_kind(TK_SHORT)) {
       t = short_type;
-      expect_token(token->kind);
   } else if (token->kind == TK_STRUCT) {
       t = struct_decl();
   } else {
-    // どの方でもない場合はtypedefされてるものの中から探す
-    t = find_typedef(token);
+    // どの型でもない場合はtypedefされてるものの中から探す
+    t = find_typedef(consume_ident());
     if (!t) {
       error_at(token->str, "型 %s が見つかりません", my_strndup(token->str, token->len));
     }
-    // 型が見つかったので読み飛ばす
-    expect_ident();
   }
   while (consume("*")) {
     t = pointer_to(t);
