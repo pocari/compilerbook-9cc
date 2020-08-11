@@ -415,10 +415,10 @@ static bool is_type(Token *tk) {
 // program                   = (
 //                               func_decls
 //                             | global_var_decls
-//                             | "typedef" type_in_decl ident read_type_suffix ";"
+//                             | "typedef" basetype ident read_type_suffix ";"
 //                           )*
-// function_def              = type_in_decl ident "(" function_params? ")" "{" stmt* "}"
-// global_var_decls          = type_in_decl ident read_type_suffix ";"
+// function_def              = basetype ident "(" function_params? ")" "{" stmt* "}"
+// global_var_decls          = basetype ident read_type_suffix ";"
 // stmt                      = expr ";"
 //                           | "{" stmt* "}"
 //                           | "return" expr ";"
@@ -426,15 +426,15 @@ static bool is_type(Token *tk) {
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
-//                           | "typedef" type_in_decl ident read_type_suffix ";"
-// var_decl                  = type_in_decl ident ( "=" local_var_initializer)? ";"
+//                           | "typedef" basetype ident read_type_suffix ";"
+// var_decl                  = basetype ident ( "=" local_var_initializer)? ";"
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | expr
-// type_in_decl              = ("int" | "char" | struct_decl) ("*" *)
+// basetype              = ("int" | "char" | struct_decl) ("*" *)
 // struct_decl               = "struct" ident
 //                           | "struct" ident? "{" struct_member* "}"
-// struct_member             = type_in_decl ident
+// struct_member             = basetype ident
 // expr                      = assign
 // assign                    = equality (= assign)?
 // equality                  = relational ("==" relational | "!=" relational)*
@@ -456,7 +456,7 @@ Program *program();
 
 static Function *function_def();
 static Node *stmt();
-static Type *type_in_decl();
+static Type *basetype();
 static Node *var_decl();
 static Node *expr();
 static Node *assign();
@@ -489,7 +489,7 @@ static next_decl_type next_decl() {
   }
 
   if (!is_typedef) {
-    type_in_decl();
+    basetype();
     is_func = consume_ident() && consume("(");
 
     if (!is_func) {
@@ -512,7 +512,7 @@ static next_decl_type next_decl() {
 }
 
 static void parse_typedef() {
-  Type *ty = type_in_decl();
+  Type *ty = basetype();
   char *name = expect_ident();
   ty = read_type_suffix(ty);
   expect(";");
@@ -521,7 +521,7 @@ static void parse_typedef() {
 
 // グローバル変数のパース
 static void parse_gvar() {
-  Type *type = type_in_decl();
+  Type *type = basetype();
   char *ident_name = expect_ident();
   // 識別子につづく配列用の宣言をパースして型情報を返す
   type = read_type_suffix(type);
@@ -557,8 +557,8 @@ Program *program() {
   return program;
 }
 
-// type_in_decl  = type_keyword ("*" *)
-static Type *type_in_decl() {
+// basetype  = type_keyword ("*" *)
+static Type *basetype() {
   Type *t;
   if (!is_type(token)) {
     error_at(token->str, "typename expected");
@@ -593,7 +593,7 @@ static Type *type_in_decl() {
 }
 
 static Member *struct_member() {
-  Type *type = type_in_decl();
+  Type *type = basetype();
   char *ident = expect_ident();
   type = read_type_suffix(type);
   expect(";");
@@ -675,14 +675,14 @@ static void function_params(Function *func) {
     return;
   }
 
-  Type *type = type_in_decl();
+  Type *type = basetype();
   Var *var = new_lvar(expect_ident(), type);
   VarList *var_list = calloc(1, sizeof(VarList));
   var_list->var = var;
   // fprintf(stderr, "parse func param start\n");
   while (!consume(")")) {
     expect(",");
-    type = type_in_decl();
+    type = basetype();
     Var *var = new_lvar(expect_ident(), type);
     VarList *v = calloc(1, sizeof(VarList));
     v->var = var;
@@ -711,7 +711,7 @@ static Function *function_def() {
   locals = NULL;
   Scope *sc = enter_scope();
 
-  Type *ret_type = type_in_decl();
+  Type *ret_type = basetype();
   Token *t = consume_ident();
   if (!t) {
     error("関数定義がありません");
@@ -937,7 +937,7 @@ static Node *local_var_initializer(Var *var) {
 
 static Node *var_decl() {
   if (is_type(token)) {
-    Type *type = type_in_decl();
+    Type *type = basetype();
     char *ident_name = expect_ident();
     // 識別子につづく配列用の宣言をパースして型情報を返す
     type = read_type_suffix(type);
