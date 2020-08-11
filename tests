@@ -533,6 +533,17 @@ int f39_struct_included_long() {
 int f41_long_short_int_char_args(long a, short b, int c, char d) {
   return a + b + c + d;
 }
+int f42_use_all_argument_register_short(short a, short b, short c, short d, short e, short f) {
+  return a + b + c + d + e + f;
+}
+
+int f42_use_all_argument_register_int(int a, int b, int c, int d, int e, int f) {
+  return a + b + c + d + e + f;
+}
+
+int f42_use_all_argument_register_char(char a, char b, char c, char d, char e, char f) {
+  return a + b + c + d + e + f;
+}
 
 int main() {
   test_count = 0;
@@ -717,6 +728,10 @@ int main() {
   short f40_val;
   assert(2, sizeof(f40_val), "sizeof(f40_val)");
   assert(34, f41_long_short_int_char_args(10, 9, 8, 7), "f41_long_short_int_char_args(10, 9, 8, 7)");
+
+  assert(21, f42_use_all_argument_register_short(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
+  assert(21, f42_use_all_argument_register_int(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
+  assert(21, f42_use_all_argument_register_char(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
