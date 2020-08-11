@@ -5,23 +5,31 @@ Type *char_type = &(Type){ TY_CHAR, 1, 1};
 Type *long_type = &(Type){ TY_CHAR, 8, 8};
 Type *short_type = &(Type){ TY_CHAR, 2, 2};
 
-Type *new_type(TypeKind kind, Type *ptr_to, int size, int align) {
+static Type *new_type(TypeKind kind, int size, int align) {
   Type *t = calloc(1, sizeof(Type));
   t->kind = kind;
   t->size = size;
   t->align = align;
-  t->ptr_to = ptr_to;
 
   return t;
 }
 
 Type *pointer_to(Type *ptr_to) {
-  return new_type(TY_PTR, ptr_to, 8, 8);
+  Type *ty = new_type(TY_PTR, 8, 8);
+  ty->ptr_to = ptr_to;
+  return ty;
 }
 
 Type *array_of(Type *ptr_to, int array_size) {
-  Type *ty = new_type(TY_ARRAY, ptr_to, ptr_to->size * array_size, ptr_to->align);
+  Type *ty = new_type(TY_ARRAY, ptr_to->size * array_size, ptr_to->align);
+  ty->ptr_to = ptr_to;
   ty->array_size = array_size;
+  return ty;
+}
+
+Type *func_type(Type *return_type) {
+  Type *ty = new_type(TY_FUNC, 1, 1);
+  ty->return_ty = return_type;
   return ty;
 }
 

@@ -162,13 +162,19 @@ static Var *new_lvar(char *name, Type *type) {
   return var;
 }
 
-static Var *new_gvar(char *name, Type *type) {
+static Var *new_gvar(char *name, Type *type, bool emit) {
   Var *var = new_var(name, type, false);
 
-  VarList *v = calloc(1, sizeof(VarList));
-  v->var = var;
-  v->next = globals;
-  globals = v;
+  if (emit) {
+    // 通常のグローバル変数や、文字列リテラルは.dataセクションに出力するように
+    // VarListとして保存するが、関数定義などのND_CALLのときのチェックようにしか使わないものは
+    // (new_varの中でやっている)スコープにのみいれて、
+    // emit: false で呼び出してコード生成時に何も出力しないようにする。
+    VarList *v = calloc(1, sizeof(VarList));
+    v->var = var;
+    v->next = globals;
+    globals = v;
+  }
 
   return var;
 }
@@ -530,7 +536,7 @@ static void parse_gvar() {
   char *ident_name;
   type = declarator(type, &ident_name);
   expect(";");
-  new_gvar(ident_name, type);
+  new_gvar(ident_name, type, true);
 }
 
 Program *program() {
@@ -736,7 +742,6 @@ static void set_stack_info(Function *f) {
 static Function *function_def_or_decl() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
-  Scope *sc = enter_scope();
 
   Type *ret_type = basetype();
   char *ident;
@@ -744,7 +749,10 @@ static Function *function_def_or_decl() {
   Function *func = calloc(1, sizeof(Function));
   func->return_type = ret_type;
   func->name = ident;
+  // 関数呼び出し時のチェック用に定義した関数も関数型としてscopeに入れる
+  new_gvar(func->name, func_type(func->return_type), false);
 
+  Scope *sc = enter_scope();
   expect("(");
   function_params(func);
 
@@ -1201,6 +1209,7 @@ static Node *parse_call_func(Token *t) {
 
   if (consume(")")) {
     // 閉じカッコがきたら引数なし関数
+    add_type(node);
     return node;
   }
 
@@ -1220,6 +1229,20 @@ static Node *parse_call_func(Token *t) {
   }
   expect(")");
 
+  add_type(node);
+  Var *func_var = find_var(t);
+  if (func_var) {
+    if (func_var->type->kind != TY_FUNC) {
+      // 関数名でなかったらエラー
+      error_at(t->str, "%s is not a function name", node->funcname);
+    }
+    // 関数の戻り値の型をND_CALLの戻り値にする
+    node->ty = func_var->type->return_ty;
+  } else {
+    fprintf(stderr, "関数: %s は宣言されていません\n", node->funcname);
+    // 未宣言の関数を呼び出す場合は警告だけだして一旦int型を返す関数として扱う
+    node->ty = int_type;
+  }
   return node;
 }
 
@@ -1232,7 +1255,7 @@ static char *next_data_label() {
 
 static Node *parse_string_literal(Token *str_token) {
   Type *ty = array_of(char_type, str_token->content_length);
-  Var *var = new_gvar(next_data_label(), ty);
+  Var *var = new_gvar(next_data_label(), ty, true);
   var->contents = str_token->contents;
   var->content_length = str_token->content_length;
 

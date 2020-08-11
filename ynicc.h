@@ -76,6 +76,7 @@ typedef enum {
   TY_PTR,
   TY_ARRAY,
   TY_STRUCT,
+  TY_FUNC,
 } TypeKind;
 
 struct Type {
@@ -85,6 +86,7 @@ struct Type {
   Type *ptr_to; // arrayかpointerの場合の型
   size_t array_size; // kind が TY_ARRAY のときに配列サイズがセットされる
   Member *members; // 構造体の場合のフィールド達
+  Type *return_ty; // 関数型の場合の戻り値の型
 };
 
 struct Member {
@@ -104,9 +106,8 @@ bool is_integer(Type *t);
 bool is_pointer(Type *t);
 Type *pointer_to(Type *t);
 int node_type_size(Node * node);
-Type *new_type(TypeKind kind, Type *ptr_to, int size, int align);
 Type *array_of(Type *ptr_to, int array_size);
-
+Type *func_type(Type *ret_type);
 
 // parser.c
 
