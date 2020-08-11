@@ -2,6 +2,8 @@
 int test_count;
 int ok_count;
 
+int printf();
+
 int assert(int expected, int actual, char *code) {
   test_count = test_count + 1;
   if (expected == actual) {
@@ -576,6 +578,14 @@ int f43_nested_decl() {
   assert(6, y[1][1], "y[1][1]");
 }
 
+// 宣言
+int f44_hogehoge(int x, char y);
+
+// 定義
+int f44_hogehoge(int x, char y) {
+  return x + y;
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -764,6 +774,7 @@ int main() {
   assert(21, f42_use_all_argument_register_int(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
   assert(21, f42_use_all_argument_register_char(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
   f43_nested_decl();
+  assert(3, f44_hogehoge(1, 2), "f44_hogehoge(1, 2)");
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

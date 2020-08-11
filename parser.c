@@ -420,7 +420,7 @@ static bool is_type(Token *tk) {
 // basetype                  = ("int" | "char" | "long" | "short" | struct_decl | typedef_types)
 // declarator                =  "*" * ( "(" declarator | ")" | ident ) type_suffix
 // type_suffix               = ("[" number "]" type_suffix)?
-// function_def              = basetype declarator "(" function_params? ")" "{" stmt* "}"
+// function_def_or_decl      = basetype declarator "(" function_params? ")" ("{" stmt* "}" | ";")
 // global_var_decls          = basetype declarator ";"
 // stmt                      = expr ";"
 //                           | "{" stmt* "}"
@@ -456,7 +456,7 @@ static bool is_type(Token *tk) {
 
 Program *program();
 
-static Function *function_def();
+static Function *function_def_or_decl();
 static Node *stmt();
 static Type *basetype();
 static Type *declarator(Type *ty, char **name);
@@ -539,8 +539,13 @@ Program *program() {
   while (!at_eof()) {
     switch(next_decl()) {
       case NEXT_DECL_FUNCTION_DEF:
-        cur->next = function_def();
-        cur = cur->next;
+        {
+          Function *f = function_def_or_decl();
+          if (f) {
+            cur->next = f;
+            cur = cur->next;
+          }
+        }
         break;
       case NEXT_DECL_GLOBAL_VAR:
         parse_gvar();
@@ -728,7 +733,7 @@ static void set_stack_info(Function *f) {
   f->stack_size = align_to(offset, 8);
 }
 
-static Function *function_def() {
+static Function *function_def_or_decl() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
   Scope *sc = enter_scope();
@@ -742,6 +747,12 @@ static Function *function_def() {
 
   expect("(");
   function_params(func);
+
+  // ")" の後に ; が来てたら関数の定義なしで宣言のみ
+  if (consume(";")) {
+    leave_scope(sc);
+    return NULL;
+  }
   expect("{");
 
   // 関数本体
