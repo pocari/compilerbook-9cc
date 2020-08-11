@@ -668,17 +668,17 @@ int main() {
   {int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = p + 3; assert(3, q - p, "int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = q + 3; q - p;"); }
   {int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = p + 3; assert(4, *(q - 1), "int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = q + 3; *(q - 1);"); }
 
-  assert(4, sizeof(1), "sizeof(1)");
+  assert(8, sizeof(1), "sizeof(1)");
   { int x;
     int *y;
     int **z;
     assert(4, sizeof(x), "sizeof(x)");
     assert(8, sizeof(&x), "sizeof(&x)");
     assert(8, sizeof(y), "sizeof(y)");
-    assert(4, sizeof(1 + 2), "sizeof(1 + 2)");
+    assert(8, sizeof(1 + 2), "sizeof(1 + 2)");
     assert(8, sizeof z, "sizeof z");
-    assert(4, sizeof(sizeof(0)), "sizeof(sizeof(0))");
-    assert(4, sizeof sizeof &x, "sizeof sizeof &x");
+    assert(8, sizeof(sizeof(0)), "sizeof(sizeof(0))");
+    assert(8, sizeof sizeof &x, "sizeof sizeof &x");
   }
 
   assert(3, f18_ary(), "f18_ary()");

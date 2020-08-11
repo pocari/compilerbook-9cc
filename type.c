@@ -69,7 +69,7 @@ void add_type(Node *node) {
     case ND_LTE:
     case ND_CALL:
     case ND_NUM:
-      node->ty = int_type;
+      node->ty = long_type;
       return;
     case ND_PTR_ADD:
     case ND_PTR_SUB:
