@@ -417,7 +417,9 @@ static bool is_type(Token *tk) {
 //                             | global_var_decls
 //                             | "typedef" basetype ident type_suffix ";"
 //                           )*
+// basetype                  = ("int" | "char" | "long" | "short" | struct_decl) ("*" *)
 // function_def              = basetype ident "(" function_params? ")" "{" stmt* "}"
+// type_suffix               = ("[" number "]" type_suffix)?
 // global_var_decls          = basetype ident type_suffix ";"
 // stmt                      = expr ";"
 //                           | "{" stmt* "}"
@@ -431,7 +433,6 @@ static bool is_type(Token *tk) {
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | expr
-// basetype              = ("int" | "char" | struct_decl) ("*" *)
 // struct_decl               = "struct" ident
 //                           | "struct" ident? "{" struct_member* "}"
 // struct_member             = basetype ident
