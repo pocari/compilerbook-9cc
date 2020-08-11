@@ -22,9 +22,12 @@ static void load(Type *t) {
   int sz = t->size;
   if (sz == 1) {
     printfln("  movsx rax, BYTE PTR [rax]");
-  } else {
-    assert(sz == 8);
+  } else if (sz == 4) {
+    printfln("  movsxd rax, DWORD PTR [rax]");
+  } else if (sz == 8) {
     printfln("  mov rax, [rax]");
+  } else {
+    assert(false);
   }
 
   printfln("  push rax"); // 変数の値(rax)をスタックに積む
@@ -34,11 +37,15 @@ static void store(Type *t) {
   printfln("  pop rdi"); // rhsの結果
   printfln("  pop rax"); // 左辺の変数のアドレス
   int sz = t->size;
+  // 左辺の変数にrhsの結果を代入
   if (sz == 1) {
-    printfln("  mov [rax], dil"); // 左辺の変数にrhsの結果を代入
+    printfln("  mov [rax], dil");
+  } else if (sz == 4) {
+    printfln("  mov [rax], edi");
+  } else if (sz == 8) {
+    printfln("  mov [rax], rdi");
   } else {
-    assert(sz == 8);
-    printfln("  mov [rax], rdi"); // 左辺の変数にrhsの結果を代入
+    assert(false);
   }
   printfln("  push rdi"); // この代入結果自体もスタックに積む(右結合でどんどん左に伝搬していくときの右辺値になる)
 }
@@ -96,6 +103,10 @@ static int next_label_key() {
 // ND_CALLの実装参照
 static char *ARGUMENT_REGISTERS_SIZE8[] = {
     "rdi", "rsi", "rdx", "rcx", "r8", "r9",
+};
+
+static char *ARGUMENT_REGISTERS_SIZE4[] = {
+    "edi", "esi", "edx", "ecx", "r8d", "r9d",
 };
 
 static char *ARGUMENT_REGISTERS_SIZE1[] = {
@@ -403,9 +414,13 @@ static void codegen_func(Function *func) {
     int sz = v->var->type->size;
     if (sz == 1) {
       printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE1[i]);
-    } else {
+    } else if (sz == 4) {
+      printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE4[i]);
+    } else if (sz == 8) {
       assert(sz == 8);
       printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE8[i]);
+    } else {
+      assert(false);
     }
     i--;
   }

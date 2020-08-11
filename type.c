@@ -1,6 +1,6 @@
 #include "ynicc.h"
 
-Type *int_type = &(Type){ TY_INT, 8, 8};
+Type *int_type = &(Type){ TY_INT, 4, 4};
 Type *char_type = &(Type){ TY_CHAR, 1, 1};
 
 Type *new_type(TypeKind kind, Type *ptr_to, int size, int align) {

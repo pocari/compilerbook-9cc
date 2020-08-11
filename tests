@@ -366,27 +366,28 @@ int f30_struct_member() {
     ;
 }
 
-int f31_local_variable_alignment() {
-  char x;
-  int y;
-
-  // テスト用に無理やりアドレスをint型にいれる
-  int a = &x;
-  int b = &y;
-
-  return b - a;
-}
-
-int f32_local_variable_alignment() {
-  int x;
-  char y;
-
-  // テスト用に無理やりアドレスをint型にいれる
-  int a = &x;
-  int b = &y;
-
-  return b - a;
-}
+// // TODO: long を実装したあとにもう一回確認
+// int f31_local_variable_alignment() {
+//   char x;
+//   int y;
+// 
+//   // テスト用に無理やりアドレスをint型にいれる
+//   int *a = &x;
+//   int *b = &y;
+// 
+//   return b - a;
+// }
+// 
+// int f32_local_variable_alignment() {
+//   int x;
+//   char y;
+// 
+//   // テスト用に無理やりアドレスをint型にいれる
+//   int *a = &x;
+//   int *b = &y;
+// 
+//   return b - a;
+// }
 
 int f33_use_struct_tag() {
   struct tag1 {
@@ -525,15 +526,15 @@ int main() {
   assert(1, f16_for_while_if_func_arg(2, 3), "f16_for_while_if_func_arg(2, 3)");
 
   {int foo; foo = 3; assert(3, *&foo, "int foo; foo = 3; *&foo;");}
-  {int foo; int boo; foo = 3; boo = &foo; assert(3, *boo, "int foo; int boo; foo = 3; boo = &foo; *boo");}
-  {int a; int b;int c;int d; a = 4; b = 5; c = 6; d = &a + 1; assert(5, *d, "{int a; int b;int c;int d; a = 4; b = 5; c = 6; d = &a + 1; *d; }");}
-  {int a; int b; int c; int d; a = 4; b = 5; c = 6; d = &c - 1; assert(5, *d, "{int a; int b; int c; int d; a = 4; b = 5; c = 6; d = &c - 1; }");}
+  {int foo; int *boo; foo = 3; boo = &foo; assert(3, *boo, "int foo; int *boo; foo = 3; boo = &foo; *boo");}
+  {int a; int b;int c;int *d; a = 4; b = 5; c = 6; d = &a + 1; assert(5, *d, "{int a; int b;int c;int *d; a = 4; b = 5; c = 6; d = &a + 1; *d; }");}
+  {int a; int b; int c; int *d; a = 4; b = 5; c = 6; d = &c - 1; assert(5, *d, "{int a; int b; int c; int *d; a = 4; b = 5; c = 6; d = &c - 1; }");}
   {int a; int b; int c; a = 4; b = 5; c = 6; *(&c - 1) = 12; assert(12, b, "{int a; int b; int c; a = 4; b = 5; c = 6; *(&c - 1) = 12; }");}
   {int x; x=3; *&x; assert(3, *&x, "{int x; x=3; *&x;}");}
-  {int x; int y; int z;x=3; y=&x; z=&y; assert(3, **z, "{int x; int y; int z;x=3; y=&x; z=&y; }");}
+  {int x; int *y; int **z;x=3; y=&x; z=&y; assert(3, **z, "{int x; int *y; int **z;x=3; y=&x; z=&y; }");}
   {int x; int y; x=3; y=5; assert(5, *(&x+1), "{int x; int y; x=3; y=5; }");}
   {int x; int y; x=3; y=5; assert(3, *(&y-1), "{int x; int y; x=3; y=5; }");}
-  {int x; int y; x=3; y=&x; *y=5; assert(5, x, "{int x; int y; x=3; y=&x; *y=5; }");}
+  {int x; int *y; x=3; y=&x; *y=5; assert(5, x, "{int x; int *y; x=3; y=&x; *y=5; }");}
   {int x; int y; x=3; y=5; *(&x+1)=7; assert(7, y, "{int x; int y; x=3; y=5; *(&x+1)=7; }");}
   {int x; int y; x=3; y=5; *(&y-1)=7; assert(7, x, "{int x; int y; x=3; y=5; *(&y-1)=7; }");}
 
@@ -544,17 +545,17 @@ int main() {
   {int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = p + 3; assert(3, q - p, "int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = q + 3; q - p;"); }
   {int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = p + 3; assert(4, *(q - 1), "int *p; int *q; alloc_3num_ary_8_byte_cell(&p); q = q + 3; *(q - 1);"); }
 
-  assert(8, sizeof(1), "sizeof(1)");
+  assert(4, sizeof(1), "sizeof(1)");
   { int x;
     int *y;
     int **z;
-    assert(8, sizeof(x), "sizeof(x)");
+    assert(4, sizeof(x), "sizeof(x)");
     assert(8, sizeof(&x), "sizeof(&x)");
     assert(8, sizeof(y), "sizeof(y)");
-    assert(8, sizeof(1 + 2), "sizeof(1 + 2)");
+    assert(4, sizeof(1 + 2), "sizeof(1 + 2)");
     assert(8, sizeof z, "sizeof z");
-    assert(8, sizeof(sizeof(0)), "sizeof(sizeof(0))");
-    assert(8, sizeof sizeof &x, "sizeof sizeof &x");
+    assert(4, sizeof(sizeof(0)), "sizeof(sizeof(0))");
+    assert(4, sizeof sizeof &x, "sizeof sizeof &x");
   }
 
   assert(3, f18_ary(), "f18_ary()");
@@ -604,19 +605,19 @@ int main() {
   assert(56, f29_initialize_local_var(), "f29_initialize_local_var()");
   assert(15, f30_struct_member(), "f30_struct_member()");
 
-  // 型のサイズだけでいうと9バイトだが、int(現状8バイト)とcharが混在しているため、
+  // 型のサイズだけでいうと5バイトだが、int(4バイト)とcharが混在しているため、
   // int側のアラインメントに合わされて構造体
   struct {
     int x;
     char y;
   } s1;
-  assert(16, sizeof(s1), "sizeof(s1)");
+  assert(8, sizeof(s1), "sizeof(s1)");
 
   struct {
     char x;
     int y;
   } s2;
-  assert(16, sizeof(s2), "sizeof(s2)");
+  assert(8, sizeof(s2), "sizeof(s2)");
 
   struct {
     char x;
@@ -628,10 +629,10 @@ int main() {
     int x;
     int y;
   } s4;
-  assert(16, sizeof(s4), "sizeof(s4)");
+  assert(8, sizeof(s4), "sizeof(s4)");
 
-  assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
-  assert(15, f32_local_variable_alignment(), "f32_local_variable_alignment()");
+  // assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
+  // assert(15, f32_local_variable_alignment(), "f32_local_variable_alignment()");
   assert(36, f33_use_struct_tag(), "f33_use_struct_tag()");
   assert(10, f34_arrow_operator(), "f34_arrow_operator()");
   assert(60, f35_typedef_stmt(), "f35_typedef_stmt()");

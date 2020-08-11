@@ -25,8 +25,8 @@ void dump_address(void *p) {
   fprintf(stderr, "p ... %p\n", p);
 }
 
-void alloc_3num_ary_8_byte_cell(long **p) {
-  long *lp = *p = (void *)calloc(4, 8);
+void alloc_3num_ary_8_byte_cell(int **p) {
+  int *lp = *p = (void *)calloc(4, 8);
 
   lp[0] = 2;
   lp[1] = 3;

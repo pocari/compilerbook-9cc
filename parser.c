@@ -388,6 +388,7 @@ static Type *find_typedef(Token *tk) {
       continue;
     }
 
+    assert(sc);
     if (strlen(sc->name) == tk->len &&
         strncmp(sc->name, tk->str, tk->len) == 0) {
       return sc->type_def;
