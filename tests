@@ -366,28 +366,85 @@ int f30_struct_member() {
     ;
 }
 
-// // TODO: long を実装したあとにもう一回確認
-// int f31_local_variable_alignment() {
-//   char x;
-//   int y;
-// 
-//   // テスト用に無理やりアドレスをint型にいれる
-//   int *a = &x;
-//   int *b = &y;
-// 
-//   return b - a;
-// }
-// 
-// int f32_local_variable_alignment() {
-//   int x;
-//   char y;
-// 
-//   // テスト用に無理やりアドレスをint型にいれる
-//   int *a = &x;
-//   int *b = &y;
-// 
-//   return b - a;
-// }
+int f31_local_variable_alignment() {
+  char x;
+  int y;
+
+  // テスト用に無理やりアドレスをint型にいれる
+  long a = &x;
+  long b = &y;
+
+  /*
+   * スタックは現状ローカル変数の宣言の逆順にスタックに確保されるため、char, int の順で宣言するとスタック上は下記のようになる
+   * -----------> スタックの伸びる方向(アドレスが小さくなる方向)
+   *
+   *                 int y;
+   *                  |
+   *                  v
+   * +----------------+
+   * | 4byte          |
+   * +----------------+
+   * ^
+   * |
+   * rbp
+   *
+   * 次にcharを積むが、charのアラインメントは1byteなので、素直にint yの上に char xの領域を確保し、下記のようになる
+   *
+   *                 int y;   char x;
+   *                  |       |
+   *                  v       v
+   * +----------------+-------+
+   * | 4byte          | 1byte |
+   * +----------------+-------+
+   * ^
+   * |
+   * rbp
+   *
+   * なので、xのアドレスとyのアドレスは1byteだけ離れている
+   */
+  return b - a;
+}
+
+int f32_local_variable_alignment() {
+  int x;
+  char y;
+
+  // テスト用に無理やりアドレスをint型にいれる
+  long a = &x;
+  long b = &y;
+
+  /*
+   * スタックは現状ローカル変数の宣言の逆順にスタックに確保されるため、int, char の順で宣言するとスタック上は下記のようになる
+   * -----------> スタックの伸びる方向(アドレスが小さくなる方向)
+   *
+   *        char y;
+   *         |
+   *         v
+   * +-------+
+   * | 1byte |
+   * +-------+
+   * ^
+   * |
+   * rbp
+   *
+   * 次にintを積むが、intのアラインメントは4byteなので、charの直後には積めず、4byte境界になるように調整されるので、
+   * rbpからみて2個目(1個目の4の倍数の領域にはchar yがいるため)の4の倍数=rbpからみて8byteの位置にint xの両利きを確保し下記のようになる
+   *
+   *        char y;                    int x;
+   *         |                         |
+   *         v                         v
+   * +-------+--------+----------------+
+   * | 1byte | 3byte  | 4byte          |
+   * +-------+--------+----------------+
+   *         |padding |<-- xの領域  -->|
+   * ^
+   * |
+   * rbp
+   *
+   * なので、xのアドレスとyのアドレスは7byte(隙間の3byte + int xのサイズの4byte)だけ離れている
+   */
+  return b - a;
+}
 
 int f33_use_struct_tag() {
   struct tag1 {
@@ -461,6 +518,16 @@ int f37_fix_char_mov() {
 
   return x + y;
 
+}
+
+int f39_struct_included_long() {
+  struct {
+    char x;
+    int y;
+    long z;
+  } s;
+
+  return sizeof(s);
 }
 
 int main() {
@@ -631,13 +698,18 @@ int main() {
   } s4;
   assert(8, sizeof(s4), "sizeof(s4)");
 
-  // assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
-  // assert(15, f32_local_variable_alignment(), "f32_local_variable_alignment()");
+  assert(1, f31_local_variable_alignment(), "f31_local_variable_alignment()");
+  assert(7, f32_local_variable_alignment(), "f32_local_variable_alignment()");
   assert(36, f33_use_struct_tag(), "f33_use_struct_tag()");
   assert(10, f34_arrow_operator(), "f34_arrow_operator()");
   assert(60, f35_typedef_stmt(), "f35_typedef_stmt()");
   assert(3, f36_global_typedef(), "f36_global_typedef()");
   assert(2, f37_fix_char_mov(), "f37_fix_char_mov()");
+
+  long f38_val;
+  assert(8, sizeof(f38_val), "sizeof(f38_val)");
+  assert(16, f39_struct_included_long(), "f39_struct_included_long()");
+
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

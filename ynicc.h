@@ -30,6 +30,7 @@ typedef enum {
   TK_FOR,      // for
   TK_INT,      // int型
   TK_CHAR,     // char型
+  TK_LONG,     // long型
   TK_STRUCT,   // 構造体
   TK_SIZEOF,   // sizeof キーワード
   TK_STR,      // 文字列リテラル
@@ -95,6 +96,7 @@ struct Member {
 
 extern Type *int_type;
 extern Type *char_type;
+extern Type *long_type;
 void add_type(Node *node);
 bool is_integer(Type *t);
 bool is_pointer(Type *t);
