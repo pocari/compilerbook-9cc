@@ -415,10 +415,10 @@ static bool is_type(Token *tk) {
 // program                   = (
 //                               func_decls
 //                             | global_var_decls
-//                             | "typedef" basetype ident read_type_suffix ";"
+//                             | "typedef" basetype ident type_suffix ";"
 //                           )*
 // function_def              = basetype ident "(" function_params? ")" "{" stmt* "}"
-// global_var_decls          = basetype ident read_type_suffix ";"
+// global_var_decls          = basetype ident type_suffix ";"
 // stmt                      = expr ";"
 //                           | "{" stmt* "}"
 //                           | "return" expr ";"
@@ -426,7 +426,7 @@ static bool is_type(Token *tk) {
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
-//                           | "typedef" basetype ident read_type_suffix ";"
+//                           | "typedef" basetype ident type_suffix ";"
 // var_decl                  = basetype ident ( "=" local_var_initializer)? ";"
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
@@ -468,7 +468,7 @@ static Node *unary();
 static Node *postfix();
 static Node *primary();
 static Node *read_expr_stmt();
-static Type *read_type_suffix(Type *base);
+static Type *type_suffix(Type *base);
 static Type *struct_decl();
 static Node *new_add_node(Node *lhs, Node *rhs);
 
@@ -514,7 +514,7 @@ static next_decl_type next_decl() {
 static void parse_typedef() {
   Type *ty = basetype();
   char *name = expect_ident();
-  ty = read_type_suffix(ty);
+  ty = type_suffix(ty);
   expect(";");
   push_typedef_scope(name, ty);
 }
@@ -524,7 +524,7 @@ static void parse_gvar() {
   Type *type = basetype();
   char *ident_name = expect_ident();
   // 識別子につづく配列用の宣言をパースして型情報を返す
-  type = read_type_suffix(type);
+  type = type_suffix(type);
   expect(";");
   new_gvar(ident_name, type);
 }
@@ -589,7 +589,7 @@ static Type *basetype() {
 static Member *struct_member() {
   Type *type = basetype();
   char *ident = expect_ident();
-  type = read_type_suffix(type);
+  type = type_suffix(type);
   expect(";");
 
   Member *m = calloc(1, sizeof(Member));
@@ -830,13 +830,13 @@ static Node *stmt() {
 
 // int *x[n]
 // のxの直後の[n]をパースする
-static Type *read_type_suffix(Type *base) {
+static Type *type_suffix(Type *base) {
   if (!consume("[")) {
     return base;
   }
   int array_size = expect_number();
   expect("]");
-  base = read_type_suffix(base);
+  base = type_suffix(base);
   return array_of(base, array_size);
 }
 
@@ -934,7 +934,7 @@ static Node *var_decl() {
     Type *type = basetype();
     char *ident_name = expect_ident();
     // 識別子につづく配列用の宣言をパースして型情報を返す
-    type = read_type_suffix(type);
+    type = type_suffix(type);
     Var *var = new_lvar(ident_name, type);
     Node *node = new_node(ND_VAR_DECL);
     node->var = var;
