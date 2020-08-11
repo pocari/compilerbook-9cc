@@ -545,6 +545,37 @@ int f42_use_all_argument_register_char(char a, char b, char c, char d, char e, c
   return a + b + c + d + e + f;
 }
 
+int f43_nested_decl() {
+  // x は intへのポインタの配列(要素は3)
+  // => 4byte * 3 = 12byte
+  int *x[3];
+
+  // y は 「intの配列(要素は4)」へのポインタ
+  // => ポインタなので8byte
+  int (*y)[4];
+
+  // z は 「intの配列(要素は5)」
+  // => 4byte * 5 = 20 byte
+  int z[5];
+
+  int m[2][4] = {
+    {1, 2, 3, 4},
+    {5, 6, 7, 8}
+  };
+  y = m;
+  m[1][0] = 9;
+
+
+  assert(24, sizeof(x), "sizeof(x)");
+  assert(8, sizeof(y), "sizeof(y)");
+  assert(20, sizeof(z), "sizeof(z)");
+
+
+  assert(4, y[0][3], "y[0][3]");
+  assert(9, y[1][0], "y[1][0]");
+  assert(6, y[1][1], "y[1][1]");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -732,6 +763,7 @@ int main() {
   assert(21, f42_use_all_argument_register_short(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
   assert(21, f42_use_all_argument_register_int(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
   assert(21, f42_use_all_argument_register_char(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
+  f43_nested_decl();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

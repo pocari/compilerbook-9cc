@@ -415,12 +415,13 @@ static bool is_type(Token *tk) {
 // program                   = (
 //                               func_decls
 //                             | global_var_decls
-//                             | "typedef" basetype ident type_suffix ";"
+//                             | "typedef" basetype declarator ";"
 //                           )*
-// basetype                  = ("int" | "char" | "long" | "short" | struct_decl) ("*" *)
-// function_def              = basetype ident "(" function_params? ")" "{" stmt* "}"
+// basetype                  = ("int" | "char" | "long" | "short" | struct_decl | typedef_types)
+// declarator                =  "*" * ( "(" declarator | ")" | ident ) type_suffix
 // type_suffix               = ("[" number "]" type_suffix)?
-// global_var_decls          = basetype ident type_suffix ";"
+// function_def              = basetype declarator "(" function_params? ")" "{" stmt* "}"
+// global_var_decls          = basetype declarator ";"
 // stmt                      = expr ";"
 //                           | "{" stmt* "}"
 //                           | "return" expr ";"
@@ -428,14 +429,14 @@ static bool is_type(Token *tk) {
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
-//                           | "typedef" basetype ident type_suffix ";"
-// var_decl                  = basetype ident ( "=" local_var_initializer)? ";"
+//                           | "typedef" basetype declarator ";"
+// var_decl                  = basetype declarator ( "=" local_var_initializer)? ";"
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | expr
 // struct_decl               = "struct" ident
 //                           | "struct" ident? "{" struct_member* "}"
-// struct_member             = basetype ident
+// struct_member             = basetype declarator
 // expr                      = assign
 // assign                    = equality (= assign)?
 // equality                  = relational ("==" relational | "!=" relational)*
@@ -458,6 +459,7 @@ Program *program();
 static Function *function_def();
 static Node *stmt();
 static Type *basetype();
+static Type *declarator(Type *ty, char **name);
 static Node *var_decl();
 static Node *expr();
 static Node *assign();
@@ -490,8 +492,10 @@ static next_decl_type next_decl() {
   }
 
   if (!is_typedef) {
-    basetype();
-    is_func = consume_ident() && consume("(");
+    Type *ty = basetype();
+    char *name;
+    declarator(ty, &name);
+    is_func = consume("(");
 
     if (!is_func) {
       is_global_var = true;
@@ -514,8 +518,8 @@ static next_decl_type next_decl() {
 
 static void parse_typedef() {
   Type *ty = basetype();
-  char *name = expect_ident();
-  ty = type_suffix(ty);
+  char *name;
+  ty = declarator(ty, &name);
   expect(";");
   push_typedef_scope(name, ty);
 }
@@ -523,9 +527,8 @@ static void parse_typedef() {
 // グローバル変数のパース
 static void parse_gvar() {
   Type *type = basetype();
-  char *ident_name = expect_ident();
-  // 識別子につづく配列用の宣言をパースして型情報を返す
-  type = type_suffix(type);
+  char *ident_name;
+  type = declarator(type, &ident_name);
   expect(";");
   new_gvar(ident_name, type);
 }
@@ -560,37 +563,57 @@ Program *program() {
 
 // basetype  = type_keyword ("*" *)
 static Type *basetype() {
-  Type *t;
   if (!is_type(token)) {
     error_at(token->str, "typename expected");
   }
   if (consume_kind(TK_INT)) {
-      t = int_type;
+      return int_type;
   } else if (consume_kind(TK_CHAR)) {
-      t = char_type;
+      return char_type;
   } else if (consume_kind(TK_LONG)) {
-      t = long_type;
+      return long_type;
   } else if (consume_kind(TK_SHORT)) {
-      t = short_type;
+      return short_type;
   } else if (token->kind == TK_STRUCT) {
-      t = struct_decl();
+      return struct_decl();
   } else {
     // どの型でもない場合はtypedefされてるものの中から探す
-    t = find_typedef(consume_ident());
-    if (!t) {
-      error_at(token->str, "型 %s が見つかりません", my_strndup(token->str, token->len));
+    Type *t = find_typedef(consume_ident());
+    if (t) {
+      return t;
     }
   }
+  error_at(token->str, "型 %s が見つかりません", my_strndup(token->str, token->len));
+  return NULL; // ここには来ない
+}
+
+/**
+ * このパース方法に関しては、コンパイラブックの 「Cの型の構文」
+ * https://www.sigbus.info/compilerbook#type
+ * を参照。
+ * とくに、placeholderの部分などは、この説の説明を見ないと難しい。
+ */
+static Type *declarator(Type *ty, char **name) {
   while (consume("*")) {
-    t = pointer_to(t);
+    ty = pointer_to(ty);
   }
-  return t;
+  if (consume("(")) {
+    Type *placeholder = calloc(1, sizeof(Type));
+    Type *new_ty = declarator(placeholder, name);
+    expect(")");
+    // 入れ子部分を全部パースした後に、その後に続く配列の [] などを含めた(type_suffix)型としてplaceholderを完成させる
+    memcpy(placeholder, type_suffix(ty), sizeof(Type));
+    return new_ty;
+  }
+
+  *name = expect_ident();
+  return type_suffix(ty);
 }
 
 static Member *struct_member() {
   Type *type = basetype();
-  char *ident = expect_ident();
-  type = type_suffix(type);
+  char *ident;
+  type = declarator(type, &ident);
   expect(";");
 
   Member *m = calloc(1, sizeof(Member));
@@ -671,14 +694,18 @@ static void function_params(Function *func) {
   }
 
   Type *type = basetype();
-  Var *var = new_lvar(expect_ident(), type);
+  char *name;
+  type = declarator(type, &name);
+  Var *var = new_lvar(name, type);
   VarList *var_list = calloc(1, sizeof(VarList));
   var_list->var = var;
   // fprintf(stderr, "parse func param start\n");
   while (!consume(")")) {
     expect(",");
     type = basetype();
-    Var *var = new_lvar(expect_ident(), type);
+    char *name;
+    type = declarator(type, &name);
+    Var *var = new_lvar(name, type);
     VarList *v = calloc(1, sizeof(VarList));
     v->var = var;
     v->next = var_list;
@@ -707,13 +734,11 @@ static Function *function_def() {
   Scope *sc = enter_scope();
 
   Type *ret_type = basetype();
-  Token *t = consume_ident();
-  if (!t) {
-    error("関数定義がありません");
-  }
+  char *ident;
+  ret_type = declarator(ret_type, &ident);
   Function *func = calloc(1, sizeof(Function));
   func->return_type = ret_type;
-  func->name = my_strndup(t->str, t->len);
+  func->name = ident;
 
   expect("(");
   function_params(func);
@@ -933,9 +958,8 @@ static Node *local_var_initializer(Var *var) {
 static Node *var_decl() {
   if (is_type(token)) {
     Type *type = basetype();
-    char *ident_name = expect_ident();
-    // 識別子につづく配列用の宣言をパースして型情報を返す
-    type = type_suffix(type);
+    char *ident_name;
+    type = declarator(type, &ident_name);
     Var *var = new_lvar(ident_name, type);
     Node *node = new_node(ND_VAR_DECL);
     node->var = var;
