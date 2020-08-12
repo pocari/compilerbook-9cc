@@ -44,7 +44,7 @@ typedef enum {
 struct Token {
   TokenKind kind; // トークンの型
   Token *next;    // 次の入力トークン
-  int val;        // kindがTK_NUMの場合、その数値
+  long val;        // kindがTK_NUMの場合、その数値
   char *str;      // トークン文字列
   int len;        // str の長さ
 
@@ -188,7 +188,7 @@ struct Node {
   Node *arg; //関数の引数
 
   Var *var; //ND_VAR, ND_VAR_DECLのときの変数情報
-  int val;    // kindがND_NUMの場合に使う
+  long val;    // kindがND_NUMの場合に使う
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
 

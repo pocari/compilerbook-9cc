@@ -69,7 +69,7 @@ void dump_token(Token *t) {
 
   switch (t->kind) {
     case TK_NUM:
-      printf("[%d]", t->val);
+      printf("[%ld]", t->val);
       break;
     case TK_STR:
       printf("[contents: [%s], length(includes \\0): %d", t->contents, t->content_length);

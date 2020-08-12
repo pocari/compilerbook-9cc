@@ -129,7 +129,7 @@ static Node *new_unary_node(NodeKind kind, Node *lhs) {
   return node;
 }
 
-static Node *new_num_node(int val) {
+static Node *new_num_node(long val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
 
@@ -317,11 +317,11 @@ static void expect(char *op) {
   token = token->next;
 }
 
-static int expect_number() {
+static long expect_number() {
   if (token->kind != TK_NUM) {
     error_at(token->str, "数ではありません。");
   }
-  int val = token->val;
+  long val = token->val;
   token = token->next;
 
   return val;

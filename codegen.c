@@ -139,7 +139,7 @@ static void gen(Node *node) {
   #pragma clang diagnostic ignored "-Wswitch"
   switch (node->kind) {
     case ND_NUM:
-      printfln("  push %d", node->val);
+      printfln("  push %ld", node->val);
       return ;
     case ND_MEMBER:
     case ND_VAR:

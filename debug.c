@@ -372,7 +372,7 @@ char *node_ast(Node *node) {
           return ret;
         }
       case ND_NUM:
-        n += sprintf(buf, "(num %d)", node->val);
+        n += sprintf(buf, "(num %ld)", node->val);
         return my_strndup(buf, n);
       case ND_MEMBER:
         {
