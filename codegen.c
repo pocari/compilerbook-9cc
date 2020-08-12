@@ -38,6 +38,18 @@ static void load(Type *t) {
 static void store(Type *t) {
   printfln("  pop rdi"); // rhsの結果
   printfln("  pop rax"); // 左辺の変数のアドレス
+
+  if (t->kind == TY_BOOL) {
+    // booleanの場合はrdiが
+    // 0のときは0
+    // それ以外は固定で1をrdiに設定する
+    printfln("  cmp rdi, 0");
+    // cmp の比較で rdi != 0 のときだけ rdiの下位8bit に1をセット
+    printfln("  setne dil");
+    // rdiの上位56bitはクリアして1を代入
+    printfln("  movzb rdi, dil");
+  }
+
   int sz = t->size;
   // 左辺の変数にrhsの結果を代入
   if (sz == 1) {

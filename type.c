@@ -1,6 +1,7 @@
 #include "ynicc.h"
 
 Type *void_type = &(Type){ TY_VOID, 1, 1};
+Type *bool_type = &(Type){ TY_BOOL, 1, 1};
 Type *int_type = &(Type){ TY_INT, 4, 4};
 Type *char_type = &(Type){ TY_CHAR, 1, 1};
 Type *long_type = &(Type){ TY_LONG, 8, 8};

@@ -33,6 +33,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_FOR";
     case TK_VOID: // void
       return "TK_VOID";
+    case TK_BOOL: // bool
+      return "TK_BOOl";
     case TK_INT: // int
       return "TK_INT";
     case TK_CHAR: // char
@@ -151,6 +153,10 @@ static Keyword keywords[] = {
   {
     "short",
     TK_SHORT,
+  },
+  {
+    "_Bool",
+    TK_BOOL,
   },
   {
     "struct",

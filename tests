@@ -605,6 +605,28 @@ void f45_call_void_func() {
   void *x;
 }
 
+void f46_bool_test() {
+  _Bool a = 0;
+  _Bool b = 1;
+  _Bool c = 2;
+
+  assert(0, a, "a == 0");
+  assert(1, b, "b == 1");
+  assert(1, c, "c == 1");
+
+  if (a) {
+    assert(1, 2, "ここにはこないはず");
+  } else {
+    assert(1, 1, "a is false");
+  }
+
+  if (c) {
+    assert(1, 1, "c is true");
+  } else {
+    assert(1, 2, "ここにはこないはず");
+  }
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -796,6 +818,7 @@ int main() {
   assert(3, f44_hogehoge(1, 2), "f44_hogehoge(1, 2)");
 
   f45_call_void_func();
+  f46_bool_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

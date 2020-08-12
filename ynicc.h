@@ -29,6 +29,7 @@ typedef enum {
   TK_ELSE,     // else
   TK_FOR,      // for
   TK_VOID,     // void型
+  TK_BOOL,     // bool型
   TK_INT,      // int型
   TK_CHAR,     // char型
   TK_LONG,     // long型
@@ -73,6 +74,7 @@ typedef struct Member Member;
 typedef enum {
   TY_DUMMY,
   TY_VOID,
+  TY_BOOL,
   TY_INT,
   TY_CHAR,
   TY_SHORT,
@@ -102,6 +104,7 @@ struct Member {
 };
 
 extern Type *void_type;
+extern Type *bool_type;
 extern Type *int_type;
 extern Type *char_type;
 extern Type *long_type;

@@ -406,6 +406,7 @@ static Type *find_typedef(Token *tk) {
 static bool is_type(Token *tk) {
   switch (tk->kind) {
     case TK_VOID:
+    case TK_BOOL:
     case TK_INT:
     case TK_CHAR:
     case TK_LONG:
@@ -424,7 +425,7 @@ static bool is_type(Token *tk) {
 //                             | global_var_decls
 //                             | "typedef" basetype declarator ";"
 //                           )*
-// basetype                  = ("int" | "char" | "long" | "short" | struct_decl | typedef_types)
+// basetype                  = ("void" | "_Bool" | "int" | "char" | "long" | "short" | struct_decl | typedef_types)
 // declarator                =  "*" * ( "(" declarator | ")" | ident ) type_suffix
 // type_suffix               = ("[" number "]" type_suffix)?
 // function_def_or_decl      = basetype declarator "(" function_params? ")" ("{" stmt* "}" | ";")
@@ -588,6 +589,8 @@ static Type *basetype() {
       return short_type;
   } else if (consume_kind(TK_VOID)) {
       return void_type;
+  } else if (consume_kind(TK_BOOL)) {
+      return bool_type;
   } else if (token->kind == TK_STRUCT) {
       return struct_decl();
   } else {

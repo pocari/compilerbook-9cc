@@ -66,11 +66,20 @@ int type_info_helper(char *buf, int offset, Type *type) {
 
   #pragma clang diagnostic ignored "-Wswitch"
   switch (type->kind) {
+    case TY_VOID:
+      n += sprintf(buf + offset, "void");
+      break;
     case TY_INT:
       n += sprintf(buf + offset, "int");
       break;
     case TY_CHAR:
       n += sprintf(buf + offset, "char");
+      break;
+    case TY_SHORT:
+      n += sprintf(buf + offset, "short");
+      break;
+    case TY_LONG:
+      n += sprintf(buf + offset, "long");
       break;
     case TY_PTR:
       n += sprintf(buf + offset, "*");
