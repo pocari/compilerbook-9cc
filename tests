@@ -685,6 +685,13 @@ void f49_sizeof_type_argument() {
   assert(16, sizeof(hoge), "sizeof(hoge)");
 }
 
+void f50_large_number_literal() {
+  long x = 2147483647; // 2 ^ 31 - 1
+  long y = 2147483648; // 2 ^ 31
+
+  assert(y, x + 1, "y == x + 1");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -880,6 +887,7 @@ int main() {
   f47_long_long();
   f48_complex_decl();
   f49_sizeof_type_argument();
+  f50_large_number_literal();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

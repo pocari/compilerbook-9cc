@@ -139,8 +139,25 @@ static void gen(Node *node) {
   #pragma clang diagnostic ignored "-Wswitch"
   switch (node->kind) {
     case ND_NUM:
-      printfln("  push %ld", node->val);
-      return ;
+      // 32bitを超える整数を直接pushできないので、32bit以内は直接
+      // 超える場合は一度レジスタ(64bit)経由でpushする
+      //
+      // 実際にためしたところ、リテラルに書けるのは符号付き32bit整数のようなので、
+      // 正の数の場合
+      //   push 2147483647  (== 2^31 - 1)
+      // はOKで、
+      //   push 2147483648  (== 2^31 )
+      // だと、 Error: operand type mismatch for `push' のエラーになる
+      if (node->val == (int)node->val) {
+        // intのサイズに収まる場合は普通にpushする
+        printfln("  push %ld", node->val);
+      } else {
+        // intを超える数値リテラルの場合はレジスタ経由でpush
+        // movabsのabsはよくわからなかった
+        printfln("  movabs rax, %ld", node->val);
+        printfln("  push rax");
+      }
+      return;
     case ND_MEMBER:
     case ND_VAR:
       if (node->kind == ND_VAR) {
