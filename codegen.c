@@ -115,6 +115,25 @@ static int next_label_key() {
   return label_index++;
 }
 
+static void cast(Node *node) {
+  printfln(" pop rax");
+
+  if (node->ty->kind == TY_BOOL) {
+    printfln("  cmp rax, 0");
+    printfln("  setne al");
+  }
+
+  if (node->ty->size == 1) {
+    printfln("  movsx rax, al");
+  } else if (node->ty->size == 2) {
+    printfln("  movsx rax, ax");
+  } else if (node->ty->size == 4) {
+    printfln("  movsxd rax, eax");
+  }
+
+  printfln(" push rax");
+}
+
 // 引数に渡す時用のレジスタ
 // ND_CALLの実装参照
 static char *ARGUMENT_REGISTERS_SIZE8[] = {
@@ -343,6 +362,9 @@ static void gen(Node *node) {
       gen(node->lhs);
       printfln("  add rsp, 8");
       return;
+    case ND_CAST:
+      gen(node->lhs);
+      cast(node);
     case ND_NULL:
       // typedef でパース時のみ発生し具体的なコード生成が無いノード
       printfln("  # ND_NULL ");

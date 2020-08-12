@@ -692,6 +692,39 @@ void f50_large_number_literal() {
   assert(y, x + 1, "y == x + 1");
 }
 
+void f51_unary_test() {
+  typedef struct hoge {
+    int x;
+  } hoge;
+
+  hoge s;
+  s.x = 12;
+
+  int *y = &s.x;
+  assert(12, *y, "*y");
+}
+
+void f52_cast_test() {
+  // 16進リテラルがまだないのでコメントで補足
+  // long x = 0x123456789A;
+  long x = 78187493530;
+
+  _Bool b = (_Bool)x;
+  char c = (char)x;
+  short s = (short)x;
+  int i = (int)x;
+
+  // 0x01
+  assert(1, b, "(_Bool)x");
+  // 0x9A(符号付きcharで154でなく-102になる)
+  // rubyでいうと "\x9A".unpack("C") でなく、 "\x9A".unpack("c")
+  assert(-102, c, "(char)x");
+  // 0x789A
+  assert(30874, s, "(short)x");
+  // 0x3456789A
+  assert(878082202, i, "(int)x");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -888,6 +921,8 @@ int main() {
   f48_complex_decl();
   f49_sizeof_type_argument();
   f50_large_number_literal();
+  f51_unary_test();
+  f52_cast_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

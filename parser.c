@@ -466,12 +466,15 @@ static bool is_type(Token *tk) {
 // equality                  = relational ("==" relational | "!=" relational)*
 // relational                = add ("<" add | "<=" add | ">" add | ">=" add)*
 // add                       = mul ("+" mul | "-" mul)*
-// mul                       = unary ("*" unary | "/" unary)*
-// unary                     = "+"? postfix
-//                           | "-"? postfix
-//                           | "&" unary
-//                           | "*" unary
-//                           | "sizeof" unary
+// mul                       = cast ("*" cast | "/" cast)*
+// cast                      = "(" typename ")" cast | unary
+// unary                     = "+"? cast
+//                           | "-"? cast
+//                           | "&" cast
+//                           | "*" cast
+//                           | "sizeof" cast
+//                           | "sizeof" "(" type_name ")"
+//                           | postfix
 // postfix                   = parimary ("[" expr "]" | "." ident | "->" ident)*
 // primary                   = num
 //                           | ident ("(" arg_list? ")")?
@@ -492,6 +495,7 @@ static Node *equality();
 static Node *relational();
 static Node *add();
 static Node *mul();
+static Node *cast();
 static Node *unary();
 static Node *postfix();
 static Node *primary();
@@ -1293,30 +1297,46 @@ static Node *add() {
 }
 
 static Node *mul() {
-  Node *node = unary();
+  Node *node = cast();
 
   for (;;) {
     if (consume("*")) {
-      node = new_bin_node(ND_MUL, node, unary());
+      node = new_bin_node(ND_MUL, node, cast());
     } else if (consume("/")) {
-      node = new_bin_node(ND_DIV, node, unary());
+      node = new_bin_node(ND_DIV, node, cast());
     } else if (consume("%")) {
-      node = new_bin_node(ND_MOD, node, unary());
+      node = new_bin_node(ND_MOD, node, cast());
     } else {
       return node;
     }
   }
 }
 
+static Node *cast() {
+  Token *tmp = token;
+  if (consume("(")) {
+    if (is_type(token)) {
+      Type *ty = type_name();
+      expect(")");
+      Node *node = new_unary_node(ND_CAST, cast());
+      add_type(node->lhs);
+      node->ty = ty;
+      return node;
+    }
+  }
+  token = tmp;
+  return unary();
+}
+
 static Node *unary() {
   if (consume("+")) {
-    return postfix();
+    return cast();
   } else if (consume("-")) {
-    return new_bin_node(ND_SUB, new_num_node(0), postfix());
+    return new_bin_node(ND_SUB, new_num_node(0), cast());
   } else if (consume("&")) {
-    return new_unary_node(ND_ADDR, unary());
+    return new_unary_node(ND_ADDR, cast());
   } else if (consume("*")) {
-    return new_unary_node(ND_DEREF, unary());
+    return new_unary_node(ND_DEREF, cast());
   } else if (consume_kind(TK_SIZEOF)) {
     Token *tmp = token;
     if (consume("(")) {
@@ -1329,7 +1349,7 @@ static Node *unary() {
       token = tmp;
     }
 
-    Node *n = unary();
+    Node *n = cast();
     add_type(n);
     return new_num_node(node_type_size(n));
   }

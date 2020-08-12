@@ -148,6 +148,7 @@ typedef enum {
   ND_EXPR_STMT, // 式文
   ND_NUM,       // 整数
   ND_MEMBER,    // 構造体のメンバーへの参照
+  ND_CAST,      // cast
   ND_NULL,      // 何もしないノード
 } NodeKind;
 
