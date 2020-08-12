@@ -425,7 +425,7 @@ static bool is_type(Token *tk) {
 //                             | global_var_decls
 //                             | "typedef" basetype declarator ";"
 //                           )*
-// basetype                  = ("void" | "_Bool" | "int" | "char" | "long" | "short" | struct_decl | typedef_types)
+// basetype                  = ("void" | "_Bool" | "int" | "char" | "long" | "long" "long" | "short" | struct_decl | typedef_types)
 // declarator                =  "*" * ( "(" declarator | ")" | ident ) type_suffix
 // type_suffix               = ("[" number "]" type_suffix)?
 // function_def_or_decl      = basetype declarator "(" function_params? ")" ("{" stmt* "}" | ";")
