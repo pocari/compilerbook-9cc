@@ -580,19 +580,21 @@ static Type *basetype() {
     error_at(token->str, "typename expected");
   }
   if (consume_kind(TK_INT)) {
-      return int_type;
+    return int_type;
   } else if (consume_kind(TK_CHAR)) {
-      return char_type;
+    return char_type;
   } else if (consume_kind(TK_LONG)) {
-      return long_type;
+    // long longの2個目のlongがあったら読み飛ばしてlongとみなす
+    consume_kind(TK_LONG);
+    return long_type;
   } else if (consume_kind(TK_SHORT)) {
-      return short_type;
+    return short_type;
   } else if (consume_kind(TK_VOID)) {
-      return void_type;
+    return void_type;
   } else if (consume_kind(TK_BOOL)) {
-      return bool_type;
+    return bool_type;
   } else if (token->kind == TK_STRUCT) {
-      return struct_decl();
+    return struct_decl();
   } else {
     // どの型でもない場合はtypedefされてるものの中から探す
     Type *t = find_typedef(consume_ident());

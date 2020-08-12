@@ -627,6 +627,14 @@ void f46_bool_test() {
   }
 }
 
+void f47_long_long() {
+  long long a = 10;
+  long long *b = &a;
+
+  assert(10, *b, "*b");
+  assert(8, sizeof(a), "sizeof(a)");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -819,6 +827,7 @@ int main() {
 
   f45_call_void_func();
   f46_bool_test();
+  f47_long_long();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
