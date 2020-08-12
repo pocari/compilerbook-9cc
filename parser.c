@@ -439,10 +439,11 @@ static bool is_type(Token *tk) {
 // program                   = (
 //                               func_decls
 //                             | global_var_decls
-//                             | "typedef" basetype declarator ";"
 //                           )*
 // basetype                  = ("void" | "_Bool" | "int" | "char" | "long" | "long" "long" | "short" | struct_decl | typedef_types)
-// declarator                =  "*" * ( "(" declarator | ")" | ident ) type_suffix
+// declarator                =  "*" * ( "(" declarator         ")" | ident )  type_suffix
+// abstract_declarator       =  "*" * ( "(" abstract_declarator")"         )? type_suffix
+// typename                  = basetype abstract_declarator type_suffix
 // type_suffix               = ("[" number "]" type_suffix)?
 // function_def_or_decl      = basetype declarator "(" function_params? ")" ("{" stmt* "}" | ";")
 // global_var_decls          = basetype declarator ";"
@@ -453,7 +454,6 @@ static bool is_type(Token *tk) {
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
-//                           | "typedef" basetype declarator ";"
 // var_decl                  = basetype declarator ( "=" local_var_initializer)? ";"
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
@@ -484,6 +484,7 @@ static Function *function_def_or_decl();
 static Node *stmt();
 static Type *basetype(bool *is_typedef);
 static Type *declarator(Type *ty, char **name);
+static Type *abstract_declarator(Type *ty);
 static Node *var_decl();
 static Node *expr();
 static Node *assign();
@@ -774,6 +775,29 @@ static Type *declarator(Type *ty, char **name) {
   }
 
   *name = expect_ident();
+  return type_suffix(ty);
+}
+
+// declarator の識別子が無い版
+static Type *abstract_declarator(Type *ty) {
+  while (consume("*")) {
+    ty = pointer_to(ty);
+  }
+  if (consume("(")) {
+    Type *placeholder = calloc(1, sizeof(Type));
+    Type *new_ty = abstract_declarator(placeholder);
+    expect(")");
+    // 入れ子部分を全部パースした後に、その後に続く配列の [] などを含めた(type_suffix)型としてplaceholderを完成させる
+    memcpy(placeholder, type_suffix(ty), sizeof(Type));
+    return new_ty;
+  }
+
+  return type_suffix(ty);
+}
+
+static Type *type_name(void) {
+  Type *ty = basetype(NULL);
+  ty = abstract_declarator(ty);
   return type_suffix(ty);
 }
 
@@ -1294,6 +1318,17 @@ static Node *unary() {
   } else if (consume("*")) {
     return new_unary_node(ND_DEREF, unary());
   } else if (consume_kind(TK_SIZEOF)) {
+    Token *tmp = token;
+    if (consume("(")) {
+      if (is_type(token)) {
+        Type *ty = type_name();
+        expect(")");
+        return new_num_node(ty->size);
+      }
+      // 型名じゃなかったらまた再度 "(" からパースやり直すためにconsume("(")の直前まで戻す
+      token = tmp;
+    }
+
     Node *n = unary();
     add_type(n);
     return new_num_node(node_type_size(n));

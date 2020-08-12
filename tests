@@ -674,6 +674,17 @@ void f48_complex_decl() {
   assert(8, sizeof(o), "sizeof(o)");
 }
 
+void f49_sizeof_type_argument() {
+  typedef struct hoge {
+    int x;
+    long y;
+  } hoge;
+
+  assert(4, sizeof(int), "sizeof(int)");
+  assert(8, sizeof(int *(*)[3]), "sizeof(int *(*y)[3])");
+  assert(16, sizeof(hoge), "sizeof(hoge)");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -868,6 +879,7 @@ int main() {
   f46_bool_test();
   f47_long_long();
   f48_complex_decl();
+  f49_sizeof_type_argument();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
