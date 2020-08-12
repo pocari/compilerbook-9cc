@@ -635,6 +635,45 @@ void f47_long_long() {
   assert(8, sizeof(a), "sizeof(a)");
 }
 
+typedef f48_global_typedef_01;
+typedef char f48_global_typedef_02;
+short typedef  f48_global_typedef_03;
+int f48_global_var_04;
+long int *f48_global_var_05;
+f48_global_typedef_01 f48_global_var_06;
+
+void f48_complex_decl() {
+  int a;
+  long b;
+  long long c;
+  long long int d;
+  long int long e;
+  int long long f;
+  char g;
+  void *h;
+  short i;
+  short int j;
+  int short k;
+  typedef typedef l;
+  l m;
+  long typedef n;
+  n o;
+
+  assert(4, sizeof(a), "sizeof(a)");
+  assert(8, sizeof(b), "sizeof(b)");
+  assert(8, sizeof(c), "sizeof(c)");
+  assert(8, sizeof(d), "sizeof(d)");
+  assert(8, sizeof(e), "sizeof(e)");
+  assert(8, sizeof(f), "sizeof(f)");
+  assert(1, sizeof(g), "sizeof(g)");
+  assert(8, sizeof(h), "sizeof(h)");
+  assert(2, sizeof(i), "sizeof(i)");
+  assert(2, sizeof(j), "sizeof(j)");
+  assert(2, sizeof(k), "sizeof(k)");
+  assert(4, sizeof(m), "sizeof(m)");
+  assert(8, sizeof(o), "sizeof(o)");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -828,6 +867,7 @@ int main() {
   f45_call_void_func();
   f46_bool_test();
   f47_long_long();
+  f48_complex_decl();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

@@ -403,7 +403,7 @@ static Type *find_typedef(Token *tk) {
   return NULL;
 }
 
-static bool is_type(Token *tk) {
+static bool is_builtin_type(Token *tk) {
   switch (tk->kind) {
     case TK_VOID:
     case TK_BOOL:
@@ -411,6 +411,22 @@ static bool is_type(Token *tk) {
     case TK_CHAR:
     case TK_LONG:
     case TK_SHORT:
+      return true;
+    default:
+      return false;
+  }
+}
+
+static bool is_type(Token *tk) {
+  if (is_builtin_type(tk)) {
+    return true;
+  }
+
+  // ビルトインでなくても、typedefか構造体かtypedefされた型ならtrueを返す
+  // 型の途中でtypedef出てくる場合もあるのでtypedef自体も型名の一つとしてtrueにしておき
+  // 詳細はbasetype関数で判断する
+  switch (tk->kind) {
+    case TK_TYPEDEF:
     case TK_STRUCT:
       return true;
     default:
@@ -466,7 +482,7 @@ Program *program();
 
 static Function *function_def_or_decl();
 static Node *stmt();
-static Type *basetype();
+static Type *basetype(bool *is_typedef);
 static Type *declarator(Type *ty, char **name);
 static Node *var_decl();
 static Node *expr();
@@ -486,46 +502,42 @@ static Node *new_add_node(Node *lhs, Node *rhs);
 typedef enum {
   NEXT_DECL_DUMMY,
   NEXT_DECL_FUNCTION_DEF,
-  NEXT_DECL_GLOBAL_VAR,
-  NEXT_DECL_TYPEDEF,
+  NEXT_DECL_GLOBAL_VAR_OR_TYPEDEF,
 } next_decl_type;
 
 static next_decl_type next_decl() {
   // 先読みした結果今の位置に戻る用に今のtokenを保存
   Token *tmp = token;
-  bool is_func, is_global_var, is_typedef;
+  bool is_func, is_global_var;
 
-  if (consume_kind(TK_TYPEDEF)) {
-    is_typedef = true;
+
+  bool is_typedef = false;
+  Type *ty = basetype(&is_typedef);
+
+  if (is_typedef) {
+    // typedefがあったら、それは関数ではないとみなす
+    token = tmp;
+    return NEXT_DECL_GLOBAL_VAR_OR_TYPEDEF;
   }
 
-  if (!is_typedef) {
-    Type *ty = basetype();
-    char *name;
-    declarator(ty, &name);
-    is_func = consume("(");
-
-    if (!is_func) {
-      is_global_var = true;
-    }
-  }
+  char *name;
+  declarator(ty, &name);
+  is_func = consume("(");
 
   // 先読みした結果、関数定義かグローバル変数かわかったので、tokenを元に戻す
   token = tmp;
 
-  if (is_typedef)
-    return NEXT_DECL_TYPEDEF;
-  if (is_func)
+  if (is_func) {
+    // カッコがあれば関数定義
     return NEXT_DECL_FUNCTION_DEF;
-  if (is_global_var)
-    return NEXT_DECL_GLOBAL_VAR;
+  }
 
-  error_at(token->str, "想定しない宣言です");
-  assert(false);
+  // それ以外はグローバル変数
+  return NEXT_DECL_GLOBAL_VAR_OR_TYPEDEF;
 }
 
 static void parse_typedef() {
-  Type *ty = basetype();
+  Type *ty = basetype(NULL);
   char *name;
   ty = declarator(ty, &name);
   expect(";");
@@ -534,10 +546,17 @@ static void parse_typedef() {
 
 // グローバル変数のパース
 static void parse_gvar() {
-  Type *type = basetype();
+  bool is_typedef = false;
+  Type *type = basetype(&is_typedef);
   char *ident_name;
   type = declarator(type, &ident_name);
   expect(";");
+
+  if (is_typedef) {
+    push_typedef_scope(ident_name, type);
+    return;
+  }
+
   new_gvar(ident_name, type, true);
 }
 
@@ -555,12 +574,8 @@ Program *program() {
           }
         }
         break;
-      case NEXT_DECL_GLOBAL_VAR:
+      case NEXT_DECL_GLOBAL_VAR_OR_TYPEDEF:
         parse_gvar();
-        break;
-      case NEXT_DECL_TYPEDEF:
-        consume_kind(TK_TYPEDEF);
-        parse_typedef();
         break;
       default:
         // ここには来ないはず
@@ -574,8 +589,141 @@ Program *program() {
   return program;
 }
 
-// basetype  = type_keyword ("*" *)
-static Type *basetype() {
+// cの宣言
+// - typedefは何回書いても1個とみなされる。またtypedefしたい型名を省略した場合intとしてtypedefされる。
+//   - 下記は全部合法で、 hogeをint型としてtypedefする
+//   typedef typedef int hoge;
+//   typedef typedef hoge
+//   int typedef hoge;
+//   int typedef typdef hoge;
+//
+// このため、変数の宣言をパースしきらないとtypedefかどうかもわからないので、今パースしようとしている場所がtypedef可能かどうかを引数のis_typedefで渡してもらう。
+// その上で、本当にtypedefがあったか、なかったか(=普通の変数宣言だったか)を is_typedefに設定して返す
+// 一方、例えば関数の戻り値の型部分などのようにtypedefが存在しできない場合は is_typedef をNULLとして渡してもらって判断する。
+//
+// また、intやlongのように何度か型宣言に含められるものがあり、
+// それらの順番まですべてを想定すると大変なので、最大何個まで各型を書けるかの数で判断する方針らしい
+// - short型
+//   short
+//   short int
+//   int short
+//   => shortがある場合はintが1個あっても良い
+// - long型
+//   long
+//   long long
+//   long long int
+//   long int long
+//   int long long
+//   => longがある場合は longかintがそれぞれ最大1個あっても良い
+//
+static Type *basetype(bool *is_typedef) {
+  if (!is_type(token)) {
+    error_at(token->str, "typename expected");
+  }
+
+  // typedef x
+  // なども合法なのでデフォルトの型をintにしておく
+  Type *ty = int_type;
+
+  // 各型が何回出てきたかを数えるcounter
+  int counter = 0;
+
+  // counterに加えていく値。
+  // 適当に2回足してもかぶらないようにシフトさせているんだと思う
+  enum {
+    VOID  = 1 << 0,
+    BOOL  = 1 << 2,
+    CHAR  = 1 << 4,
+    SHORT = 1 << 6,
+    INT   = 1 << 8,
+    LONG  = 1 << 10,
+    OTHER = 1 << 12,
+  };
+
+  // typedef可能なパースならtypedef無し(=false)で初期化
+  if (is_typedef) {
+    *is_typedef = false;
+  }
+
+  while (is_type(token)) {
+    Token *tk = token;
+
+    if (consume_kind(TK_TYPEDEF)) {
+      if (!is_typedef) {
+        error_at(tk->str, "typedefはここでは使えません");
+      }
+      // 一度でもどこかにtypedefがついていたらtypedefの文なのでフラグを立てる
+      *is_typedef = true;
+      continue;
+    }
+
+    if (!is_builtin_type(tk)) {
+      if (counter) {
+        //ビルトインの型名じゃないものがきて、かつ、一度でも何かの型を読んでいたら
+        //変数宣言(またはtypedef)の後の識別子にきてるので、終了
+        break;
+      }
+      //まだ何も型名を読んでいなくて、ビルトインの方じゃない場合は、構造体か、typedefされた型名になる。
+      if (tk->kind == TK_STRUCT) {
+        ty = struct_decl();
+      } else {
+        ty = find_typedef(tk);
+        assert(ty);
+        token = token->next;
+      }
+
+      // ビルトイン以外の型を読んだのでカウンターを上げる
+      counter += OTHER;
+      continue;
+    }
+
+    if (consume_kind(TK_VOID)) {
+      counter += VOID;
+    } else if (consume_kind(TK_BOOL)) {
+      counter += BOOL;
+    } else if (consume_kind(TK_CHAR)) {
+      counter += CHAR;
+    } else if (consume_kind(TK_SHORT)) {
+      counter += SHORT;
+    } else if (consume_kind(TK_INT)) {
+      counter += INT;
+    } else if (consume_kind(TK_LONG)) {
+      counter += LONG;
+    }
+
+    // counterがとり得る値のみ許可して他はエラー
+    switch (counter) {
+      case VOID:
+        ty = void_type;
+        break;
+      case BOOL:
+        ty = bool_type;
+        break;
+      case CHAR:
+        ty = char_type;
+        break;
+      case SHORT:
+      case SHORT + INT: // これで short int, int short どっちも判断できる
+        ty = short_type;
+        break;
+      case INT:
+        ty = int_type;
+        break;
+      case LONG:
+      case LONG + INT:
+      case LONG + LONG:
+      case LONG + LONG + INT:
+        ty = long_type;
+        break;
+      default:
+        error_at(tk->str, "不正な型です");
+    }
+  }
+
+  return ty;;
+}
+
+static Type *basetype2(bool *is_typedef) {
   if (!is_type(token)) {
     error_at(token->str, "typename expected");
   }
@@ -630,7 +778,7 @@ static Type *declarator(Type *ty, char **name) {
 }
 
 static Member *struct_member() {
-  Type *type = basetype();
+  Type *type = basetype(NULL);
   char *ident;
   type = declarator(type, &ident);
   expect(";");
@@ -712,7 +860,7 @@ static void function_params(Function *func) {
     return;
   }
 
-  Type *type = basetype();
+  Type *type = basetype(NULL);
   char *name;
   type = declarator(type, &name);
   Var *var = new_lvar(name, type);
@@ -721,7 +869,7 @@ static void function_params(Function *func) {
   // fprintf(stderr, "parse func param start\n");
   while (!consume(")")) {
     expect(",");
-    type = basetype();
+    type = basetype(NULL);
     char *name;
     type = declarator(type, &name);
     Var *var = new_lvar(name, type);
@@ -751,7 +899,7 @@ static Function *function_def_or_decl() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
 
-  Type *ret_type = basetype();
+  Type *ret_type = basetype(NULL);
   char *ident;
   ret_type = declarator(ret_type, &ident);
   Function *func = calloc(1, sizeof(Function));
@@ -864,9 +1012,6 @@ static Node *stmt() {
     }
     node->body = head.next;
     leave_scope(sc);
-  } else if (consume_kind(TK_TYPEDEF)) {
-    parse_typedef();
-    node = new_node(ND_NULL);
   } else {
     // キーワードじゃなかったら 変数宣言かどうかチェック
     node = var_decl();
@@ -984,10 +1129,18 @@ static Node *local_var_initializer(Var *var) {
 
 static Node *var_decl() {
   if (is_type(token)) {
-    Type *type = basetype();
+    bool is_typedef = false;
+    Type *type = basetype(&is_typedef);
     Token *tmp_tk = token;
     char *ident_name;
     type = declarator(type, &ident_name);
+
+    if (is_typedef) {
+      expect(";");
+      push_typedef_scope(ident_name, type);
+      return new_node(ND_NULL);
+    }
+
     Var *var = new_lvar(ident_name, type);
     Node *node = new_node(ND_VAR_DECL);
     node->var = var;
