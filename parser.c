@@ -405,6 +405,7 @@ static Type *find_typedef(Token *tk) {
 
 static bool is_type(Token *tk) {
   switch (tk->kind) {
+    case TK_VOID:
     case TK_INT:
     case TK_CHAR:
     case TK_LONG:
@@ -585,6 +586,8 @@ static Type *basetype() {
       return long_type;
   } else if (consume_kind(TK_SHORT)) {
       return short_type;
+  } else if (consume_kind(TK_VOID)) {
+      return void_type;
   } else if (token->kind == TK_STRUCT) {
       return struct_decl();
   } else {
@@ -977,11 +980,17 @@ static Node *local_var_initializer(Var *var) {
 static Node *var_decl() {
   if (is_type(token)) {
     Type *type = basetype();
+    Token *tmp_tk = token;
     char *ident_name;
     type = declarator(type, &ident_name);
     Var *var = new_lvar(ident_name, type);
     Node *node = new_node(ND_VAR_DECL);
     node->var = var;
+
+    if (var->type->kind == TY_VOID) {
+      error_at(tmp_tk->str, "void型の変数は宣言できません");
+    }
+
     // 初期化式があるかどうかチェック
     if (consume("=")) {
       // 今作ったlocal変数に初期化式の値を代入するノードを設定

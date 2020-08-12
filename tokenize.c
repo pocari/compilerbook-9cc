@@ -31,6 +31,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_ELSE";
     case TK_FOR: // for
       return "TK_FOR";
+    case TK_VOID: // void
+      return "TK_VOID";
     case TK_INT: // int
       return "TK_INT";
     case TK_CHAR: // char
@@ -129,6 +131,10 @@ static Keyword keywords[] = {
   {
     "for",
     TK_FOR,
+  },
+  {
+    "void",
+    TK_VOID,
   },
   {
     "int",

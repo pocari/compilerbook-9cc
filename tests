@@ -600,6 +600,11 @@ int f44_hogehoge(int x, char y) {
   return x + y;
 }
 
+// voidのテストがよくわからないので voidの戻り値の関数内でvoid *ポインタを定義してエラーにならないことだけ確認
+void f45_call_void_func() {
+  void *x;
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -789,6 +794,8 @@ int main() {
   assert(21, f42_use_all_argument_register_char(1, 2, 3, 4, 5, 6), "use_all_argument_register_short(1, 2, 3, 4, 5, 6)");
   f43_nested_decl();
   assert(3, f44_hogehoge(1, 2), "f44_hogehoge(1, 2)");
+
+  f45_call_void_func();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

@@ -1,9 +1,10 @@
 #include "ynicc.h"
 
+Type *void_type = &(Type){ TY_VOID, 1, 1};
 Type *int_type = &(Type){ TY_INT, 4, 4};
 Type *char_type = &(Type){ TY_CHAR, 1, 1};
-Type *long_type = &(Type){ TY_CHAR, 8, 8};
-Type *short_type = &(Type){ TY_CHAR, 2, 2};
+Type *long_type = &(Type){ TY_LONG, 8, 8};
+Type *short_type = &(Type){ TY_SHORT, 2, 2};
 
 static Type *new_type(TypeKind kind, int size, int align) {
   Type *t = calloc(1, sizeof(Type));
