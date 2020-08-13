@@ -35,6 +35,7 @@ typedef enum {
   TK_LONG,     // long型
   TK_SHORT,    // short型
   TK_STRUCT,   // 構造体
+  TK_ENUM,     // enum
   TK_SIZEOF,   // sizeof キーワード
   TK_STR,      // 文字列リテラル
   TK_TYPEDEF,  // typedef キーワード
@@ -82,6 +83,7 @@ typedef enum {
   TY_PTR,
   TY_ARRAY,
   TY_STRUCT,
+  TY_ENUM,
   TY_FUNC,
 } TypeKind;
 
@@ -116,6 +118,7 @@ Type *pointer_to(Type *t);
 int node_type_size(Node * node);
 Type *array_of(Type *ptr_to, int array_size);
 Type *func_type(Type *ret_type);
+Type *enum_type(void);
 
 // parser.c
 

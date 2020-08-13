@@ -740,6 +740,55 @@ void f53_char_literal_test() {
   assert(0, '\0', "'\\0'");
 }
 
+void f54_enum_test() {
+  // enum型の変数宣言trailing commaあり
+  enum {
+    X1,
+    X2 = 5,
+    X3,
+  } x = X3;
+
+  // enum型の変数宣言trailing commaなし
+  enum {
+    Y1,
+    Y2 = 5,
+    Y3
+  } y = Y2;
+
+  // タグつきenum変数
+  enum enum_z {
+    Z1,
+    Z2,
+    Z3,
+  } z = Z2;
+
+  // 既存のenumタグから変数宣言
+  enum enum_z z2 = Z3;
+
+  // typedef しながらenum定義
+  typedef enum enum_hoge_tag {
+    HOGE1 = 1,
+    HOGE2 = 2,
+    HOGE3
+  } enum_hoge;
+
+  // タグ名から変数宣言
+  enum enum_hoge_tag hoge_var1 = HOGE2;
+  // typedefされた型名から変数宣言
+  enum_hoge hoge_var2 = HOGE3;
+
+  // 既存のenumタグをtypedefで型定義
+  typedef typedef enum enum_z typedef zzz;
+  zzz z3 = Z1;
+
+  assert(6, x, "x");
+  assert(5, y, "y");
+  assert(1, z, "z");
+  assert(2, z2, "z2");
+  assert(2, hoge_var1, "hoge_var1");
+  assert(3, hoge_var2, "hoge_var2");
+  assert(0, z3, "z3");
+}
 
 int main() {
   test_count = 0;
@@ -940,6 +989,7 @@ int main() {
   f51_unary_test();
   f52_cast_test();
   f53_char_literal_test();
+  f54_enum_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

@@ -18,19 +18,29 @@
  *           なので、 locals >= Scopeのvar_scope という関係になる
  */
 
+// 構造体とeumのタグ
 typedef struct TagScope TagScope;
 struct TagScope {
   TagScope *next;
-  char *name; // 構造体のタグ名
-  Type *ty; // 構造体の型自身
+  char *name; // タグ名
+  Type *ty; // 構造体/enumの型自身
 };
 
 typedef struct VarScope VarScope;
 struct VarScope {
   VarScope *next;
   char *name;
+
+  // 変数の場合に設定
   Var *var;
+
+  // typedefの場合のみ設定
   Type *type_def;
+
+  // enumの場合のみ設定
+  Type *enum_ty;
+  int enum_val;
+
 };
 
 typedef struct Scope Scope;
@@ -65,11 +75,11 @@ static void leave_scope(Scope *prev_scope) {
   tag_scope = prev_scope->tag_scope;
 }
 
-static void push_tag_scope(Token *struct_tag_tok, Type *struct_type) {
+static void push_tag_scope(Token *tag_tok, Type *type) {
   TagScope *sc = calloc(1, sizeof(TagScope));
 
-  sc->name = my_strndup(struct_tag_tok->str, struct_tag_tok->len);
-  sc->ty = struct_type;
+  sc->name = my_strndup(tag_tok->str, tag_tok->len);
+  sc->ty = type;
   sc->next = tag_scope;
 
   tag_scope = sc;
@@ -98,7 +108,13 @@ static void push_typedef_scope(char *name, Type *type_def) {
   // fprintf(stderr, "%s\n", type_info(type_def));
 }
 
-static Type *find_struct_tag(Token *tk) {
+static void push_enum_scope(char *name, Type *enum_ty, int enum_val) {
+  VarScope *sc = push_var_scope_helper(name);
+  sc->enum_ty = enum_ty;
+  sc->enum_val = enum_val;
+}
+
+static Type *find_tag(Token *tk) {
   for (TagScope *sc = tag_scope; sc; sc = sc->next) {
     if (strncmp(sc->name, tk->str, tk->len) == 0) {
       return sc->ty;
@@ -360,8 +376,8 @@ static bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-static Var *find_var_helper(Token *token, VarScope *scope) {
-  for (VarScope *sc = scope; sc; sc = sc->next) {
+static VarScope *find_var(Token *token) {
+  for (VarScope *sc = var_scope; sc; sc = sc->next) {
     if (sc->type_def) {
       // typedef は変数じゃないので無視
       continue;
@@ -369,22 +385,10 @@ static Var *find_var_helper(Token *token, VarScope *scope) {
 
     if (strlen(sc->name) == token->len &&
         strncmp(sc->name, token->str, token->len) == 0) {
-      return sc->var;
+      return sc;
     }
   }
   return NULL;
-}
-
-static Var *find_var(Token *token) {
-  Var *v = NULL;
-
-  // local+global変数から探す
-  v = find_var_helper(token, var_scope);
-  if (v) {
-    return v;
-  }
-
-  return v;
 }
 
 static Type *find_typedef(Token *tk) {
@@ -422,12 +426,13 @@ static bool is_type(Token *tk) {
     return true;
   }
 
-  // ビルトインでなくても、typedefか構造体かtypedefされた型ならtrueを返す
+  // ビルトインでなくても、typedefか構造体かenumかtypedefされた型ならtrueを返す
   // 型の途中でtypedef出てくる場合もあるのでtypedef自体も型名の一つとしてtrueにしておき
   // 詳細はbasetype関数で判断する
   switch (tk->kind) {
     case TK_TYPEDEF:
     case TK_STRUCT:
+    case TK_ENUM:
       return true;
     default:
       return find_typedef(tk);
@@ -440,7 +445,7 @@ static bool is_type(Token *tk) {
 //                               func_decls
 //                             | global_var_decls
 //                           )*
-// basetype                  = ("void" | "_Bool" | "int" | "char" | "long" | "long" "long" | "short" | struct_decl | typedef_types)
+// basetype                  = ("void" | "_Bool" | "int" | "char" | "long" | "long" "long" | "short" | struct_decl | typedef_types | enum_decl)
 // declarator                =  "*" * ( "(" declarator         ")" | ident )  type_suffix
 // abstract_declarator       =  "*" * ( "(" abstract_declarator")"         )? type_suffix
 // typename                  = basetype abstract_declarator type_suffix
@@ -502,6 +507,7 @@ static Node *primary();
 static Node *read_expr_stmt();
 static Type *type_suffix(Type *base);
 static Type *struct_decl();
+static Type *enum_decl();
 static Node *new_add_node(Node *lhs, Node *rhs);
 
 typedef enum {
@@ -671,6 +677,8 @@ static Type *basetype(bool *is_typedef) {
       //まだ何も型名を読んでいなくて、ビルトインの方じゃない場合は、構造体か、typedefされた型名になる。
       if (tk->kind == TK_STRUCT) {
         ty = struct_decl();
+      } else if (tk->kind == TK_ENUM) {
+        ty = enum_decl();
       } else {
         ty = find_typedef(tk);
         assert(ty);
@@ -828,9 +836,12 @@ static Type *struct_decl() {
   // tkをタグ名として構造体の定義を探して返す
   if (tk) {
     if (!peek_token("{")) {
-      Type *st = find_struct_tag(tk);
+      Type *st = find_tag(tk);
       if (!st) {
         error_at(bak->str, "構造体: %s が見つかりません", my_strndup(tk->str, tk->len));
+      }
+      if (st->kind != TY_STRUCT) {
+        error_at(bak->str, "%s は構造体ではありません", my_strndup(tk->str, tk->len));
       }
       return st;
     }
@@ -881,6 +892,56 @@ static Type *struct_decl() {
   }
 
   return type;
+}
+
+static Type *enum_decl() {
+  expect_token(TK_ENUM);
+
+  Token *bak = token;
+
+  Token *tag_tk = consume_ident();
+
+  if (tag_tk) {
+    if (!peek_token("{")) {
+      // 構造体と同じくenum tagの次に"{"がない定義済みenum型の変数宣言になるので、tag名で探す
+      Type *t = find_tag(tag_tk);
+      if (!t) {
+        error_at(bak->str, "enum: %s が見つかりません", my_strndup(tag_tk->str, tag_tk->len));
+      }
+      if (t->kind != TY_ENUM) {
+        error_at(bak->str, "%s はenumではありません", my_strndup(tag_tk->str, tag_tk->len));
+      }
+      return t;
+    }
+  }
+  // ここに来た場合は新規のenumの定義
+  expect("{");
+  Type *ty = enum_type();
+  int enum_value = 0;
+  for (;;) {
+    char *ident = expect_ident();
+    if (consume("=")) {
+      enum_value = expect_number();
+    }
+    push_enum_scope(ident, ty, enum_value++);
+
+    if (consume("}")) {
+      break;
+    }
+
+    expect(",");
+
+    if (consume("}")) {
+      break;
+    }
+  }
+
+  if (tag_tk) {
+    // enumのタグがあったらそのtag名で登録
+    push_tag_scope(tag_tk, ty);
+  }
+
+  return ty;;
 }
 
 static void function_params(Function *func) {
@@ -1363,11 +1424,16 @@ Node *new_var_node(Var *var) {
 }
 
 static Node *parse_var(Token *t) {
-    Var *var = find_var(t);
-    if (!var) {
-      error_at(t->str, "変数 %s は宣言されていません。", my_strndup(t->str, t->len));
-    }
-    return new_var_node(var);
+  VarScope *sc = find_var(t);
+  if (!sc) {
+    error_at(t->str, "変数 %s は宣言されていません。",
+             my_strndup(t->str, t->len));
+  }
+  if (sc->enum_ty) {
+    return new_num_node(sc->enum_val);
+  } else {
+    return new_var_node(sc->var);
+  }
 }
 
 static Member *find_member(Type *type, char *name) {
@@ -1452,8 +1518,9 @@ static Node *parse_call_func(Token *t) {
   expect(")");
 
   add_type(node);
-  Var *func_var = find_var(t);
-  if (func_var) {
+  VarScope *func_var_sc = find_var(t);
+  if (func_var_sc) {
+    Var *func_var = func_var_sc->var;
     if (func_var->type->kind != TY_FUNC) {
       // 関数名でなかったらエラー
       error_at(t->str, "%s is not a function name", node->funcname);

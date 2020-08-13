@@ -163,6 +163,10 @@ static Keyword keywords[] = {
     TK_STRUCT,
   },
   {
+    "enum",
+    TK_ENUM,
+  },
+  {
     "sizeof",
     TK_SIZEOF,
   },

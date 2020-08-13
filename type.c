@@ -35,6 +35,10 @@ Type *func_type(Type *return_type) {
   return ty;
 }
 
+Type *enum_type(void) {
+  return new_type(TY_ENUM, 4, 4);
+}
+
 bool is_pointer(Type *t) {
   return t->kind == TY_PTR || t->kind == TY_ARRAY;
 }
