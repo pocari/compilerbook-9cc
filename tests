@@ -723,6 +723,8 @@ void f52_cast_test() {
   assert(30874, s, "(short)x");
   // 0x3456789A
   assert(878082202, i, "(int)x");
+
+  assert(0, (_Bool)(char)256, "(_Bool)(char)256");
 }
 
 int main() {
