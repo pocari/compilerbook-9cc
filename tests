@@ -727,6 +727,20 @@ void f52_cast_test() {
   assert(0, (_Bool)(char)256, "(_Bool)(char)256");
 }
 
+void f53_char_literal_test() {
+  assert(97, 'a', "'a'");
+  assert(110, 'n', "'n'");
+  assert(10, '\n', "'\\n'");
+  assert(9, '\t', "'\\t'");
+  assert(39, '\'', "'\\''");
+  assert(34, '\"', "'\\''");
+  assert(34, '"', "'\\\"'");
+  assert(92, '\\', "'\\\\'");
+  assert(48, '0', "'0'");
+  assert(0, '\0', "'\\0'");
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -925,6 +939,7 @@ int main() {
   f50_large_number_literal();
   f51_unary_test();
   f52_cast_test();
+  f53_char_literal_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

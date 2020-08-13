@@ -30,7 +30,7 @@ string_buffer *sb_init() {
   return sb;
 }
 
-void sb_append_char(string_buffer *sb, char ch) {
+void sb_append_char(string_buffer *sb, int ch) {
   ensure_buffer(sb);
   sb->buf[sb->str_len++] = ch;
 }

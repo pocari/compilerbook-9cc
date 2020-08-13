@@ -183,6 +183,61 @@ Keyword *tokenize_keyword(char *p) {
   return NULL;
 };
 
+static int parse_escaped(int ch) {
+  switch(ch) {
+    case '0':
+      return 0;
+    case 'n':
+      return '\n';
+    case 't':
+      return '\t';
+    case '\\':
+      return '\\';
+    case '"':
+      return '"';
+    case '\'':
+      return '\'';
+    default:
+      return ch;
+  }
+}
+
+// 文字リテラルをトークナイズした結果を返す
+// また、トークナイズした結果でポインタもすすめる
+static Token *tokenize_char_literal(Token *current_token, char **current_pointer) {
+  int val;
+  char *p = *current_pointer;
+
+  // この関数に入ってきた時点でpは開き"'"を指しているので、中身を見るために一つすすめる
+  // sは開始位置の保存用
+  char *s = p++;
+
+  if (*p == '\\') {
+    p++;
+    val = parse_escaped(*p);
+  } else {
+    val = *p;
+  }
+  char *tmp = p++;
+  if (!(*p)) {
+    error_at(tmp, "文字が終了していません。");
+  }
+
+  // ここでpが閉じる側の"'"を指していなければエラー
+  if (*p != '\'') {
+    error_at(p, "\"'\" が閉じられていません。");
+  }
+
+  // この時点でpが"'"を指しているので、その次の位置でcurrent_pointerを更新
+  p++;
+  *current_pointer = p;
+
+  Token *tk = new_token(TK_NUM, current_token, s, 0);
+  tk->val = val;
+
+  return tk;
+}
+
 // 文字列リテラルをトークナイズした結果を返す
 // また、トークナイズした結果でポインタもすすめる
 static Token *tokenize_string_literal(Token *current_token, char **current_pointer) {
@@ -193,24 +248,7 @@ static Token *tokenize_string_literal(Token *current_token, char **current_point
   while (*p && (*p != '"')) {
     if (*p == '\\') {
       p++;
-      switch (*p) {
-        case 'n':
-          sb_append_char(sb, '\n');
-          break;
-        case 't':
-          sb_append_char(sb, '\t');
-          break;
-        case '\\':
-          sb_append_char(sb, '\\');
-          break;
-        case '"':
-          sb_append_char(sb, '"');
-          break;
-        default:
-          // エスケープシーケンス以外に\がついてたら無視してその文字そのものとする
-          sb_append_char(sb, *p);
-          break;
-      }
+      sb_append_char(sb, parse_escaped(*p));
     } else {
       sb_append_char(sb, *p);
     }
@@ -284,6 +322,7 @@ Token *tokenize(char *p) {
       while (is_alnum(*p)) {
         p++;
       }
+
       cur = new_token(TK_IDENT, cur, s, p - s); //p - s で文字列長さになる
       continue;
     }
@@ -292,6 +331,11 @@ Token *tokenize(char *p) {
       cur = tokenize_string_literal(cur, &p);
       continue;
     }
+    if (*p == '\'') {
+      cur = tokenize_char_literal(cur, &p);
+      continue;
+    }
+
 
     if (ispunct(*p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
