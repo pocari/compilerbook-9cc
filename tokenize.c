@@ -45,12 +45,16 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_SHORT";
     case TK_STRUCT: // struct
       return "TK_STRUCT";
+    case TK_ENUM: // enum
+      return "TK_ENUM";
     case TK_SIZEOF: // sizeof
       return "TK_SIZEOF";
     case TK_STR: // 文字列リテラル
       return "TK_STR";
     case TK_TYPEDEF: // typedef
       return "TK_TYPEDEF";
+    case TK_STATIC: // static
+      return "TK_STATIC";
     case TK_EOF: // 入力終了
       return "TK_EOF";
   }
@@ -173,6 +177,10 @@ static Keyword keywords[] = {
   {
     "typedef",
     TK_TYPEDEF,
+  },
+  {
+    "static",
+    TK_STATIC,
   },
 };
 

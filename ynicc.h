@@ -39,6 +39,7 @@ typedef enum {
   TK_SIZEOF,   // sizeof キーワード
   TK_STR,      // 文字列リテラル
   TK_TYPEDEF,  // typedef キーワード
+  TK_STATIC,   // static キーワード
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -168,6 +169,7 @@ struct Function {
   VarList *locals; //この関数のローカル変数情報
   VarList *params; //この関数の仮引数
   int stack_size; //この関数のスタックサイズ
+  bool is_staitc;
 };
 
 struct Node {

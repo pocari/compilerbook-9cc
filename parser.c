@@ -49,6 +49,11 @@ struct Scope {
   TagScope *tag_scope;
 };
 
+typedef enum {
+  TYPEDEF = 1 << 0,
+  STATIC  = 1 << 1,
+} StorageClass;
+
 // 現在パース中のスコープにある変数(ローカル、グローバル含む)を管理する
 static VarScope *var_scope;
 
@@ -303,8 +308,15 @@ static bool consume(char *op) {
   return true;
 }
 
+static bool peek_kind(TokenKind kind) {
+  if (token->kind == kind) {
+    return true;
+  }
+  return false;
+}
+
 static Token *consume_kind(TokenKind kind) {
-  if (token->kind != kind) {
+  if (!peek_kind(kind)) {
     return NULL;
   }
 
@@ -427,12 +439,13 @@ static bool is_type(Token *tk) {
   }
 
   // ビルトインでなくても、typedefか構造体かenumかtypedefされた型ならtrueを返す
-  // 型の途中でtypedef出てくる場合もあるのでtypedef自体も型名の一つとしてtrueにしておき
+  // 型の途中でtypedef/staticが出てくる場合もあるのでtypedef/static自体も型名の一つとしてtrueにしておき
   // 詳細はbasetype関数で判断する
   switch (tk->kind) {
     case TK_TYPEDEF:
     case TK_STRUCT:
     case TK_ENUM:
+    case TK_STATIC:
       return true;
     default:
       return find_typedef(tk);
@@ -490,7 +503,7 @@ Program *program();
 
 static Function *function_def_or_decl();
 static Node *stmt();
-static Type *basetype(bool *is_typedef);
+static Type *basetype(StorageClass *sclass);
 static Type *declarator(Type *ty, char **name);
 static Type *abstract_declarator(Type *ty);
 static Node *var_decl();
@@ -521,11 +534,10 @@ static next_decl_type next_decl() {
   Token *tmp = token;
   bool is_func, is_global_var;
 
+  StorageClass sclass = 0;
+  Type *ty = basetype(&sclass);
 
-  bool is_typedef = false;
-  Type *ty = basetype(&is_typedef);
-
-  if (is_typedef) {
+  if (sclass == TYPEDEF) {
     // typedefがあったら、それは関数ではないとみなす
     token = tmp;
     return NEXT_DECL_GLOBAL_VAR_OR_TYPEDEF;
@@ -557,13 +569,13 @@ static void parse_typedef() {
 
 // グローバル変数のパース
 static void parse_gvar() {
-  bool is_typedef = false;
-  Type *type = basetype(&is_typedef);
+  StorageClass sclass = false;
+  Type *type = basetype(&sclass);
   char *ident_name;
   type = declarator(type, &ident_name);
   expect(";");
 
-  if (is_typedef) {
+  if (sclass == TYPEDEF) {
     push_typedef_scope(ident_name, type);
     return;
   }
@@ -608,9 +620,9 @@ Program *program() {
 //   int typedef hoge;
 //   int typedef typdef hoge;
 //
-// このため、変数の宣言をパースしきらないとtypedefかどうかもわからないので、今パースしようとしている場所がtypedef可能かどうかを引数のis_typedefで渡してもらう。
-// その上で、本当にtypedefがあったか、なかったか(=普通の変数宣言だったか)を is_typedefに設定して返す
-// 一方、例えば関数の戻り値の型部分などのようにtypedefが存在しできない場合は is_typedef をNULLとして渡してもらって判断する。
+// このため、変数の宣言をパースしきらないとtypedefかどうかもわからないので、今パースしようとしている場所がtypedef可能かどうかを引数のsclassで渡してもらう。
+// その上で、本当にtypedefがあったか、なかったか(=普通の変数宣言だったか)を sclassに設定して返す
+// 一方、例えば関数の戻り値の型部分などのようにtypedefが存在しできない場合は sclass をNULLとして渡してもらって判断する。
 //
 // また、intやlongのように何度か型宣言に含められるものがあり、
 // それらの順番まですべてを想定すると大変なので、最大何個まで各型を書けるかの数で判断する方針らしい
@@ -627,7 +639,7 @@ Program *program() {
 //   int long long
 //   => longがある場合は longかintがそれぞれ最大1個あっても良い
 //
-static Type *basetype(bool *is_typedef) {
+static Type *basetype(StorageClass *sclass) {
   if (!is_type(token)) {
     error_at(token->str, "typename expected");
   }
@@ -651,20 +663,30 @@ static Type *basetype(bool *is_typedef) {
     OTHER = 1 << 12,
   };
 
-  // typedef可能なパースならtypedef無し(=false)で初期化
-  if (is_typedef) {
-    *is_typedef = false;
+  // storage class が指定可能な場所はまず未定義で初期化
+  if (sclass) {
+    *sclass = 0;
   }
 
   while (is_type(token)) {
     Token *tk = token;
 
-    if (consume_kind(TK_TYPEDEF)) {
-      if (!is_typedef) {
-        error_at(tk->str, "typedefはここでは使えません");
+    if (peek_kind(TK_TYPEDEF) || peek_kind(TK_STATIC)) {
+      if (!sclass) {
+        error_at(tk->str, "ストレージクラス指定子はここでは使えません");
       }
-      // 一度でもどこかにtypedefがついていたらtypedefの文なのでフラグを立てる
-      *is_typedef = true;
+      // 一度でもどこかにtypedef/staticがついていたら覚えておく
+      if (consume_kind(TK_TYPEDEF)) {
+        *sclass |= TYPEDEF;
+      } else if (consume_kind(TK_STATIC)) {
+        *sclass |= STATIC;
+      }
+
+      // typedef と static を同時に使っていたらエラーにする
+      if ((*sclass & TYPEDEF) && (*sclass & STATIC)) {
+        error_at(tk->str, "staticとtypedefは同時に指定できません");
+      }
+
       continue;
     }
 
@@ -735,38 +757,6 @@ static Type *basetype(bool *is_typedef) {
 
   return ty;;
 }
-
-static Type *basetype2(bool *is_typedef) {
-  if (!is_type(token)) {
-    error_at(token->str, "typename expected");
-  }
-  if (consume_kind(TK_INT)) {
-    return int_type;
-  } else if (consume_kind(TK_CHAR)) {
-    return char_type;
-  } else if (consume_kind(TK_LONG)) {
-    // long longの2個目のlongがあったら読み飛ばしてlongとみなす
-    consume_kind(TK_LONG);
-    return long_type;
-  } else if (consume_kind(TK_SHORT)) {
-    return short_type;
-  } else if (consume_kind(TK_VOID)) {
-    return void_type;
-  } else if (consume_kind(TK_BOOL)) {
-    return bool_type;
-  } else if (token->kind == TK_STRUCT) {
-    return struct_decl();
-  } else {
-    // どの型でもない場合はtypedefされてるものの中から探す
-    Type *t = find_typedef(consume_ident());
-    if (t) {
-      return t;
-    }
-  }
-  error_at(token->str, "型 %s が見つかりません", my_strndup(token->str, token->len));
-  return NULL; // ここには来ない
-}
-
 /**
  * このパース方法に関しては、コンパイラブックの 「Cの型の構文」
  * https://www.sigbus.info/compilerbook#type
@@ -988,7 +978,8 @@ static Function *function_def_or_decl() {
   // 今からパースする関数ようにグローバルのlocalsを初期化
   locals = NULL;
 
-  Type *ret_type = basetype(NULL);
+  StorageClass sclass;
+  Type *ret_type = basetype(&sclass);
   char *ident;
   ret_type = declarator(ret_type, &ident);
   Function *func = calloc(1, sizeof(Function));
@@ -1020,6 +1011,7 @@ static Function *function_def_or_decl() {
   // fprintf(stderr, "parse function body end\n");
   func->body = head.next;
   func->locals = locals;
+  func->is_staitc = (sclass == STATIC);
   set_stack_info(func);
 
   leave_scope(sc);
@@ -1218,13 +1210,13 @@ static Node *local_var_initializer(Var *var) {
 
 static Node *var_decl() {
   if (is_type(token)) {
-    bool is_typedef = false;
-    Type *type = basetype(&is_typedef);
+    StorageClass sclass = false;
+    Type *type = basetype(&sclass);
     Token *tmp_tk = token;
     char *ident_name;
     type = declarator(type, &ident_name);
 
-    if (is_typedef) {
+    if (sclass == TYPEDEF) {
       expect(";");
       push_typedef_scope(ident_name, type);
       return new_node(ND_NULL);

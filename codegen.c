@@ -451,7 +451,9 @@ static void gen(Node *node) {
 
 static void codegen_func(Function *func) {
   funcname = func->name;
-  printfln(".global %s", func->name);
+  if (!func->is_staitc) {
+    printfln(".global %s", func->name);
+  }
   printfln("%s:", func->name);
   // プロローグ
   // rbp初期化とローカル変数確保
