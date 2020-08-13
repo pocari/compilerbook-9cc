@@ -147,4 +147,6 @@ int main() {
   } else {
     printf("not solved\n");
   }
+
+  return 0;
 }
