@@ -1,3 +1,5 @@
+int printf();
+
 int fizz_buzz(int i) {
   if (i % 15 == 0) {
     printf("%5d\tFizzBuzz\n", i);
@@ -11,8 +13,7 @@ int fizz_buzz(int i) {
 }
 
 int main() {
-  int i;
-  for (i = 1; i <= 20; i = i + 1) {
+  for (int i = 1; i <= 20; i++) {
     fizz_buzz(i);
   }
 }

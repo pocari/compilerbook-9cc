@@ -1,3 +1,5 @@
+int printf();
+
 typedef struct hoge {
   int x;
   int y;

@@ -1,21 +1,24 @@
+int printf();
+
 int fib(int n) {
   if (n == 1) {
     return 1;
+  } else if (n == 2) {
+    return 1;
   } else {
-    if (n == 2) {
-      return 1;
-    } else {
-      return fib(n - 1) + fib(n - 2);
-    }
+    return fib(n - 1) + fib(n - 2);
   }
 }
 
 int main() {
-  int x[10];
-  int i;
+  int x[11];
 
-  for (i = 1; i <= 10; i = i + 1) {
-    *(x + i - 1) = fib(i);
+  for (int i = 1; i <= 10; i++) {
+    x[i] = fib(i);
   }
-  return *(x + 5);
+  for (int i = 1; i <= 10; i++) {
+    printf("x[%2d] ... %2d\n", i, x[i]);
+  }
+
+  return 0;
 }

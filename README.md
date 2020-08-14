@@ -3,34 +3,47 @@
 ```
 $ make
 $ cat examples/fib.c
+int printf();
+
 int fib(int n) {
   if (n == 1) {
     return 1;
+  } else if (n == 2) {
+    return 1;
   } else {
-    if (n == 2) {
-      return 1;
-    } else {
-      return fib(n - 1) + fib(n - 2);
-    }
+    return fib(n - 1) + fib(n - 2);
   }
 }
 
 int main() {
-  int x[10];
-  int i;
+  int x[11];
 
-  for (i = 1; i <= 10; i = i + 1) {
-    *(x + i - 1) = fib(i);
+  for (int i = 1; i <= 10; i++) {
+    x[i] = fib(i);
   }
-  return *(x + 5);
+  for (int i = 1; i <= 10; i++) {
+    printf("x[%2d] ... %2d\n", i, x[i]);
+  }
+
+  return 0;
 }
 $ ./ynicc examples/fib.c > tmp.s
-$ gcc -o tmp tmp.s
+$ gcc -static -o tmp tmp.s
 $ ./tmp
-$ echo $?
-8
+x[ 1] ...  1
+x[ 2] ...  1
+x[ 3] ...  2
+x[ 4] ...  3
+x[ 5] ...  5
+x[ 6] ...  8
+x[ 7] ... 13
+x[ 8] ... 21
+x[ 9] ... 34
+x[10] ... 55
 
 $ cat examples/fizzbuzz.c
+int printf();
+
 int fizz_buzz(int i) {
   if (i % 15 == 0) {
     printf("%5d\tFizzBuzz\n", i);
@@ -44,13 +57,12 @@ int fizz_buzz(int i) {
 }
 
 int main() {
-  int i;
-  for (i = 1; i <= 20; i = i + 1) {
+  for (int i = 1; i <= 20; i++) {
     fizz_buzz(i);
   }
 }
 $ ./ynicc examples/fizzbuzz.c > tmp.s
-$ gcc -no-pie -otmp tmp.s
+$ gcc -static -otmp tmp.s
 $ ./tmp
     1   1
     2   2
