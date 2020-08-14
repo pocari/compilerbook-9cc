@@ -1,13 +1,13 @@
 int printf();
 
 void dump_board(int (*board)[9]) {
-  for (int i = 0; i < 9; i = i + 1) {
+  for (int i = 0; i < 9; i++) {
     if (i != 0) {
       if (i % 3 == 0) {
         printf(" ------+-------+------\n");
       }
     }
-    for (int j = 0; j < 9; j = j + 1) {
+    for (int j = 0; j < 9; j++) {
       if (j != 0) {
         if (j % 3 == 0) {
           printf(" |");
@@ -27,8 +27,8 @@ void dump_board(int (*board)[9]) {
 
 int free_pos_count(int (*board)[9]) {
   int count = 0;
-  for (int i = 0; i < 9; i = i + 1) {
-    for (int j = 0; j < 9; j = j + 1) {
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
       if (board[i][j] == 0) {
         count = count + 1;
       }
@@ -46,7 +46,7 @@ int pos_to_col(int pos) {
 }
 
 int next_free_pos(int (*board)[9], int pos) {
-  for (int i = pos; i < 9 * 9; i = i + 1) {
+  for (int i = pos; i < 9 * 9; i++) {
     int r = pos_to_row(i);
     int c = pos_to_col(i);
     if (board[r][c] == 0) {
@@ -58,14 +58,14 @@ int next_free_pos(int (*board)[9], int pos) {
 
 int can_put(int (*board)[9], int row, int col, int num) {
   //縦のチェック
-  for (int i = 0; i < 9; i = i + 1) {
+  for (int i = 0; i < 9; i++) {
     if (board[i][col] == num) {
       // すでに同じ列にnumがあったらおけない
       return 0;
     }
   }
   //横のチェック
-  for (int i = 0; i < 9; i = i + 1) {
+  for (int i = 0; i < 9; i++) {
     if (board[row][i] == num) {
       // すでに同じ行にnumがあったらおけない
       return 0;
@@ -76,8 +76,8 @@ int can_put(int (*board)[9], int row, int col, int num) {
   int r_offset = row / 3;
   int c_offset = col / 3;
 
-  for (int r = 0; r < 3; r = r + 1) {
-    for (int c = 0; c < 3; c = c + 1) {
+  for (int r = 0; r < 3; r++) {
+    for (int c = 0; c < 3; c++) {
       if (board[r + 3 * r_offset][c + 3 * c_offset] == num) {
         //すでに同じブロックにnumがあったらおけない
         return 0;
@@ -95,7 +95,7 @@ int solve(int (*board)[9], int pos) {
   } else {
     int free_pos = next_free_pos(board, pos);
     if (free_pos != -1) {
-      for (int n = 1; n <= 9; n = n + 1) {
+      for (int n = 1; n <= 9; n++) {
         int r = pos_to_row(free_pos);
         int c = pos_to_col(free_pos);
         int ok = can_put(board, r, c, n);
