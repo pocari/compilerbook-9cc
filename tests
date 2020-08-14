@@ -807,9 +807,7 @@ void f56_coma_test() {
 
   int j_sum = 0;
   int i_sum = 0;
-  int j = 0;
-  // forの初期化式の部分はまだカンマつけられない
-  for (int i = 0; i < 10; i = i + 1, j = j + 2) {
+  for (int i = 0, j = 0; i < 10; i = i + 1, j = j + 2) {
     // 0, 2, 4, 6, 8, 10, 12, 14, 16, 18
     i_sum = i_sum + i;
     j_sum = j_sum + j;
@@ -818,6 +816,17 @@ void f56_coma_test() {
   assert(45, i_sum, "i_sum");
   assert(90, j_sum, "j_sum");
 }
+
+void f57_multi_var_decl_test() {
+  int i = 10, *j = &i, k[2] = {2, 3};
+
+  assert(10, i, "i == 10");
+  assert(10, *j, "*j == i");
+  assert(&i, j, "j == &i");
+  assert(2, k[0], "k[0]");
+  assert(3, k[1], "k[1]");
+}
+
 
 int main() {
   test_count = 0;
@@ -1021,6 +1030,7 @@ int main() {
   f54_enum_test();
   f55_for_var_decl_test();
   f56_coma_test();
+  f57_multi_var_decl_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

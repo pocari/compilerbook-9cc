@@ -472,7 +472,8 @@ static bool is_type(Token *tk) {
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
-// var_decl                  = basetype declarator ( "=" local_var_initializer)? ";"
+// var_decl                  = basetype var_decl_sub ("," var_decl_sub)* ";"
+// var_decl_sub              = declarator ( "=" local_var_initializer)?
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | assign
@@ -507,6 +508,7 @@ static Type *basetype(StorageClass *sclass);
 static Type *declarator(Type *ty, char **name);
 static Type *abstract_declarator(Type *ty);
 static Node *var_decl();
+static Node *var_decl_sub();
 static Node *expr();
 static Node *assign();
 static Node *equality();
@@ -1220,6 +1222,7 @@ static Node *var_decl() {
     Type *type = basetype(&sclass);
     Token *tmp_tk = token;
     char *ident_name;
+    Type *basic_type = type;
     type = declarator(type, &ident_name);
 
     if (sclass == TYPEDEF) {
@@ -1241,11 +1244,37 @@ static Node *var_decl() {
       // 今作ったlocal変数に初期化式の値を代入するノードを設定
       node->initializer = local_var_initializer(var);
     }
+    // カンマ区切りの別の宣言もあればパース
+    node = var_decl_sub(basic_type, node);
     expect(";");
 
     return node;
   }
   return NULL;
+}
+
+static Node *var_decl_sub(Type *base, Node *decl) {
+  while (consume(",")) {
+    Token *tmp_tk = token;
+    char *ident_name;
+    Type *type = declarator(base, &ident_name);
+
+    Var *var = new_lvar(ident_name, type);
+    Node *node = new_node(ND_VAR_DECL);
+    node->var = var;
+
+    if (var->type->kind == TY_VOID) {
+      error_at(tmp_tk->str, "void型の変数は宣言できません");
+    }
+
+    // 初期化式があるかどうかチェック
+    if (consume("=")) {
+      // 今作ったlocal変数に初期化式の値を代入するノードを設定
+      node->initializer = local_var_initializer(var);
+    }
+    decl = new_bin_node(ND_COMMA, decl, node);
+  }
+  return decl;
 }
 
 static Node *expr() {
