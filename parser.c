@@ -475,12 +475,12 @@ static bool is_type(Token *tk) {
 // var_decl                  = basetype declarator ( "=" local_var_initializer)? ";"
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
-//                           | expr
+//                           | assign
 // struct_decl               = "struct" ident
 //                           | "struct" ident? "{" struct_member* "}"
 // struct_member             = basetype declarator
-// expr                      = assign
-// assign                    = equality (= assign)?
+// expr                      = assign ("," assign)*
+// assign                    = equality ( "=" assign)?
 // equality                  = relational ("==" relational | "!=" relational)*
 // relational                = add ("<" add | "<=" add | ">" add | ">=" add)*
 // add                       = mul ("+" mul | "-" mul)*
@@ -1198,7 +1198,7 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
     return cur;
   }
 
-  Node *e = expr();
+  Node *e = assign();
   // fprintf(stdout, "val: %d\n", e->val);
   cur->next = new_desg_node(var, desg, e);
   return cur->next;
@@ -1249,7 +1249,16 @@ static Node *var_decl() {
 }
 
 static Node *expr() {
-  return assign();
+  Node *node = assign();
+
+  while (consume(",")) {
+    // カンマがある場合、最後の式の値だけスタックに積みたいので、
+    // カンマより左にある式の結果は全部式文(ND_EXPR_STMT)にして計算だけして結果は捨てる
+    node = new_unary_node(ND_EXPR_STMT, node);
+    node = new_bin_node(ND_COMMA, node, assign());
+  }
+
+  return node;
 }
 
 static Node *assign() {
@@ -1501,10 +1510,10 @@ static Node *parse_call_func(Token *t) {
 
   // 引数パース
   int args = 0;
-  Node *cur = node->arg = expr();
+  Node *cur = node->arg = assign();
   args++;
   while (consume(",")) {
-    cur->next = expr();
+    cur->next = assign();
     cur = cur->next;
     args++;
   }

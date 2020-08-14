@@ -358,13 +358,18 @@ static void gen(Node *node) {
       }
       return;
     case ND_EXPR_STMT:
-      // 式文なので、結果を捨てる
       gen(node->lhs);
+      // 式文なので、結果を捨てる
       printfln("  add rsp, 8");
       return;
     case ND_CAST:
       gen(node->lhs);
       cast(node);
+      return;
+    case ND_COMMA:
+      gen(node->lhs);
+      gen(node->rhs);
+      return;
     case ND_NULL:
       // typedef でパース時のみ発生し具体的なコード生成が無いノード
       printfln("  # ND_NULL ");
