@@ -66,7 +66,6 @@ int main(int argc, char **argv) {
   }
 
   free_tokens(head);
-  free_program(pgm);
 
   return 0;
 }

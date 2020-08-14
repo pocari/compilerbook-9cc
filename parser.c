@@ -516,6 +516,8 @@ static Node *assign();
 static Node *equality();
 static Node *relational();
 static Node *add();
+static Node *new_add_node(Node *lhs, Node *rhs);
+static Node *new_sub_node(Node *lhs, Node *rhs);
 static Node *mul();
 static Node *cast();
 static Node *unary();
@@ -525,7 +527,6 @@ static Node *read_expr_stmt();
 static Type *type_suffix(Type *base);
 static Type *struct_decl();
 static Type *enum_decl();
-static Node *new_add_node(Node *lhs, Node *rhs);
 
 typedef enum {
   NEXT_DECL_DUMMY,
@@ -1295,8 +1296,25 @@ static Node *expr() {
 static Node *assign() {
   Node *node = equality();
 
+  // chibicc だと "=" 以外の +=, -=... 計の演算子は別途 ND_ADD_EQ のような専用のNode種別をつくって処理している
+  // https://github.com/rui314/chibicc/commit/05e907d2b8a94103d60148ce90e27ca191ad5446
+  // 難しかったので、簡単そうな i += x を構文木上 i = i + x に読み替える方式にしてみる。
+  // ただそのせいで、左辺のnodeが複数のnodeで共有されてしまってfree_nodesのときに複数回freeしてしまってエラーになったので、
+  // chibccに合わせて今回からastのfreeはやめる
   if (consume("=")) {
     return new_bin_node(ND_ASSIGN, node, assign());
+  } else if (consume("+=")) {
+    Node *n = new_add_node(node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
+  } else if (consume("-=")) {
+    Node *n = new_sub_node(node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
+  } else if (consume("*=")) {
+    Node *n = new_bin_node(ND_MUL, node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
+  } else if (consume("/=")) {
+    Node *n = new_bin_node(ND_DIV, node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
   }
 
   return node;
@@ -1629,86 +1647,5 @@ static Node *primary() {
 
   // () でも ident でもなければ 整数
   return new_num_node(expect_number());
-}
-
-static void free_nodes(Node *node) {
-  if (!node) {
-    return;
-  }
-  // Var の free は別途VarListのfreeで一緒にする(共有しているため)
-  free_nodes(node->next);
-  free_nodes(node->arg);
-  free_nodes(node->lhs);
-  free_nodes(node->rhs);
-  free_nodes(node->body);
-  free_nodes(node->cond);
-  free_nodes(node->then);
-  free_nodes(node->els);
-  free_nodes(node->init);
-  free_nodes(node->inc);
-  free_nodes(node->initializer);
-  free(node->funcname);
-  free(node);
-}
-
-static void free_lvar(Var *var) {
-  if (var) {
-    Type *t = var->type;
-    while (t) {
-      Type *tmp = t->ptr_to;
-      if (!is_integer(t)) {
-        free(t);
-      }
-      t = tmp;
-    }
-    free(var->name);
-    var->name = NULL;
-  }
-  free(var);
-}
-
-static void free_var_list_deep(VarList *var) {
-  VarList *v = var;
-  while (v) {
-    VarList *tmp = v->next;
-    free_lvar(v->var);
-    v->var = NULL;
-    free(v);
-    v = tmp;
-  }
-}
-
-static void free_var_list_shallow(VarList *var) {
-  VarList *v = var;
-  while (v) {
-    VarList *tmp = v->next;
-    free(v);
-    v = tmp;
-  }
-}
-
-static void free_function(Function *f) {
-  free(f->name);
-  // var_listの中のVarは locals にローカル変数も関数の引数も含めて全部もっているので localsのfreeで一緒に削除する
-  free_var_list_deep(f->locals);
-  // 引数のvar_listの Var * はlocalsのfreeでおこなｗれているので、こちらは VarList の freeのみ行う
-  free_var_list_shallow(f->params);
-
-  free_nodes(f->body);
-  free(f);
-}
-
-static void free_functions(Function *func) {
-  Function *f = func;
-  while (f) {
-    Function *tmp = f->next;
-    free_function(f);
-    f = tmp;
-  }
-}
-
-void free_program(Program *program) {
-  free_functions(program->functions);
-  free_var_list_deep(program->global_var);
 }
 

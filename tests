@@ -859,6 +859,47 @@ void f58_inc_dec_test() {
   assert(2, *--p, "*--p");
 }
 
+void f59_assign_with_operator_test() {
+  int i = 1;
+
+  i += 2;
+  assert(3, i, "i");
+
+  i -= 4;
+  assert(-1, i, "i");
+
+  i *= -7;
+  assert(7, i, "i");
+
+  i /= 2;
+  assert(3, i, "i");
+
+  int a = 2;
+  int b = 3;
+
+  a += b += 4;
+
+  assert(7, b, "b");
+  assert(9, a, "a");
+
+
+  int x[3] = {2, 3, 4};
+  int *p = x;
+
+  assert(2, *p, "*p");
+
+  p += 1;
+  assert(3, *p, "*p");
+
+  p += 1;
+  assert(4, *p, "*p");
+
+  p -= 1;
+  assert(3, *p, "*p");
+
+}
+
+
 
 int main() {
   test_count = 0;
@@ -1064,6 +1105,7 @@ int main() {
   f56_coma_test();
   f57_multi_var_decl_test();
   f58_inc_dec_test();
+  f59_assign_with_operator_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
