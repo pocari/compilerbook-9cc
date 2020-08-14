@@ -790,6 +790,18 @@ void f54_enum_test() {
   assert(0, z3, "z3");
 }
 
+void f55_for_var_decl_test() {
+  int i = 10;
+  int sum = 0;
+  for (int i = 0; i < 10; i = i + 1) {
+    sum = sum + i;
+  }
+  assert(45, sum, "sum");
+  // forの外側のiなので変わらないはず
+  assert(10, i, "i");
+
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -990,6 +1002,7 @@ int main() {
   f52_cast_test();
   f53_char_literal_test();
   f54_enum_test();
+  f55_for_var_decl_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

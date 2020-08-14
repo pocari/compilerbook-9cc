@@ -470,7 +470,7 @@ static bool is_type(Token *tk) {
 //                           | "return" expr ";"
 //                           | "if" "(" expr ")" stmt ("else" stmt)?
 //                           | "while" "(" expr ")" stmt
-//                           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
 // var_decl                  = basetype declarator ( "=" local_var_initializer)? ";"
 // local_var_initializer     = local_var_initializer_sub
@@ -1055,14 +1055,19 @@ static Node *stmt() {
     node->body = stmt();
   } else if (consume_kind(TK_FOR)) {
     node = new_node(ND_FOR);
+    Scope *sc = enter_scope();
     expect("(");
     if (consume(";")) {
       //次が";"なら初期化式なしなのでNULL入れる
       node->init = NULL;
     } else {
-      // ";"でないなら初期化式があるのでパース
-      node->init = read_expr_stmt();
-      expect(";");
+      // ";"でないなら初期化式かまたは辺宣言あるのでパース
+      if (is_type(token)) {
+        node->init = var_decl();
+      } else {
+        node->init = read_expr_stmt();
+        expect(";");
+      }
     }
     if (consume(";")) {
       //次が";"なら条件式なしなのでNULL入れる
@@ -1081,6 +1086,7 @@ static Node *stmt() {
       expect(")");
     }
     node->body = stmt();
+    leave_scope(sc);
   } else if (consume("{")) {
     node = new_node(ND_BLOCK);
     Scope *sc = enter_scope();
