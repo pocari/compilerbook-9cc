@@ -491,10 +491,12 @@ static bool is_type(Token *tk) {
 //                           | "-"? cast
 //                           | "&" cast
 //                           | "*" cast
+//                           | "++" cast
+//                           | "--" cast
 //                           | "sizeof" cast
 //                           | "sizeof" "(" type_name ")"
 //                           | postfix
-// postfix                   = parimary ("[" expr "]" | "." ident | "->" ident)*
+// postfix                   = parimary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
 // primary                   = num
 //                           | ident ("(" arg_list? ")")?
 //                           | "(" expr ")"
@@ -1434,6 +1436,10 @@ static Node *unary() {
     return new_unary_node(ND_ADDR, cast());
   } else if (consume("*")) {
     return new_unary_node(ND_DEREF, cast());
+  } else if (consume("++")) {
+    return new_unary_node(ND_PRE_INC, cast());
+  } else if (consume("--")) {
+    return new_unary_node(ND_PRE_DEC, cast());
   } else if (consume_kind(TK_SIZEOF)) {
     Token *tmp = token;
     if (consume("(")) {
@@ -1522,6 +1528,17 @@ static Node *postfix() {
       node = struct_ref(node);
       continue;
     }
+
+    if (consume("++")) {
+      node = new_unary_node(ND_POST_INC, node);
+      continue;
+    }
+
+    if (consume("--")) {
+      node = new_unary_node(ND_POST_DEC, node);
+      continue;
+    }
+
     break;
   }
   return node;

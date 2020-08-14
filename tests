@@ -827,6 +827,28 @@ void f57_multi_var_decl_test() {
   assert(3, k[1], "k[1]");
 }
 
+void f58_inc_dec_test() {
+  int i = 2;
+  int x = ++i;
+
+  assert(3, x, "x");
+  assert(3, i, "i");
+
+  int y = --i;
+  assert(2, y, "y");
+  assert(2, i, "i");
+
+  int j = 3;
+  int m = j++;
+  assert(3, m, "m");
+  assert(4, j, "j");
+
+  int n = j--;
+  assert(4, n, "n");
+  assert(3, j, "j");
+
+}
+
 
 int main() {
   test_count = 0;
@@ -1031,6 +1053,7 @@ int main() {
   f55_for_var_decl_test();
   f56_coma_test();
   f57_multi_var_decl_test();
+  f58_inc_dec_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

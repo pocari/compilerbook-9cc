@@ -154,6 +154,10 @@ typedef enum {
   ND_MEMBER,    // 構造体のメンバーへの参照
   ND_CAST,      // cast
   ND_COMMA,     // カンマ演算子
+  ND_POST_INC,  // x++
+  ND_POST_DEC,  // x--
+  ND_PRE_INC,   // ++x
+  ND_PRE_DEC,   // --x
   ND_NULL,      // 何もしないノード
 } NodeKind;
 

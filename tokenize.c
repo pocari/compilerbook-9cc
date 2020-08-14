@@ -284,6 +284,28 @@ static Token *tokenize_string_literal(Token *current_token, char **current_point
   return tok;
 }
 
+static char *multi_char_ope[]= {
+  "<=",
+  ">=",
+  "==",
+  "!=",
+  "->",
+  "++",
+  "--",
+  NULL,
+};
+
+// 複数文字からなるオペレータにマッチするかを返す。
+// マッチする場合そのオペレータの文字数、マッチしない場合は0を返す
+int is_multi_char_operator(char *p) {
+  for (char **op = multi_char_ope; *op; op++) {
+    if (starts_with(p, *op)) {
+      return strlen(*op);
+    }
+  }
+  return 0;
+}
+
 Token *tokenize(char *p) {
   Token head;
   head.next = NULL;
@@ -322,9 +344,10 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (starts_with(p, "<=") || starts_with(p, ">=") || starts_with(p, "==") || starts_with(p, "!=") || starts_with(p, "->")) {
-      cur = new_token(TK_RESERVED, cur, p, 2);
-      p += 2;
+    int len = is_multi_char_operator(p);
+    if (len) {
+      cur = new_token(TK_RESERVED, cur, p, len);
+      p += len;
       continue;
     }
 

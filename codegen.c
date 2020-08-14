@@ -111,6 +111,22 @@ static void gen_addr(Node *node) {
  error("代入の左辺値が変数ではありません");
 }
 
+// スタックの先頭の値をインクリメントしてスタックに積み直す
+static void inc(Type *ty) {
+  printfln("  pop rax");
+  // ポインタの場合はそのポインタが指す先の型のサイズ分インクリメントする。(int *x; x++ が4バイト先に進むような場合)
+  // ポインタでない場合は単に値を1増やす int i = 0; i++; でiが1になる みたいな場合
+  printfln("  add rax, %ld\n", ty->ptr_to ? ty->ptr_to->size : 1);
+  printfln("  push rax");
+}
+
+// スタックの先頭の値をデクリメントしてスタックに積み直す
+static void dec(Type *ty) {
+  printfln("  pop rax");
+  printfln("  sub rax, %ld\n", ty->ptr_to ? ty->ptr_to->size : 1);
+  printfln("  push rax");
+}
+
 static int next_label_key() {
   static int label_index = 0;
   return label_index++;
@@ -370,6 +386,39 @@ static void gen(Node *node) {
     case ND_COMMA:
       gen(node->lhs);
       gen(node->rhs);
+      return;
+    case ND_PRE_INC:
+      gen_addr(node->lhs);
+      printfln("  push [rsp]");
+      load(node->ty);
+      inc(node->ty);
+      store(node->ty);
+      return;
+    case ND_PRE_DEC:
+      gen_addr(node->lhs);
+      printfln("  push [rsp]");
+      load(node->ty);
+      dec(node->ty);
+      store(node->ty);
+      return;
+    case ND_POST_INC:
+      gen_addr(node->lhs);
+      printfln("  push [rsp]");
+      load(node->ty);
+      inc(node->ty);
+      store(node->ty);
+      // x = i++;
+      // のようなケースでは、 変数iの値自体はインクリメントするが、
+      // xに設定される値としては、インクリメント前の値なのでスタックの値だけデクリメントしてもとに戻す
+      dec(node->ty);
+      return;
+    case ND_POST_DEC:
+      gen_addr(node->lhs);
+      printfln("  push [rsp]");
+      load(node->ty);
+      dec(node->ty);
+      store(node->ty);
+      inc(node->ty);
       return;
     case ND_NULL:
       // typedef でパース時のみ発生し具体的なコード生成が無いノード
