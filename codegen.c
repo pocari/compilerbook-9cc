@@ -15,7 +15,7 @@ static int printfln(char *fmt, ...) {
   return n + 1;
 }
 
-
+//スタックの先頭に積まれている値をアドレスとみなして、引数の型のサイズに合わせた値をそのアドレスから取得してスタックに積む
 static void load(Type *t) {
   printfln("  pop rax"); // スタックにつまれている、変数のアドレスをraxにロード
   // 変数のアドレスにある値をraxにロード
@@ -35,6 +35,7 @@ static void load(Type *t) {
   printfln("  push rax"); // 変数の値(rax)をスタックに積む
 }
 
+// スタックの先頭を値、 スタックの2番目の値をアドレスとみなして、そのアドレスに値を設定して、 値をスタックに積む
 static void store(Type *t) {
   printfln("  pop rdi"); // rhsの結果
   printfln("  pop rax"); // 左辺の変数のアドレス
