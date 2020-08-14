@@ -847,6 +847,16 @@ void f58_inc_dec_test() {
   assert(4, n, "n");
   assert(3, j, "j");
 
+  int ary[3] = {2, 3, 4};
+  int *p = ary;
+
+  assert(2, *p++, "*p++");
+  assert(3, *p++, "*p++");
+  assert(4, *p++, "*p++");
+
+  assert(4, *--p, "*--p");
+  assert(3, *--p, "*--p");
+  assert(2, *--p, "*--p");
 }
 
 
