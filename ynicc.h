@@ -92,6 +92,7 @@ struct Type {
   TypeKind kind;
   int size; //サイズ(TY_ARRAYの場合は sizeof(要素) * array_size, それ以外の場合はsizeof(要素))
   int align; // アラインされるバイト数
+  bool is_incomplete; // int ary[] のようなサイズがわからない状態で宣言されているときにtrueになるフラグ
   Type *ptr_to; // arrayかpointerの場合の型
   size_t array_size; // kind が TY_ARRAY のときに配列サイズがセットされる
   Member *members; // 構造体の場合のフィールド達

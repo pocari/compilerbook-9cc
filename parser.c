@@ -591,12 +591,17 @@ static void parse_gvar() {
   StorageClass sclass = false;
   Type *type = basetype(&sclass);
   char *ident_name;
+  Token *tk = token;
   type = declarator(type, &ident_name);
   expect(";");
 
   if (sclass == TYPEDEF) {
     push_typedef_scope(ident_name, type);
     return;
+  }
+
+  if (type->is_incomplete) {
+    error_at(tk->str, "incomplete element type");
   }
 
   new_gvar(ident_name, type, true);
@@ -825,7 +830,11 @@ static Type *type_name(void) {
 static Member *struct_member() {
   Type *type = basetype(NULL);
   char *ident;
+  Token *tk = token;
   type = declarator(type, &ident);
+  if (type->is_incomplete) {
+    error_at(tk->str, "incomplete element type");
+  }
   expect(";");
 
   Member *m = calloc(1, sizeof(Member));
@@ -1138,14 +1147,27 @@ static Type *type_suffix(Type *base) {
   if (!consume("[")) {
     return base;
   }
-  int array_size = expect_number();
-  expect("]");
+
+  int array_size = 0;
+  int is_incomplete = true;
+  if (!consume("]")) {
+    //[の直後に"]"が来ていない場合、配列のサイズがあるはずなので、完全な方としてis_incompleteをfalseに
+    is_incomplete = false;
+    array_size = expect_number();
+    expect("]");
+  }
+
   base = type_suffix(base);
+  // 不完全型許されるのは最初の配列の最初の次元のみなので、再帰で呼ばれた結果(=2次元以降)に関しては必ず完全になっていること
+  if (base->is_incomplete) {
+    error_at(token->str, "incomplete element type");
+  }
+  base->is_incomplete = is_incomplete;
   return array_of(base, array_size);
 }
 
 // https://github.com/rui314/chibicc/blob/e1b12f2c3d0e4389f327fcaa7484b5e439d4a716/parse.c#L679
-// 配列の初期化式の書く要素の位置を表す構造体
+// 配列の初期化式の各要素の位置を表す構造体
 // int x[2][3] = {{1, 2, 3}, {4, 5, 6}};
 // みたいな式があった場合各次元のindexがリンクリストでつながっていて、
 // 例えば、 x[1][2] の要素を指す Designator は下記のようになる
@@ -1205,7 +1227,7 @@ static Node *new_desg_node(Var *var, Designator *desg, Node *rhs) {
 }
 
 static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator *desg) {
-  static int count = 0;
+  // static int count = 0;
   // fprintf(stdout, "count: %d, type: %d\n", count++, ty->kind);
   if (ty->kind == TY_ARRAY) {
     expect("{");
@@ -1265,6 +1287,11 @@ static Node *var_decl() {
       // 今作ったlocal変数に初期化式の値を代入するノードを設定
       node->initializer = local_var_initializer(var);
     }
+
+    if (type->is_incomplete) {
+      error_at(tmp_tk->str, "incomplete element type");
+    }
+
     // カンマ区切りの別の宣言もあればパース
     node = var_decl_sub(basic_type, node);
     expect(";");
@@ -1293,6 +1320,11 @@ static Node *var_decl_sub(Type *base, Node *decl) {
       // 今作ったlocal変数に初期化式の値を代入するノードを設定
       node->initializer = local_var_initializer(var);
     }
+
+    if (type->is_incomplete) {
+      error_at(tmp_tk->str, "incomplete element type");
+    }
+
     decl = new_bin_node(ND_COMMA, decl, node);
   }
   return decl;
@@ -1536,7 +1568,13 @@ static Node *unary() {
     Token *tmp = token;
     if (consume("(")) {
       if (is_type(token)) {
+        Token *tk = token;
         Type *ty = type_name();
+
+        if (ty->is_incomplete) {
+          error_at(tk->str, "incomplete element type");
+        }
+
         expect(")");
         return new_num_node(ty->size);
       }
@@ -1544,8 +1582,12 @@ static Node *unary() {
       token = tmp;
     }
 
+    Token *tk = token;
     Node *n = cast();
     add_type(n);
+    if (n->ty->is_incomplete) {
+      error_at(tk->str, "incomplete element type");
+    }
     return new_num_node(node_type_size(n));
   }
   return postfix();
