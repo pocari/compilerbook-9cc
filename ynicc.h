@@ -136,6 +136,9 @@ typedef enum {
   ND_MOD,       // %
   ND_LT,        // <
   ND_LTE,       // <=
+  ND_BIT_OR,    // |
+  ND_BIT_AND,   // &
+  ND_BIT_XOR,   // ^
   ND_EQL,       // ==
   ND_NOT_EQL,   // !=
   ND_NOT,       // 否定?演算子 if (!x) とかの!

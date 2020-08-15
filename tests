@@ -945,6 +945,29 @@ void f62_bit_not_operator_test() {
   assert(0, ~-1, "~-1");
 }
 
+void f63_bit_binary_op_test() {
+
+  /*
+    0b111
+  & 0b110
+  -------
+    0b110
+
+    0b010
+  ^ 0b110
+  -------
+    0b100
+
+    0b101
+  | 0b100
+  -------
+    0b101 == 5
+  */
+
+
+  assert(5, 0b101 | 0b010 ^ 0b111 & 0b110, "0b101 | 0b010 ^ 0b111 & 0b110;");
+}
+
 
 int main() {
   test_count = 0;
@@ -1154,6 +1177,7 @@ int main() {
   f60_hex_octal_number_test();
   f61_not_operator_test();
   f62_bit_not_operator_test();
+  f63_bit_binary_op_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

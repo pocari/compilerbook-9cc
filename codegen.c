@@ -514,6 +514,15 @@ static void gen(Node *node) {
       printfln("  setne al");
       printfln("  movzb rax, al");
       break;
+    case ND_BIT_AND:
+      printfln("  and rax, rdi");
+      break;
+    case ND_BIT_OR:
+      printfln("  or rax, rdi");
+      break;
+    case ND_BIT_XOR:
+      printfln("  xor rax, rdi");
+      break;
     default:
       error("予期しないNodeです。 kind: %d", node->kind);
   }

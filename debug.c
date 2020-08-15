@@ -72,6 +72,12 @@ char *node_kind_to_s(Node *nd) {
       return "ND_NOT";
     case  ND_BIT_NOT:
       return "ND_BIT_NOT";
+    case  ND_BIT_AND:
+      return "ND_BIT_AND";
+    case  ND_BIT_OR:
+      return "ND_BIT_OR";
+    case  ND_BIT_XOR:
+      return "ND_BIT_XOR";
     case  ND_NULL:
       return "ND_NULL";
   };
@@ -211,6 +217,36 @@ char *node_ast(Node *node) {
           char *l = node_ast(node->lhs);
           char *r = node_ast(node->rhs);
           n = sprintf(buf, "(/ %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
+      case ND_BIT_XOR:
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(^ %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
+      case ND_BIT_OR:
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(| %s %s)", l, r);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          free(r);
+          return ret;
+        }
+      case ND_BIT_AND:
+        {
+          char *l = node_ast(node->lhs);
+          char *r = node_ast(node->rhs);
+          n = sprintf(buf, "(& %s %s)", l, r);
           char *ret = my_strndup(buf, n);
           free(l);
           free(r);

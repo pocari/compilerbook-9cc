@@ -81,6 +81,9 @@ void add_type(Node *node) {
     case ND_NOT_EQL:
     case ND_LT:
     case ND_LTE:
+    case ND_BIT_AND:
+    case ND_BIT_OR:
+    case ND_BIT_XOR:
     case ND_CALL:
     case ND_NUM:
       node->ty = long_type;

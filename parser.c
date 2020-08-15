@@ -480,8 +480,14 @@ static bool is_type(Token *tk) {
 // struct_decl               = "struct" ident
 //                           | "struct" ident? "{" struct_member* "}"
 // struct_member             = basetype declarator
+// 
+// 以降の演算子の優先順位は下記参照(この表で上にある演算子(優先度が高い演算子)ほどBNFとしては下にくる)
+// http://www.bohyoh.com/CandCPP/C/operator.html
 // expr                      = assign ("," assign)*
-// assign                    = equality ( "=" assign)?
+// assign                    = bitor ( ("="  | "+=" | "-=" | "*=" | "/=") assign)?
+// bitor                     = bitand ( "|" bitand )*
+// bitand                    = bitxor ( "&" bitxor )*
+// bitxor                    = equality ( "^" equality )*
 // equality                  = relational ("==" relational | "!=" relational)*
 // relational                = add ("<" add | "<=" add | ">" add | ">=" add)*
 // add                       = mul ("+" mul | "-" mul)*
@@ -514,6 +520,9 @@ static Node *var_decl();
 static Node *var_decl_sub();
 static Node *expr();
 static Node *assign();
+static Node *bitand();
+static Node *bitor();
+static Node *bitxor();
 static Node *equality();
 static Node *relational();
 static Node *add();
@@ -1295,7 +1304,7 @@ static Node *expr() {
 }
 
 static Node *assign() {
-  Node *node = equality();
+  Node *node = bitor();
 
   // chibicc だと "=" 以外の +=, -=... 計の演算子は別途 ND_ADD_EQ のような専用のNode種別をつくって処理している
   // https://github.com/rui314/chibicc/commit/05e907d2b8a94103d60148ce90e27ca191ad5446
@@ -1316,6 +1325,35 @@ static Node *assign() {
   } else if (consume("/=")) {
     Node *n = new_bin_node(ND_DIV, node, assign());
     return new_bin_node(ND_ASSIGN, node, n);
+  }
+  return node;
+}
+
+static Node *bitor() {
+  Node *node = bitxor();
+
+  while (consume("|")) {
+    node = new_bin_node(ND_BIT_OR, node, bitxor());
+  }
+
+  return node;
+}
+
+static Node *bitxor() {
+  Node *node = bitand();
+
+  while (consume("^")) {
+    node = new_bin_node(ND_BIT_XOR, node, bitxor());
+  }
+
+  return node;
+}
+
+static Node *bitand() {
+  Node *node = equality();
+
+  while (consume("&")) {
+    node = new_bin_node(ND_BIT_AND, node, bitxor());
   }
 
   return node;
