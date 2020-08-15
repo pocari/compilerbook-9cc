@@ -70,6 +70,8 @@ char *node_kind_to_s(Node *nd) {
       return "ND_PRE_DEC";
     case  ND_NOT:
       return "ND_NOT";
+    case  ND_BIT_NOT:
+      return "ND_BIT_NOT";
     case  ND_NULL:
       return "ND_NULL";
   };
@@ -399,7 +401,15 @@ char *node_ast(Node *node) {
       case ND_NOT:
         {
           char *l = node_ast(node->lhs);
-          n += sprintf(buf, "(not %s)", l);
+          n += sprintf(buf, "(! %s)", l);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          return ret;
+        }
+      case ND_BIT_NOT:
+        {
+          char *l = node_ast(node->lhs);
+          n += sprintf(buf, "(~ %s)", l);
           char *ret = my_strndup(buf, n);
           free(l);
           return ret;

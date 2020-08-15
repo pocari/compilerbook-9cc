@@ -940,6 +940,12 @@ void f61_not_operator_test() {
   assert(1, !(x - 10), "!(x - 10)");
 }
 
+void f62_bit_not_operator_test() {
+  assert(-1, ~0, "~0");
+  assert(0, ~-1, "~-1");
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1147,6 +1153,7 @@ int main() {
   f59_assign_with_operator_test();
   f60_hex_octal_number_test();
   f61_not_operator_test();
+  f62_bit_not_operator_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

@@ -430,6 +430,12 @@ static void gen(Node *node) {
       printfln("  movzb rax, al");
       printfln("  push rax");
       return;
+    case ND_BIT_NOT:
+      gen(node->lhs);
+      printfln("  pop rax");
+      printfln("  not rax");
+      printfln("  push rax");
+      return;
     case ND_NULL:
       // typedef でパース時のみ発生し具体的なコード生成が無いノード
       printfln("  # ND_NULL ");

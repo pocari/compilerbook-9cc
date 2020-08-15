@@ -1461,6 +1461,8 @@ static Node *unary() {
     return new_unary_node(ND_PRE_DEC, cast());
   } else if (consume("!")) {
     return new_unary_node(ND_NOT, cast());
+  } else if (consume("~")) {
+    return new_unary_node(ND_BIT_NOT, cast());
   } else if (consume_kind(TK_SIZEOF)) {
     Token *tmp = token;
     if (consume("(")) {
