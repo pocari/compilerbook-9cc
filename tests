@@ -996,6 +996,15 @@ void f64_logical_adn_or_test() {
   assert(0, 0 && p->x, "0 && p->x");
 }
 
+void f65_helper(int a[]) {
+  return a[3];
+}
+
+void f65_array_arg_as_pointer_test() {
+  int ary[4] = {1, 2, 3, 4};
+
+  assert(4, f65_helper(ary), "f65_helper(ary)");
+}
 
 
 int main() {
@@ -1208,6 +1217,7 @@ int main() {
   f62_bit_not_operator_test();
   f63_bit_binary_op_test();
   f64_logical_adn_or_test();
+  f65_array_arg_as_pointer_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

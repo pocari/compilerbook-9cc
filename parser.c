@@ -601,7 +601,7 @@ static void parse_gvar() {
   }
 
   if (type->is_incomplete) {
-    error_at(tk->str, "incomplete element type");
+    error_at(tk->str, "incomplete element type(gvar)");
   }
 
   new_gvar(ident_name, type, true);
@@ -779,7 +779,7 @@ static Type *basetype(StorageClass *sclass) {
     }
   }
 
-  return ty;;
+  return ty;
 }
 /**
  * このパース方法に関しては、コンパイラブックの 「Cの型の構文」
@@ -801,6 +801,7 @@ static Type *declarator(Type *ty, char **name) {
   }
 
   *name = expect_ident();
+  fprintf(stderr, "ident_name: %s\n", *name);
   return type_suffix(ty);
 }
 
@@ -833,7 +834,7 @@ static Member *struct_member() {
   Token *tk = token;
   type = declarator(type, &ident);
   if (type->is_incomplete) {
-    error_at(tk->str, "incomplete element type");
+    error_at(tk->str, "incomplete element type(struct_member)");
   }
   expect(";");
 
@@ -970,6 +971,10 @@ static void function_params(Function *func) {
   Type *type = basetype(NULL);
   char *name;
   type = declarator(type, &name);
+  if (type->kind == TY_ARRAY) {
+    // 関数の仮引数で宣言されている配列型のみ、ポインタに読み替えて受けるようにする
+    type = pointer_to(type->ptr_to);
+  }
   Var *var = new_lvar(name, type);
   VarList *var_list = calloc(1, sizeof(VarList));
   var_list->var = var;
@@ -979,6 +984,10 @@ static void function_params(Function *func) {
     type = basetype(NULL);
     char *name;
     type = declarator(type, &name);
+    if (type->kind == TY_ARRAY) {
+      // 関数の仮引数で宣言されている配列型のみ、ポインタに読み替えて受けるようにする
+      type = pointer_to(type->ptr_to);
+    }
     Var *var = new_lvar(name, type);
     VarList *v = calloc(1, sizeof(VarList));
     v->var = var;
@@ -1157,13 +1166,16 @@ static Type *type_suffix(Type *base) {
     expect("]");
   }
 
+  Token *tk = token;
   base = type_suffix(base);
   // 不完全型許されるのは最初の配列の最初の次元のみなので、再帰で呼ばれた結果(=2次元以降)に関しては必ず完全になっていること
   if (base->is_incomplete) {
-    error_at(token->str, "incomplete element type");
+    error_at(tk->str, "incomplete element type(type_suffix)");
   }
-  base->is_incomplete = is_incomplete;
-  return array_of(base, array_size);
+  Type *ary_ty = array_of(base, array_size);
+  ary_ty->is_incomplete = is_incomplete;
+
+  return ary_ty;
 }
 
 // https://github.com/rui314/chibicc/blob/e1b12f2c3d0e4389f327fcaa7484b5e439d4a716/parse.c#L679
@@ -1289,7 +1301,7 @@ static Node *var_decl() {
     }
 
     if (type->is_incomplete) {
-      error_at(tmp_tk->str, "incomplete element type");
+      error_at(tmp_tk->str, "incomplete element type(var_decl)");
     }
 
     // カンマ区切りの別の宣言もあればパース
@@ -1322,7 +1334,7 @@ static Node *var_decl_sub(Type *base, Node *decl) {
     }
 
     if (type->is_incomplete) {
-      error_at(tmp_tk->str, "incomplete element type");
+      error_at(tmp_tk->str, "incomplete element type(var_decl_sub)");
     }
 
     decl = new_bin_node(ND_COMMA, decl, node);
@@ -1572,7 +1584,7 @@ static Node *unary() {
         Type *ty = type_name();
 
         if (ty->is_incomplete) {
-          error_at(tk->str, "incomplete element type");
+          error_at(tk->str, "incomplete element type(sizeof1)");
         }
 
         expect(")");
@@ -1586,7 +1598,7 @@ static Node *unary() {
     Node *n = cast();
     add_type(n);
     if (n->ty->is_incomplete) {
-      error_at(tk->str, "incomplete element type");
+      error_at(tk->str, "incomplete element type(sizeof2)");
     }
     return new_num_node(node_type_size(n));
   }
