@@ -136,6 +136,8 @@ typedef enum {
   ND_MOD,       // %
   ND_LT,        // <
   ND_LTE,       // <=
+  ND_OR,        // ||
+  ND_AND,       // &&
   ND_BIT_OR,    // |
   ND_BIT_AND,   // &
   ND_BIT_XOR,   // ^

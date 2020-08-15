@@ -436,6 +436,54 @@ static void gen(Node *node) {
       printfln("  not rax");
       printfln("  push rax");
       return;
+    case ND_OR:
+      {
+        // 左の項が0じゃなかったらその時点で右の項は評価せずに1を返すようにする
+        int label_key = next_label_key();
+        // 左の項のチェック
+        gen(node->lhs);
+        printfln("  pop rax");
+        printfln("  cmp rax, 0");
+        // 0じゃなかったらtrue(1)をスタックに乗せる
+        printfln("  jne .L.true.%04d.true", label_key);
+        // 右の項のチェック
+        gen(node->rhs);
+        printfln("  pop rax");
+        printfln("  cmp rax, 0");
+        printfln("  jne .L.true.%04d.true", label_key);
+        // 左も右も両方0だったのでorの結果として0をいれて終了ラベルに飛ぶ
+        printfln("  push 0");
+        printfln("  jmp .L.end.%04d.true", label_key);
+        printfln(".L.true.%04d.true:", label_key);
+        printfln("  push 1");
+        printfln(".L.end.%04d.true:", label_key);
+      }
+      return;
+    case ND_AND:
+      {
+        // 左の項が0だったらその時点で右の項は評価せずに0を返すようにする
+        int label_key = next_label_key();
+        // 左の項のチェック
+        gen(node->lhs);
+        printfln("  pop rax");
+        printfln("  cmp rax, 0");
+        // 0だったらfalse(0)をスタックに乗せる
+        printfln("  je .L.false.%04d.true", label_key);
+        // 右の項のチェック
+        gen(node->rhs);
+        printfln("  pop rax");
+        printfln("  cmp rax, 0");
+        // 0だったらfalse(0)をスタックに乗せる
+        printfln("  je .L.false.%04d.true", label_key);
+        // 左も右も0じゃなかったので、andの結果として1を入れて終了ラベルに飛ぶ
+        printfln("  push 1");
+        printfln("  jmp .L.end.%04d.true", label_key);
+        printfln(".L.false.%04d.true:", label_key);
+        printfln("  push 0");
+        printfln(".L.end.%04d.true:", label_key);
+
+      }
+      return;
     case ND_NULL:
       // typedef でパース時のみ発生し具体的なコード生成が無いノード
       printfln("  # ND_NULL ");
