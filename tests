@@ -930,8 +930,15 @@ void f60_hex_octal_number_test() {
   assert(2, x, "x");
 }
 
-
-
+void f61_not_operator_test() {
+  int x = 10;
+  assert(0, !x, "!x");
+  assert(1, !!x, "!!x");
+  assert(1, !0, "!0");
+  assert(0, !1, "!1");
+  assert(0, !(x == 10), "!(x == 10)");
+  assert(1, !(x - 10), "!(x - 10)");
+}
 
 int main() {
   test_count = 0;
@@ -1139,6 +1146,7 @@ int main() {
   f58_inc_dec_test();
   f59_assign_with_operator_test();
   f60_hex_octal_number_test();
+  f61_not_operator_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

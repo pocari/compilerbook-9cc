@@ -493,6 +493,7 @@ static bool is_type(Token *tk) {
 //                           | "*" cast
 //                           | "++" cast
 //                           | "--" cast
+//                           | "!" cast
 //                           | "sizeof" cast
 //                           | "sizeof" "(" type_name ")"
 //                           | postfix
@@ -1458,6 +1459,8 @@ static Node *unary() {
     return new_unary_node(ND_PRE_INC, cast());
   } else if (consume("--")) {
     return new_unary_node(ND_PRE_DEC, cast());
+  } else if (consume("!")) {
+    return new_unary_node(ND_NOT, cast());
   } else if (consume_kind(TK_SIZEOF)) {
     Token *tmp = token;
     if (consume("(")) {

@@ -138,6 +138,7 @@ typedef enum {
   ND_LTE,       // <=
   ND_EQL,       // ==
   ND_NOT_EQL,   // !=
+  ND_NOT,       // 否定?演算子 if (!x) とかの!
   ND_ASSIGN,    // =
   ND_VAR,       // ローカル変数
   ND_RETURN,    // return

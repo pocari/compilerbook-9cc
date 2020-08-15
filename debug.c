@@ -53,11 +53,25 @@ char *node_kind_to_s(Node *nd) {
     case  ND_MOD:
       return  "ND_MOD";
     case  ND_NUM:
-      return "ND_NUM  ";
+      return "ND_NUM";
     case  ND_MEMBER:
-      return "ND_MEMBER  ";
+      return "ND_MEMBER";
+    case  ND_CAST:
+      return "ND_CAS";
+    case  ND_COMMA:
+      return "ND_COMMA";
+    case  ND_POST_INC:
+      return "ND_POST_INC";
+    case  ND_POST_DEC:
+      return "ND_POST_DEC";
+    case  ND_PRE_INC:
+      return "ND_PRE_INC";
+    case  ND_PRE_DEC:
+      return "ND_PRE_DEC";
+    case  ND_NOT:
+      return "ND_NOT";
     case  ND_NULL:
-      return "ND_NULL  ";
+      return "ND_NULL";
   };
 }
 
@@ -378,6 +392,14 @@ char *node_ast(Node *node) {
         {
           char *l = node_ast(node->lhs);
           n += sprintf(buf, "(member %s %s)", l, node->member->name);
+          char *ret = my_strndup(buf, n);
+          free(l);
+          return ret;
+        }
+      case ND_NOT:
+        {
+          char *l = node_ast(node->lhs);
+          n += sprintf(buf, "(not %s)", l);
           char *ret = my_strndup(buf, n);
           free(l);
           return ret;

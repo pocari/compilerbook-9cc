@@ -420,6 +420,16 @@ static void gen(Node *node) {
       store(node->ty);
       inc(node->ty);
       return;
+    case ND_NOT:
+      gen(node->lhs);
+      printfln("  pop rax");
+      printfln("  cmp rax, 0");
+      // cmp の比較で rax == 0 のときだけ raxの下位8bitに1をセット
+      printfln("  sete al");
+      // raxの上位56bitはクリアして1を代入
+      printfln("  movzb rax, al");
+      printfln("  push rax");
+      return;
     case ND_NULL:
       // typedef でパース時のみ発生し具体的なコード生成が無いノード
       printfln("  # ND_NULL ");
