@@ -1187,7 +1187,11 @@ static Node *new_desg_node_sub(Var *var, Designator *desg) {
   }
   Node *prev = new_desg_node_sub(var, desg->next);
   Node *node = new_add_node(prev, new_num_node(desg->idx));
-  return new_unary_node(ND_DEREF, node);
+
+  node = new_unary_node(ND_DEREF, node);
+  add_type(node);
+
+  return node;
 }
 
 static Node *new_desg_node(Var *var, Designator *desg, Node *rhs) {
@@ -1481,7 +1485,10 @@ static Node *cast() {
     }
   }
   token = tmp;
-  return unary();
+  Node *node = unary();
+  add_type(node);
+
+  return node;
 }
 
 static Node *unary() {
@@ -1523,6 +1530,7 @@ static Node *unary() {
 Node *new_var_node(Var *var) {
   Node *node = new_node(ND_VAR);
   node->var = var;
+  add_type(node);
   return node;
 }
 
@@ -1572,6 +1580,7 @@ static Node *struct_ref(Node *lhs) {
 static Node *postfix() {
   Node *node = primary();
   for (;;) {
+    add_type(node);
     if (consume("[")) {
       node = new_bin_node(ND_DEREF, new_add_node(node, expr()), NULL);
       expect("]");
@@ -1609,6 +1618,21 @@ static Node *parse_call_func(Token *t) {
   Node *node = new_node(ND_CALL);
   node->funcname = my_strndup(t->str, t->len);
 
+  VarScope *func_var_sc = find_var(t);
+  if (func_var_sc) {
+    Var *func_var = func_var_sc->var;
+    if (func_var->type->kind != TY_FUNC) {
+      // 関数名でなかったらエラー
+      error_at(t->str, "%s is not a function name", node->funcname);
+    }
+    // 関数の戻り値の型をND_CALLの戻り値にする
+    node->ty = func_var->type->return_ty;
+  } else {
+    fprintf(stderr, "関数: %s は宣言されていません\n", node->funcname);
+    // 未宣言の関数を呼び出す場合は警告だけだして一旦int型を返す関数として扱う
+    node->ty = int_type;
+  }
+
   if (consume(")")) {
     // 閉じカッコがきたら引数なし関数
     add_type(node);
@@ -1632,20 +1656,7 @@ static Node *parse_call_func(Token *t) {
   expect(")");
 
   add_type(node);
-  VarScope *func_var_sc = find_var(t);
-  if (func_var_sc) {
-    Var *func_var = func_var_sc->var;
-    if (func_var->type->kind != TY_FUNC) {
-      // 関数名でなかったらエラー
-      error_at(t->str, "%s is not a function name", node->funcname);
-    }
-    // 関数の戻り値の型をND_CALLの戻り値にする
-    node->ty = func_var->type->return_ty;
-  } else {
-    fprintf(stderr, "関数: %s は宣言されていません\n", node->funcname);
-    // 未宣言の関数を呼び出す場合は警告だけだして一旦int型を返す関数として扱う
-    node->ty = int_type;
-  }
+
   return node;
 }
 
