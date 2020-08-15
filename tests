@@ -984,6 +984,16 @@ void f64_logical_adn_or_test() {
   // 優先順位のチェック
   assert(1, 1 || 1 && 0, "1 || 1 && 0");
   assert(0, (1 || 1) && 0, "1 || 1 && 0");
+
+  // 短絡評価の確認
+  typedef struct hoge {
+    int x;
+  } hoge;
+  hoge *p = 0;
+
+  // 短絡評価されてなかったらヌルポでsegvするはず
+  assert(1, 1 || p->x, "1 || p->x");
+  assert(0, 0 && p->x, "0 && p->x");
 }
 
 
