@@ -284,6 +284,141 @@ static Token *tokenize_string_literal(Token *current_token, char **current_point
   return tok;
 }
 
+// p が8進数の数値の開始かどうかを返す
+static bool starts_with_octal(char *p) {
+  // 前提として*pは何らかの数値というところまでわかっている
+  if (*p++ != '0') {
+    // 先頭が0出ない場合は8進数でない
+    return false;
+  }
+  if (isdigit(*p)) {
+    // 先頭の0につづいてまだなにかの数字があれば8進数とみなす
+    return true;
+  }
+  return false;
+}
+
+static bool is_hex_digit(char c) {
+  return
+    ('a' <= c && c <= 'f') ||
+    ('A' <= c && c <= 'F') ||
+    ('0' <= c && c <= '9');
+}
+
+static bool is_octal_digit(char c) {
+  return '0' <= c && c <= '7';
+}
+
+static bool is_binary_digit(char c) {
+  return '0' <= c && c <= '1';
+}
+
+static int hex_val(char c) {
+  if ('a' <= c && c <= 'f') {
+    return c - 'a' + 10;
+  } else if ('A' <= c && c <= 'F') {
+    return c - 'A' + 10;
+  }
+  return c - '0';
+}
+
+static int octal_val(char c) {
+  return c - '0';
+}
+
+static int binary_val(char c) {
+  return c - '0';
+}
+
+static Token *tokenize_hex_number(Token *cur, char **cur_pos) {
+  long val = 0;
+  char *p = *cur_pos;
+
+  // "0x" (2文字分)を読み飛ばす
+  p += 2;
+  while (p && is_hex_digit(*p)) {
+    val = (val << 4) + hex_val(*p);
+    p++;
+  }
+
+  if (!p) {
+    error_at(p, "数値が不正です");
+  }
+
+  Token *tok = new_token(TK_NUM, cur, *cur_pos, 0);
+  tok->val = val;
+
+  *cur_pos = p;
+
+  return tok;
+}
+
+static Token *tokenize_octal_number(Token *cur, char **cur_pos) {
+  long val = 0;
+  char *p = *cur_pos;
+
+  // "0" (1文字分)を読み飛ばす
+  p += 1;
+  while (p && is_octal_digit(*p)) {
+    val = (val << 3) + octal_val(*p);
+    p++;
+  }
+
+  if (!p) {
+    error_at(p, "数値が不正です");
+  }
+
+  Token *tok = new_token(TK_NUM, cur, *cur_pos, 0);
+  tok->val = val;
+
+  *cur_pos = p;
+
+  return tok;
+}
+
+static Token *tokenize_binary_number(Token *cur, char **cur_pos) {
+  long val = 0;
+  char *p = *cur_pos;
+
+  // "0b" (2文字分)を読み飛ばす
+  p += 2;
+  while (p && is_binary_digit(*p)) {
+    val = (val << 1) + binary_val(*p);
+    p++;
+  }
+
+  if (!p) {
+    error_at(p, "数値が不正です");
+  }
+
+  Token *tok = new_token(TK_NUM, cur, *cur_pos, 0);
+  tok->val = val;
+
+  *cur_pos = p;
+
+  return tok;
+}
+static Token *tokenize_number(Token *cur, char **cur_pos) {
+  Token *tok = NULL;
+
+  if (starts_with(*cur_pos, "0x")) {
+    // 16進数
+    tok = tokenize_hex_number(cur, cur_pos);
+  } else if (starts_with(*cur_pos, "0b")) {
+    // 2進数
+    tok = tokenize_binary_number(cur, cur_pos);
+  } else if (starts_with_octal(*cur_pos)) {
+    // 8進数
+    tok = tokenize_octal_number(cur, cur_pos);
+  } else {
+    // 10進数
+    tok = new_token(TK_NUM, cur, *cur_pos, 0);
+    tok->val = strtol(*cur_pos, cur_pos, 10);
+  }
+
+  return tok;
+}
+
 static char *multi_char_ope[]= {
   "<=",
   ">=",
@@ -344,6 +479,7 @@ Token *tokenize(char *p) {
     if (key) {
       int keyword_len = strlen(key->keyword);
       cur = new_token(key->kind, cur, p, keyword_len);
+      assert(cur);
       p += keyword_len;
       continue;
     }
@@ -351,6 +487,7 @@ Token *tokenize(char *p) {
     int len = is_multi_char_operator(p);
     if (len) {
       cur = new_token(TK_RESERVED, cur, p, len);
+      assert(cur);
       p += len;
       continue;
     }
@@ -363,27 +500,31 @@ Token *tokenize(char *p) {
       }
 
       cur = new_token(TK_IDENT, cur, s, p - s); //p - s で文字列長さになる
+      assert(cur);
       continue;
     }
 
     if (*p == '"') {
       cur = tokenize_string_literal(cur, &p);
+      assert(cur);
       continue;
     }
     if (*p == '\'') {
       cur = tokenize_char_literal(cur, &p);
+      assert(cur);
       continue;
     }
 
 
     if (ispunct(*p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
+      assert(cur);
       continue;
     }
 
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p, 0);
-      cur->val = strtol(p, &p, 10);
+      cur = tokenize_number(cur, &p);
+      assert(cur);
       continue;
     }
 

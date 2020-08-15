@@ -706,24 +706,21 @@ void f51_unary_test() {
 
 void f52_cast_test() {
   // 16進リテラルがまだないのでコメントで補足
-  // long x = 0x123456789A;
-  long x = 78187493530;
+  long x = 0x123456789A;
 
   _Bool b = (_Bool)x;
   char c = (char)x;
   short s = (short)x;
   int i = (int)x;
 
-  // 0x01
-  assert(1, b, "(_Bool)x");
+  assert(0x01, b, "(_Bool)x");
+
   // 0x9A(符号付きcharで154でなく-102になる)
   // rubyでいうと "\x9A".unpack("C") でなく、 "\x9A".unpack("c")
+  // 0x9Aが10011010と、8bit目が1なので符号付きのcharとしてはマイナスになるので、ここは10進数で比較
   assert(-102, c, "(char)x");
-  // 0x789A
-  assert(30874, s, "(short)x");
-  // 0x3456789A
-  assert(878082202, i, "(int)x");
-
+  assert(0x789A, s, "(short)x");
+  assert(0x3456789A, i, "(int)x");
   assert(0, (_Bool)(char)256, "(_Bool)(char)256");
 }
 
@@ -896,8 +893,43 @@ void f59_assign_with_operator_test() {
 
   p -= 1;
   assert(3, *p, "*p");
-
 }
+
+void f60_hex_octal_number_test() {
+  long x = 0x0;
+  assert(0, x, "x");
+
+  x = 0x1234;
+  assert(4660, x, "x");
+
+  x = 0xA;
+  assert(10, x, "x");
+
+  x = 0xa;
+  assert(10, x, "x");
+
+  x = 0xABCDEF;
+  assert(11259375, x, "x");
+
+  x = 0000000000;
+  assert(0, x, "x");
+
+  x = 010;
+  assert(8, x, "x");
+
+  x = 01234567;
+  assert(342391, x, "x");
+
+  x = 0b0;
+  assert(0, x, "x");
+
+  x = 0b1;
+  assert(1, x, "x");
+
+  x = 0b10;
+  assert(2, x, "x");
+}
+
 
 
 
@@ -1106,6 +1138,7 @@ int main() {
   f57_multi_var_decl_test();
   f58_inc_dec_test();
   f59_assign_with_operator_test();
+  f60_hex_octal_number_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
