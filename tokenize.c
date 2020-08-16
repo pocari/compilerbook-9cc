@@ -59,6 +59,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_BREAK";
     case TK_CONTINUE: // continue
       return "TK_CONTINUE";
+    case TK_GOTO: // goto
+      return "TK_GOTO";
     case TK_EOF: // 入力終了
       return "TK_EOF";
   }
@@ -193,6 +195,10 @@ static Keyword keywords[] = {
   {
     "continue",
     TK_CONTINUE,
+  },
+  {
+    "goto",
+    TK_GOTO,
   },
 };
 

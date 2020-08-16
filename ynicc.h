@@ -41,7 +41,8 @@ typedef enum {
   TK_TYPEDEF,  // typedef キーワード
   TK_STATIC,   // static キーワード
   TK_BREAK,    // break キーワード
-  TK_CONTINUE ,// continue キーワード
+  TK_CONTINUE, // continue キーワード
+  TK_GOTO,     // goto キーワード
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -171,6 +172,8 @@ typedef enum {
   ND_PRE_DEC,   // --x
   ND_BREAK,     // break
   ND_CONTINUE,  // continue
+  ND_GOTO,      // goto
+  ND_LABEL,     // ラベル
   ND_NULL,      // 何もしないノード
 } NodeKind;
 
@@ -217,6 +220,8 @@ struct Node {
   int funcarg_num; // 関数呼び出しの引数の数
 
   Member *member; // 構造体のメンバーへのアクセス時の対象のメンバー
+
+  char *label_name;
 };
 
 struct Var {

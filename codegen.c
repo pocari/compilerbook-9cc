@@ -368,6 +368,13 @@ static void gen(Node *node) {
       }
       printfln("  jmp .L.continue.%04d", current_continue_jump_seq);
       return;
+    case ND_GOTO:
+      printfln("  jmp .L.goto.%s.%s", funcname, node->label_name);
+      return;
+    case ND_LABEL:
+      printfln(".L.goto.%s.%s:", funcname, node->label_name);
+      gen(node->lhs);
+      return;
     case ND_CALL:
       {
         // 引数を渡すときにつかうレジスタは

@@ -483,6 +483,8 @@ static bool is_type(Token *tk) {
 //                           | var_decl
 //                           | "break" ";"
 //                           | "continue" ";"
+//                           | "goto" ident ";"
+//                           | ident ":" stmt
 // var_decl                  = basetype var_decl_sub ("," var_decl_sub)* ";"
 //                           | basetype ";"
 // var_decl_sub              = declarator ( "=" local_var_initializer)?
@@ -1189,17 +1191,32 @@ static Node *stmt() {
     leave_scope(sc);
   } else if (consume_kind(TK_BREAK)) {
     expect(";");
-    return new_node(ND_BREAK);
+    node = new_node(ND_BREAK);
   } else if (consume_kind(TK_CONTINUE)) {
     expect(";");
-    return new_node(ND_CONTINUE);
+    node = new_node(ND_CONTINUE);
+  } else if (consume_kind(TK_GOTO)) {
+    char *ident = expect_ident();
+    expect(";");
+    node = new_node(ND_GOTO);
+    node->label_name = ident;
   } else {
-    // キーワードじゃなかったら 変数宣言かどうかチェック
-    node = var_decl();
-    if (!node) {
-      // 変数宣言でなかったら式文
-      node = read_expr_stmt();
-      expect(";");
+    Token *tmp = token;
+    Token *tk = consume_ident();
+    if (consume(":")) {
+      // identの次に":" が来てたらラベル
+      node = new_unary_node(ND_LABEL, stmt());
+      node->label_name = my_strndup(tk->str, tk->len);
+    } else {
+      // ラベルじゃなかったので、もとに戻す
+      token = tmp;
+      // キーワードじゃなかったら 変数宣言かどうかチェック
+      node = var_decl();
+      if (!node) {
+        // 変数宣言でなかったら式文
+        node = read_expr_stmt();
+        expect(";");
+      }
     }
   }
 

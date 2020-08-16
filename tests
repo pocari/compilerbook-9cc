@@ -1152,6 +1152,28 @@ void f69_continue_test() {
   assert(8, sum, "sum");
 }
 
+void f70_goto_test() {
+  // 1 -> 2 -> 3 -> 4 -> endの順にジャンプする
+  int i = 0;
+  goto L1;
+
+L4:
+  assert(4, ++i, "++i");
+  goto LEND;
+L3:
+  assert(3, ++i, "++i");
+  goto L4;
+L2:
+  assert(2, ++i, "++i");
+  goto L3;
+L1:
+  assert(1, ++i, "++i");
+  goto L2;
+LEND:
+  assert(5, ++i, "++i");
+}
+
+
 
 int main() {
   test_count = 0;
@@ -1368,6 +1390,7 @@ int main() {
   f67_improve_struct_decl_test();
   f68_break_test();
   f69_continue_test();
+  f70_goto_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
