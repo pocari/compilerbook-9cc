@@ -473,6 +473,7 @@ static bool is_type(Token *tk) {
 //                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
 // var_decl                  = basetype var_decl_sub ("," var_decl_sub)* ";"
+//                           | basetype ";"
 // var_decl_sub              = declarator ( "=" local_var_initializer)?
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
@@ -801,7 +802,6 @@ static Type *declarator(Type *ty, char **name) {
   }
 
   *name = expect_ident();
-  fprintf(stderr, "ident_name: %s\n", *name);
   return type_suffix(ty);
 }
 
@@ -1275,6 +1275,12 @@ static Node *var_decl() {
   if (is_type(token)) {
     StorageClass sclass = false;
     Type *type = basetype(&sclass);
+    if (consume(";")) {
+      // basetypeの直後に;が来ていたらenumやstructの型の定義だけする場合
+      // また、試したところ int; という意味ない文もエラーにはならないので、
+      // 特に構造体やenumに限定せず任意のbasetypeの直後の ";" もいけそう。
+      return new_node(ND_NULL);
+    }
     Token *tmp_tk = token;
     char *ident_name;
     Type *basic_type = type;
@@ -1285,6 +1291,7 @@ static Node *var_decl() {
       push_typedef_scope(ident_name, type);
       return new_node(ND_NULL);
     }
+
 
     Var *var = new_lvar(ident_name, type);
     Node *node = new_node(ND_VAR_DECL);

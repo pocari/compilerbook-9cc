@@ -1006,6 +1006,30 @@ void f65_array_arg_as_pointer_test() {
   assert(4, f65_helper(ary), "f65_helper(ary)");
 }
 
+void f66_fix_struct_decl_test() {
+  // 構造体の型だけ定義する、というのが出来なかったのでそのテスト
+
+  // 構造体の定義 + 変数の定義
+  struct hoge {
+    int x;
+  } hoge_var;
+
+
+  // 構造体の型定義のみ
+  struct foo {
+    int y;
+  };
+
+  // 定義済みの構造体のタグから変数定義
+  struct foo foo_var;
+  struct foo *foo_var_pointer = &foo_var;
+
+  hoge_var.x = 42;
+
+  foo_var_pointer->y = hoge_var.x;
+
+  assert(42, foo_var.y, "foo_var.y");
+}
 
 int main() {
   test_count = 0;
@@ -1218,6 +1242,7 @@ int main() {
   f63_bit_binary_op_test();
   f64_logical_adn_or_test();
   f65_array_arg_as_pointer_test();
+  f66_fix_struct_decl_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
