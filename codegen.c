@@ -4,6 +4,9 @@
 // 今コード生成厨の関数名
 static char *funcname;
 
+// 今のbreakの飛び先ののキー
+static int current_break_jump_seq;
+
 static void gen(Node *node);
 
 static int printfln(char *fmt, ...) {
@@ -128,7 +131,9 @@ static void dec(Type *ty) {
 }
 
 static int next_label_key() {
-  static int label_index = 0;
+  // break可能なseq(forやwhileに入った後に使われるbreak)を判断できるように
+  // 初期値を1にして0の場合はトップレベルに出てきたbreak(=不正なbreak)とみなす
+  static int label_index = 1;
   return label_index++;
 }
 
@@ -285,13 +290,18 @@ static void gen(Node *node) {
         printfln("  pop rax"); // 条件式の結果をraxにロード
         printfln("  cmp rax, 0"); // 条件式の結果チェック
         int end_label = next_label_key();
-        printfln("  je .L.end.%04d", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
+        // breakのノードでジャンプできるようにこのラベルの値をこのループでのスコープみたいに使う
+        int seq_backup = current_break_jump_seq;
+        current_break_jump_seq = end_label;
+        printfln("  je .L.break.%04d", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
         printfln("  # ND_WHILE body start");
         gen(node->body); // whileの本体実行
         printfln("  # ND_WHILE body end");
         printfln("  jmp .L.begin.%04d", begin_label); //繰り返し
-        printfln(".L.end.%04d:", end_label);
+        printfln(".L.break.%04d:", end_label);
         printfln("  # ND_WHILE end");
+        // break用のseqを元に戻す
+        current_break_jump_seq = seq_backup;
       }
       return;
     case ND_FOR:
@@ -299,6 +309,10 @@ static void gen(Node *node) {
         printfln("  # ND_FOR start");
         int begin_label = next_label_key();
         int end_label = next_label_key();
+        // breakのノードでジャンプできるようにこのラベルの値をこのループでのスコープみたいに使う
+        int seq_backup = current_break_jump_seq;
+        current_break_jump_seq = end_label;
+
         // 初期化式
         if (node->init) {
           gen(node->init);
@@ -309,7 +323,7 @@ static void gen(Node *node) {
           gen(node->cond);
           printfln("  pop rax"); // 条件式の結果をraxにロード
           printfln("  cmp rax, 0"); // 条件式の結果チェック
-          printfln("  je .L.end.%04d", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
+          printfln("  je .L.break.%04d", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
         }
         // for の中身のアセンブラ
         gen(node->body);
@@ -318,10 +332,19 @@ static void gen(Node *node) {
           gen(node->inc);
         }
         printfln("  jmp .L.begin.%04d", begin_label); //繰り返し
-        printfln(".L.end.%04d:", end_label);
+        printfln(".L.break.%04d:", end_label);
+
+        // break用のseqを元に戻す
+        current_break_jump_seq = seq_backup;
 
         printfln("  # ND_FOR end");
       }
+      return;
+    case ND_BREAK:
+      if (!current_break_jump_seq) {
+        error("不正なbreakです");
+      }
+      printfln("  jmp .L.break.%04d", current_break_jump_seq);
       return;
     case ND_CALL:
       {

@@ -1093,6 +1093,26 @@ void f67_improve_struct_decl_test() {
   assert(8, sizeof(piyo), "sizeof(piyo)");
 }
 
+void f68_break_test() {
+  int i;
+  for (i = 0; i < 10; i++) {
+    if (i == 5) {
+      break;
+    }
+  }
+  assert(5, i, "i");
+
+  i = 0;
+  while (i < 10) {
+    if (i == 7) {
+      break;
+    }
+    i++;
+  }
+  assert(7, i, "i");
+}
+
+
 
 int main() {
   test_count = 0;
@@ -1307,6 +1327,7 @@ int main() {
   f65_array_arg_as_pointer_test();
   f66_fix_struct_decl_test();
   f67_improve_struct_decl_test();
+  f68_break_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

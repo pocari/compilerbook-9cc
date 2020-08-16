@@ -481,6 +481,7 @@ static bool is_type(Token *tk) {
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
+//                           | "break" ";"
 // var_decl                  = basetype var_decl_sub ("," var_decl_sub)* ";"
 //                           | basetype ";"
 // var_decl_sub              = declarator ( "=" local_var_initializer)?
@@ -1185,6 +1186,9 @@ static Node *stmt() {
     }
     node->body = head.next;
     leave_scope(sc);
+  } else if (consume_kind(TK_BREAK)) {
+    expect(";");
+    return new_node(ND_BREAK);
   } else {
     // キーワードじゃなかったら 変数宣言かどうかチェック
     node = var_decl();
