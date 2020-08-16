@@ -1,7 +1,7 @@
 #include "ynicc.h"
 #include <assert.h>
 
-// 今コード生成厨の関数名
+// 今コード生成中の関数名
 static char *funcname;
 
 // 今のbreakの飛び先のキー
