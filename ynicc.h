@@ -121,6 +121,7 @@ int node_type_size(Node * node);
 Type *array_of(Type *ptr_to, int array_size);
 Type *func_type(Type *ret_type);
 Type *enum_type(void);
+Type *struct_type(void);
 
 // parser.c
 

@@ -24,6 +24,7 @@ struct TagScope {
   TagScope *next;
   char *name; // タグ名
   Type *ty; // 構造体/enumの型自身
+  int depth;
 };
 
 typedef struct VarScope VarScope;
@@ -41,6 +42,7 @@ struct VarScope {
   Type *enum_ty;
   int enum_val;
 
+  int depth;
 };
 
 typedef struct Scope Scope;
@@ -60,6 +62,9 @@ static VarScope *var_scope;
 // 現在パース中のスコープにある構造体のタグ名を管理する
 static TagScope *tag_scope;
 
+// 現在パース中のスコープの深さを保持
+static int scope_depth;
+
 // 今パース中の関数のローカル変数(+仮引数)
 static VarList *locals = NULL;
 
@@ -71,6 +76,7 @@ static Scope *enter_scope(void) {
 
   new_scope->var_scope = var_scope;
   new_scope->tag_scope = tag_scope;
+  scope_depth++;
 
   return new_scope;
 }
@@ -78,6 +84,7 @@ static Scope *enter_scope(void) {
 static void leave_scope(Scope *prev_scope) {
   var_scope = prev_scope->var_scope;
   tag_scope = prev_scope->tag_scope;
+  scope_depth--;
 }
 
 static void push_tag_scope(Token *tag_tok, Type *type) {
@@ -86,6 +93,7 @@ static void push_tag_scope(Token *tag_tok, Type *type) {
   sc->name = my_strndup(tag_tok->str, tag_tok->len);
   sc->ty = type;
   sc->next = tag_scope;
+  sc->depth = scope_depth;
 
   tag_scope = sc;
 }
@@ -95,6 +103,7 @@ static VarScope *push_var_scope_helper(char *name) {
 
   sc->name = name;
   sc->next = var_scope;
+  sc->depth = scope_depth;
   var_scope = sc;
 
   return sc;
@@ -119,10 +128,10 @@ static void push_enum_scope(char *name, Type *enum_ty, int enum_val) {
   sc->enum_val = enum_val;
 }
 
-static Type *find_tag(Token *tk) {
+static TagScope *find_tag(Token *tk) {
   for (TagScope *sc = tag_scope; sc; sc = sc->next) {
     if (strncmp(sc->name, tk->str, tk->len) == 0) {
-      return sc->ty;
+      return sc;
     }
   }
   return NULL;
@@ -478,8 +487,7 @@ static bool is_type(Token *tk) {
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | assign
-// struct_decl               = "struct" ident
-//                           | "struct" ident? "{" struct_member* "}"
+// struct_decl               = "struct" ident? ("{" struct_member* "}") ?
 // struct_member             = basetype declarator
 // 
 // 以降の演算子の優先順位は下記参照(この表で上にある演算子(優先度が高い演算子)ほどBNFとしては下にくる)
@@ -724,6 +732,8 @@ static Type *basetype(StorageClass *sclass) {
       //まだ何も型名を読んでいなくて、ビルトインの方じゃない場合は、構造体か、typedefされた型名になる。
       if (tk->kind == TK_STRUCT) {
         ty = struct_decl();
+        // fprintf(stderr, "struct decl!!!!!!!!!!!!!\n");
+        // fprintf(stderr, "ty->kind: %d\n", ty->kind);
       } else if (tk->kind == TK_ENUM) {
         ty = enum_decl();
       } else {
@@ -851,22 +861,64 @@ static Type *struct_decl() {
   Token *bak = token;
   Token *tk = consume_ident();
 
-  // struct ident の後に {がなければ 既存の構造体の変数定義になるので、
-  // tkをタグ名として構造体の定義を探して返す
+  // 構造体のtagのみ宣言（？）
+  // struct hoge;
+  //
+  // その後実際の定義を宣言
+  // struct hoge {
+  //   int x;
+  // }
+  // みたいなことができるので、 struct hoge; のような場合はタグ名だけ登録する
   if (tk) {
     if (!peek_token("{")) {
-      Type *st = find_tag(tk);
-      if (!st) {
-        error_at(bak->str, "構造体: %s が見つかりません", my_strndup(tk->str, tk->len));
+      TagScope *sc = find_tag(tk);
+      if (!sc) {
+        // 無かったらこのタグ名で登録する
+        // (登録はするがまだこの時点では完全な定義でないので、ty->is_incompleteがtrueのままになる)
+        Type *ty = struct_type();
+        push_tag_scope(tk, ty);
+        return ty;
       }
-      if (st->kind != TY_STRUCT) {
+      if (sc->ty->kind != TY_STRUCT) {
         error_at(bak->str, "%s は構造体ではありません", my_strndup(tk->str, tk->len));
       }
-      return st;
+      return sc->ty;
     }
   }
 
-  expect("{");
+  // ここに来た場合 構造体の宣言の struct _ で(もしタグがあればそれの後) _ をこれから読もうとしている
+  // chibiccを見ると struct *foo というのもcの文法としてはOKで、「不完全な無名構造体へのポインタ」という変数を定義したことになるらしい。
+  // なので、 「struct」 まででその「不完全な無名構造体」とみなしてその型を返すらしい。
+  if (!consume("{")) {
+    return struct_type();
+  }
+
+  Type *ty = NULL;
+
+  TagScope *sc = NULL;
+  if (tk) {
+    sc = find_tag(tk);
+  }
+
+  if (sc && sc->depth == scope_depth) {
+    if (sc->ty->kind != TY_STRUCT) {
+      error_at(tk->str, "%s は構造体ではありません", my_strndup(tk->str, tk->len));
+    }
+    // ここに来た場合、不完全型で定義した構造体の定義になるのでその不完全型を設定して、
+    // ここ以下のメンバーのパース後に完全型になる
+    ty = sc->ty;
+  } else {
+    // 新規のタグの場合
+    // struct tag {
+    //   struct tag *next
+    // }
+    // というような、メンバーの型が自分の構造体のタグのようなケースのために、
+    // メンバーのパースの前にタグを登録しておく
+    ty = struct_type();
+    if (tk) {
+      push_tag_scope(tk, ty);
+    }
+  }
 
   Member head = {};
   Member *cur = &head;
@@ -876,19 +928,17 @@ static Type *struct_decl() {
     cur = cur->next;
   }
 
-  Type *type = calloc(1, sizeof(Type));
-  type->kind = TY_STRUCT;
-  type->members = head.next;
+  ty->members = head.next;
 
   int offset = 0;
-  for (Member *m = type->members; m; m = m->next) {
+  for (Member *m = ty->members; m; m = m->next) {
     m->offset = align_to(offset, m->ty->align);
     offset += m->ty->size;
 
-    if (type->align < m->ty->align) {
+    if (ty->align < m->ty->align) {
       // 構造体自身のアラインメントは、構造体のメンバーの中の最大のアラインメントに合わせる
       // 構造体自体のサイズの割当(ループの外)で効いてくるらしい
-      type->align = m->ty->align;
+      ty->align = m->ty->align;
     }
   }
   // アラインメント(このコメントを書いているときのintはまだ8バイト)
@@ -903,14 +953,13 @@ static Type *struct_decl() {
   // char 1バイト、int 8バイトの合計9バイトの構造体になるが、
   // アラインメントを考慮する場合、8バイト境界に置かれることになるので、
   // xの直後からyが始まるのではなく、7バイト後からyの8バイトが始まり合計16バイトの構造体になる
-  type->size = align_to(offset, type->align);
+  ty->size = align_to(offset, ty->align);
 
-  // 構造体のタグが存在していたら、今パースした構造体の定義をタグ名をキーに登録
-  if (tk) {
-    push_tag_scope(tk, type);
-  }
+  // メンバーの定義までパースして初めて不完全型->完全型になる
+  ty->is_incomplete = false;
 
-  return type;
+
+  return ty;
 }
 
 static Type *enum_decl() {
@@ -923,14 +972,14 @@ static Type *enum_decl() {
   if (tag_tk) {
     if (!peek_token("{")) {
       // 構造体と同じくenum tagの次に"{"がない定義済みenum型の変数宣言になるので、tag名で探す
-      Type *t = find_tag(tag_tk);
-      if (!t) {
+      TagScope *sc = find_tag(tag_tk);
+      if (!sc) {
         error_at(bak->str, "enum: %s が見つかりません", my_strndup(tag_tk->str, tag_tk->len));
       }
-      if (t->kind != TY_ENUM) {
+      if (sc->ty->kind != TY_ENUM) {
         error_at(bak->str, "%s はenumではありません", my_strndup(tag_tk->str, tag_tk->len));
       }
-      return t;
+      return sc->ty;
     }
   }
   // ここに来た場合は新規のenumの定義
@@ -1647,7 +1696,8 @@ static Node *struct_ref(Node *lhs) {
   add_type(lhs);
 
   if (lhs->ty->kind != TY_STRUCT) {
-    error_at(token->str, "not a struct");
+    fprintf(stderr, "type_info: %s\n", type_info(lhs->ty));
+    error_at(token->str, "not a struct(lhs->ty->kind: %d", lhs->ty->kind);
   }
 
   Token *tok = token;

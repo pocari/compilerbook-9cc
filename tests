@@ -1043,6 +1043,57 @@ void f66_fix_struct_decl_test() {
   assert(3, piyo_var, "piyo_var");
 }
 
+void f67_improve_struct_decl_test() {
+  // 不完全型で、まず定義
+  struct hoge;
+
+  // 不完全型の状態でポインタ定義
+  struct hoge *p;
+
+  // ここで完全型として再定義
+  struct hoge {
+    int x;
+    int y;
+  };
+
+  // 構造体変数
+  struct hoge hoge_var;
+
+  p = &hoge_var;
+  p->x = 12;
+  p->y = 34;
+
+  assert(12, hoge_var.x, "hoge_var.x");
+  assert(34, hoge_var.y, "hoge_var.x");
+
+
+  // 入れ子になった構造体のタグの確認
+  struct LinkList {
+    struct LinkList *next;
+    int val;
+  };
+
+  struct LinkList *p = 0;
+  for (int i = 0; i < 10; i++) {
+    struct LinkList *tmp = calloc(1, sizeof(struct LinkList));
+    tmp->next = p;
+    tmp->val = i;
+    p = tmp;
+  }
+
+  int sum = 0;
+  for (struct LinkList *x = p; x; x = x->next) {
+    sum += x->val;
+  }
+  assert(45, sum, "sum");
+
+
+  // 謎の不完全無名構造体へのポインタの確認
+  struct *piyo;
+  assert(8, sizeof(piyo), "sizeof(piyo)");
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1255,6 +1306,7 @@ int main() {
   f64_logical_adn_or_test();
   f65_array_arg_as_pointer_test();
   f66_fix_struct_decl_test();
+  f67_improve_struct_decl_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

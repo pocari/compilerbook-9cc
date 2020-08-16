@@ -39,6 +39,15 @@ Type *enum_type(void) {
   return new_type(TY_ENUM, 4, 4);
 }
 
+Type *struct_type(void) {
+  // 一旦サイズゼロ、アラインメント1バイトで作成
+  // 実際には構造体のメンバーのパース時に、メンバー中で一番大きいアラインメントで上書きされる。
+  Type *type = new_type(TY_STRUCT, 0, 1);
+  type->is_incomplete = true;
+  return type;
+}
+
+
 bool is_pointer(Type *t) {
   return t->kind == TY_PTR || t->kind == TY_ARRAY;
 }
@@ -110,16 +119,19 @@ void add_type(Node *node) {
       }
       return;
     case ND_DEREF:
-      if (is_pointer(node->lhs->ty)) {
-        node->ty = node->lhs->ty->ptr_to;
-      } else {
-        node->ty = int_type;
+      {
+        if (!node->lhs->ty->ptr_to) {
+          error("invalid pointer dereferrence");
+        }
+        Type *ty = node->lhs->ty->ptr_to;
+        if (ty->kind == TY_VOID) {
+          error("void *ポインタをデリファレンスできません");
+        }
+        if (ty->kind == TY_STRUCT && ty->is_incomplete) {
+          error("不完全な構造体のデリファレンスはできません");
+        }
+        node->ty = ty;
       }
-      // chibicc だと、こうなっていたが、yniccでやるとエラーになってしまった・・・。
-      // if (!node->lhs->ty->ptr_to) {
-      //   error("invalid pointer dereferrence");
-      // }
-      // node->ty = node->lhs->ty->ptr_to;
       return;
   }
 
