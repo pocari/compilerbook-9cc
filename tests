@@ -1029,6 +1029,18 @@ void f66_fix_struct_decl_test() {
   foo_var_pointer->y = hoge_var.x;
 
   assert(42, foo_var.y, "foo_var.y");
+
+  // enumも同様
+  enum piyo {
+    aaa = 2,
+    bbb,
+    ccc
+  };
+
+  enum piyo piyo_var;
+  piyo_var = bbb;
+
+  assert(3, piyo_var, "piyo_var");
 }
 
 int main() {
