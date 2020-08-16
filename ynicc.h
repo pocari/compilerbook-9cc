@@ -41,6 +41,7 @@ typedef enum {
   TK_TYPEDEF,  // typedef キーワード
   TK_STATIC,   // static キーワード
   TK_BREAK,    // break キーワード
+  TK_CONTINUE ,// continue キーワード
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -169,6 +170,7 @@ typedef enum {
   ND_PRE_INC,   // ++x
   ND_PRE_DEC,   // --x
   ND_BREAK,     // break
+  ND_CONTINUE,  // continue
   ND_NULL,      // 何もしないノード
 } NodeKind;
 

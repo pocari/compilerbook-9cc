@@ -482,6 +482,7 @@ static bool is_type(Token *tk) {
 //                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
 //                           | var_decl
 //                           | "break" ";"
+//                           | "continue" ";"
 // var_decl                  = basetype var_decl_sub ("," var_decl_sub)* ";"
 //                           | basetype ";"
 // var_decl_sub              = declarator ( "=" local_var_initializer)?
@@ -1189,6 +1190,9 @@ static Node *stmt() {
   } else if (consume_kind(TK_BREAK)) {
     expect(";");
     return new_node(ND_BREAK);
+  } else if (consume_kind(TK_CONTINUE)) {
+    expect(";");
+    return new_node(ND_CONTINUE);
   } else {
     // キーワードじゃなかったら 変数宣言かどうかチェック
     node = var_decl();
