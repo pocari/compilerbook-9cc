@@ -111,5 +111,40 @@ $ ./sudoku
  3 1 8 | 6 9 7 | 4 5 2
  9 7 5 | 4 1 2 | 6 3 8
  6 4 2 | 5 3 8 | 7 9 1
+
+$ ./ynicc examples/8puzzle.c > tmp.s
+$ gcc -static -o8puzzle tmp.s
+$ ./8puzzle
+initial state:
+ 3 1 2
+ 4 7
+ 6 8 5
+
+step 1:
+ 3 1 2
+ 4 7 5
+ 6 8
+
+step 2:
+ 3 1 2
+ 4 7 5
+ 6   8
+
+step 3:
+ 3 1 2
+ 4   5
+ 6 7 8
+
+step 4:
+ 3 1 2
+   4 5
+ 6 7 8
+
+step 5:
+   1 2
+ 3 4 5
+ 6 7 8
+
+solved
 ```
 
