@@ -205,7 +205,7 @@ int solve(State *initial_state) {
 
 int main() {
   seen = calloc(876543210 + 1, sizeof(char));
-  // 構造体の初期化がまだできないので、配列2初期状態を設定してコピーする
+  // 構造体の初期化がまだできないので、配列に初期状態を設定してコピーする
   int initial_board[3][3] = {
     // 31手
     // {8, 0, 6},
