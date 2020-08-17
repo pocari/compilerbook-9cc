@@ -66,15 +66,16 @@ void cleanup_queue(Queue *q) {
 
 int hash_value(State *s) {
   //左上から順番に並べた数字をhash値とする
-  //ので、最小012345678 〜 876543210
-  //になり、それを0からの数値にマッピングする
+  //ので、最小(0)12345678 〜 876543210
+  //になる。
+  //char型だと約836MBぐらいなのでムダも多いが
+  //hash値をseenのindexに対応させて1, 0で生成済みかどうかのフラグにするj
   int h = 0;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       h = h * 10 + s->board[i][j];
     }
   }
-  // 0からの数値にマッピングする
   return h;
 
 }
@@ -202,7 +203,7 @@ int solve(State *initial_state) {
 }
 
 int main() {
-  seen = calloc(876543210, sizeof(char));
+  seen = calloc(876543210 + 1, sizeof(char));
   // 構造体の初期化がまだできないので、配列2初期状態を設定してコピーする
   int initial_board[3][3] = {
     // 31手
