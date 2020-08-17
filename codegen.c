@@ -11,6 +11,7 @@ static int current_break_jump_seq;
 static int current_continue_jump_seq;
 
 static void gen(Node *node);
+static void gen_bin_op(Node *node);
 
 static int printfln(char *fmt, ...) {
   va_list ap;
@@ -580,8 +581,14 @@ static void gen(Node *node) {
       // typedef でパース時のみ発生し具体的なコード生成が無いノード
       printfln("  # ND_NULL ");
       return;
+    default:
+      // 上記以外の場合二項演算
+      gen_bin_op(node);
+      return;
   }
+}
 
+static void gen_bin_op(Node *node) {
   gen(node->lhs);
   gen(node->rhs);
 
