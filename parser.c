@@ -510,7 +510,8 @@ static bool is_type(Token *tk) {
 // bit_xor                   = bit_and ( "&" bit_and )*
 // bit_and                   = equality ( "^" equality )*
 // equality                  = relational ("==" relational | "!=" relational)*
-// relational                = add ("<" add | "<=" add | ">" add | ">=" add)*
+// relational                = shift ("<" shift | "<=" shift | ">" shift | ">=" shift)*
+// shift                     = add ("<<" add | ">>" add)*
 // add                       = mul ("+" mul | "-" mul)*
 // mul                       = cast ("*" cast | "/" cast)*
 // cast                      = "(" typename ")" cast | unary
@@ -548,6 +549,7 @@ static Node *bit_or();
 static Node *bit_xor();
 static Node *equality();
 static Node *relational();
+static Node *shift();
 static Node *add();
 static Node *new_add_node(Node *lhs, Node *rhs);
 static Node *new_sub_node(Node *lhs, Node *rhs);
@@ -1496,6 +1498,12 @@ static Node *assign() {
   } else if (consume("/=")) {
     Node *n = new_bin_node(ND_DIV, node, assign());
     return new_bin_node(ND_ASSIGN, node, n);
+  } else if (consume("<<=")) {
+    Node *n = new_bin_node(ND_A_LSHIFT, node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
+  } else if (consume(">>=")) {
+    Node *n = new_bin_node(ND_A_RSHIFT, node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
   }
   return node;
 }
@@ -1565,17 +1573,30 @@ static Node *equality() {
 }
 
 static Node *relational() {
-  Node *node = add();
+  Node *node = shift();
 
   for (;;) {
     if (consume("<=")) {
-      node = new_bin_node(ND_LTE, node, add());
+      node = new_bin_node(ND_LTE, node, shift());
     } else if (consume(">=")) {
-      node = new_bin_node(ND_LTE, add(), node);
+      node = new_bin_node(ND_LTE, shift(), node);
     } else if (consume("<")) {
-      node = new_bin_node(ND_LT, node, add());
+      node = new_bin_node(ND_LT, node, shift());
     } else if (consume(">")) {
-      node = new_bin_node(ND_LT, add(), node);
+      node = new_bin_node(ND_LT, shift(), node);
+    } else {
+      return node;
+    }
+  }
+}
+
+static Node *shift() {
+  Node *node = add();
+  for (;;) {
+    if (consume("<<")) {
+      node = new_bin_node(ND_A_LSHIFT, node, add());
+    } else if (consume(">>")) {
+      node = new_bin_node(ND_A_RSHIFT, node, add());
     } else {
       return node;
     }

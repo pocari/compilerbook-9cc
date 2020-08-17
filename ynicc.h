@@ -148,6 +148,8 @@ typedef enum {
   ND_AND,       // &&
   ND_BIT_OR,    // |
   ND_BIT_AND,   // &
+  ND_A_LSHIFT , // 算術左シフト
+  ND_A_RSHIFT , // 算術右シフト
   ND_BIT_XOR,   // ^
   ND_EQL,       // ==
   ND_NOT_EQL,   // !=

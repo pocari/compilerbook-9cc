@@ -663,6 +663,15 @@ static void gen(Node *node) {
     case ND_BIT_XOR:
       printfln("  xor rax, rdi");
       break;
+    case ND_A_LSHIFT:
+      // シフトする数はcl(rcxの下位8bit)に設定すると決まってるらしい
+      printfln("  mov cl, dil");
+      printfln("  sal rax, cl");
+      break;
+    case ND_A_RSHIFT:
+      printfln("  mov cl, dil");
+      printfln("  sar rax, cl");
+      break;
     default:
       error("予期しないNodeです。 kind: %d", node->kind);
   }

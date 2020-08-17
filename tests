@@ -1235,6 +1235,36 @@ void f71_switch_test() {
   assert(30, f71_helper_fall_through(3), "f71_helper_fall_through(1)");
 }
 
+void f72_shift_op_test() {
+  int x = 0b01;
+
+  assert(0b10, x << 1, "x << 1");
+  assert(0b100, x << 2, "x << 2");
+  assert(0, x >> 1, "x >> 1");
+
+  // 符号付きcharの-128
+  char c = 0b10000000;
+  char c1 = c << 1;
+
+  // char型に代入すると桁あふれで0になる
+  assert(0, c1 << 1, "c1 << 1");
+
+  // 代入せずに計算するだけなら64bit扱いなので-256になる
+  assert(-256, c << 1, "c << 1");
+
+  //算術右シフトなので、-64になる
+  assert(-64, c >> 1, "c >> 1");
+
+  // 代入演算子の方も確認
+  char c2 = 0b10000000;
+  c2 <<= 1;
+  assert(0, c2, "c2");
+
+  char c3 = 0b10000000;
+  c3 >>= 1;
+  assert(-64, c3, "c3");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1452,6 +1482,7 @@ int main() {
   f69_continue_test();
   f70_goto_test();
   f71_switch_test();
+  f72_shift_op_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
