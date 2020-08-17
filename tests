@@ -1173,7 +1173,67 @@ LEND:
   assert(5, ++i, "++i");
 }
 
+int f71_helper_basic_switch(int x) {
+  int ret = -1;
+  switch(x) {
+    case 1:
+      ret = 10;
+      break;
+    case 2:
+      ret = 20;
+      break;
+    default:
+      ret = 30;
+      break;
+  }
 
+  return ret;
+}
+
+int f71_helper_no_default(int x) {
+  int ret = -1;
+  switch(x) {
+    case 1:
+      ret = 10;
+      break;
+    case 2:
+      ret = 20;
+      break;
+  }
+
+  return ret;
+}
+
+int f71_helper_fall_through(int x) {
+  int ret = 0;
+  switch(x) {
+    case 1:
+      ret += 10;
+    case 2:
+      ret += 20;
+    default:
+      ret += 30;
+  }
+
+  return ret;
+}
+
+void f71_switch_test() {
+  // 基本パターン
+  assert(10, f71_helper_basic_switch(1), "f71_helper_basic_switch(1)");
+  assert(20, f71_helper_basic_switch(2), "f71_helper_basic_switch(1)");
+  assert(30, f71_helper_basic_switch(3), "f71_helper_basic_switch(1)");
+
+  // デフォルト無しパターン
+  assert(10, f71_helper_no_default(1), "f71_helper_no_default(1)");
+  assert(20, f71_helper_no_default(2), "f71_helper_no_default(1)");
+  assert(-1, f71_helper_no_default(3), "f71_helper_no_default(1)");
+
+  // フォールスルーするパターン
+  assert(60, f71_helper_fall_through(1), "f71_helper_fall_through(1)");
+  assert(50, f71_helper_fall_through(2), "f71_helper_fall_through(1)");
+  assert(30, f71_helper_fall_through(3), "f71_helper_fall_through(1)");
+}
 
 int main() {
   test_count = 0;
@@ -1391,6 +1451,7 @@ int main() {
   f68_break_test();
   f69_continue_test();
   f70_goto_test();
+  f71_switch_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

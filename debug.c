@@ -82,6 +82,18 @@ char *node_kind_to_s(Node *nd) {
       return "ND_AND";
     case  ND_OR:
       return "ND_OR";
+    case  ND_BREAK:
+      return "ND_BREAK";
+    case  ND_CONTINUE:
+      return "ND_CONTINUE";
+    case  ND_GOTO:
+      return "ND_GOTO";
+    case  ND_LABEL:
+      return "ND_LABEL";
+    case  ND_SWITCH:
+      return "ND_SWITCH";
+    case  ND_CASE:
+      return "ND_CASE";
     case  ND_NULL:
       return "ND_NULL";
   };
@@ -473,6 +485,35 @@ char *node_ast(Node *node) {
           char *ret = my_strndup(buf, n);
           free(l);
           return ret;
+        }
+      case ND_BREAK:
+        n += sprintf(buf, "(break)");
+        return my_strndup(buf, n);
+      case ND_CONTINUE:
+        n += sprintf(buf, "(continue)");
+        return my_strndup(buf, n);
+      case ND_GOTO:
+        n += sprintf(buf, "(goto %s)", node->label_name);
+        return my_strndup(buf, n);
+      case ND_SWITCH:
+        {
+          char *cond = node_ast(node->lhs);
+          char *body = node_ast(node->body);
+          n += sprintf(buf, "(switch %s %s)", cond, body);
+          free(cond);
+          free(body);
+          return my_strndup(buf, n);
+        }
+      case ND_CASE:
+        {
+          char *stmt = node_ast(node->lhs);
+          if (node->is_default_case) {
+            n += sprintf(buf, "(default %s)", stmt);
+          } else {
+            n += sprintf(buf, "(case (cond %ld) %s)", node->case_cond_val, stmt);
+          }
+          free(stmt);
+          return my_strndup(buf, n);
         }
       case ND_NULL:
         return "(ND_NULL)";

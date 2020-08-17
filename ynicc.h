@@ -43,6 +43,9 @@ typedef enum {
   TK_BREAK,    // break キーワード
   TK_CONTINUE, // continue キーワード
   TK_GOTO,     // goto キーワード
+  TK_SWITCH,   // switch キーワード
+  TK_CASE,     // case キーワード
+  TK_DEFAULT,  // default キーワード
   TK_EOF,      // 入力終了
 } TokenKind;
 
@@ -174,6 +177,8 @@ typedef enum {
   ND_CONTINUE,  // continue
   ND_GOTO,      // goto
   ND_LABEL,     // ラベル
+  ND_SWITCH,    // switch
+  ND_CASE,      // case
   ND_NULL,      // 何もしないノード
 } NodeKind;
 
@@ -215,13 +220,19 @@ struct Node {
   Node *arg; //関数の引数
 
   Var *var; //ND_VAR, ND_VAR_DECLのときの変数情報
-  long val;    // kindがND_NUMの場合に使う
+  long val;    // kindがND_NUMの場合の値
   char *funcname; // 関数名
   int funcarg_num; // 関数呼び出しの引数の数
 
   Member *member; // 構造体のメンバーへのアクセス時の対象のメンバー
 
   char *label_name;
+
+  long case_cond_val; // switch文のcaseの値
+  bool is_default_case; // ND_CASEの場合にそれがdefaultならtrue
+  Node *default_case; // ND_SWITHの場合にdefault節のノード
+  Node *case_next;    // caseのジャンプのコード生成用の1switch中のcaseノードのリスト
+
 };
 
 struct Var {

@@ -71,6 +71,9 @@ static VarList *locals = NULL;
 // グローバル変数
 static VarList *globals = NULL;
 
+// 現在処理中のswitch分のノード(caseとdefaultをその後追加していく)
+static Node *current_switch = NULL;
+
 static Scope *enter_scope(void) {
   Scope *new_scope = calloc(1, sizeof(Scope));
 
@@ -480,6 +483,9 @@ static bool is_type(Token *tk) {
 //                           | "if" "(" expr ")" stmt ("else" stmt)?
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
+//                           | "switch" "(" expr ")"
+//                           | "case" number ":" stmt
+//                           | "default" ":" stmt
 //                           | var_decl
 //                           | "break" ";"
 //                           | "continue" ";"
@@ -1117,6 +1123,7 @@ static Node *read_expr_stmt() {
 
 static Node *stmt() {
   Node *node = NULL;
+  Token *cur_tok = token;
 
   if (consume_kind(TK_RETURN)) {
     node = new_node(ND_RETURN);
@@ -1200,6 +1207,37 @@ static Node *stmt() {
     expect(";");
     node = new_node(ND_GOTO);
     node->label_name = ident;
+  } else if (consume_kind(TK_SWITCH)) {
+    expect("(");
+    Node *switch_condition = expr();
+    expect(")");
+    node = new_unary_node(ND_SWITCH, switch_condition);
+
+    // 今のswitchを保存して現在のswitchに切り替える
+    Node *tmp = current_switch;
+    current_switch = node;
+    node->body = stmt();
+    // もとのswitchに戻す
+    current_switch = tmp;
+  } else if (consume_kind(TK_CASE)) {
+    if (!current_switch) {
+      error(cur_tok->str, "対応するswitchがありません");
+    }
+    int case_cond_val = expect_number();
+    expect(":");
+    node = new_unary_node(ND_CASE, stmt());
+    node->case_cond_val = case_cond_val;
+    node->is_default_case = false;
+    node->case_next = current_switch->case_next;
+    current_switch->case_next = node;
+  } else if (consume_kind(TK_DEFAULT)) {
+    if (!current_switch) {
+      error(cur_tok->str, "対応するswitchがありません");
+    }
+    expect(":");
+    node = new_unary_node(ND_CASE, stmt());
+    node->is_default_case = true;
+    current_switch->default_case = node;
   } else {
     Token *tmp = token;
     Token *tk = consume_ident();

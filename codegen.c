@@ -356,6 +356,46 @@ static void gen(Node *node) {
         printfln("  # ND_FOR end");
       }
       return;
+    case ND_SWITCH:
+      {
+        printfln("  # ND_SWITCH start");
+
+        int break_seq_backup = current_break_jump_seq;
+        int case_label = current_break_jump_seq = next_label_key();
+
+        //switchの条件式のコードを生成
+        gen(node->lhs);
+        printfln("  pop rax");
+        // まずdefault以外のジャンプを生成
+        for (Node *n = node->case_next; n; n = n->case_next) {
+            // caseの式に等しい場合該当のコードへジャンプする式を生成
+            printfln("  cmp rax, %ld", n->case_cond_val);
+            printfln("  je .L.case.%04d.%ld", case_label, n->case_cond_val);
+        }
+        if (node->default_case) {
+          // defaultがあれば、defaultへのジャンプ式を生成して抜ける
+          printfln("  jmp .L.case.%04d.default", case_label);
+        } else {
+          // defaultがなければswitchの最後にジャンプ
+          printfln("  jmp .L.break.%04d", current_break_jump_seq);
+        }
+        // switchの中身のコード生成
+        gen(node->body);
+
+        // switch中でのブレイクの飛び先のラベル生成
+        printfln(".L.break.%04d:", current_break_jump_seq);
+        current_break_jump_seq = break_seq_backup;
+        printfln("  # ND_SWITCH end");
+      }
+      return;
+    case ND_CASE:
+      if (node->is_default_case) {
+        printfln(".L.case.%04d.default:", current_break_jump_seq);
+      } else {
+        printfln(".L.case.%04d.%ld:", current_break_jump_seq, node->case_cond_val);
+      }
+      gen(node->lhs);
+      return;
     case ND_BREAK:
       if (!current_break_jump_seq) {
         error("不正なbreakです");

@@ -61,6 +61,12 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_CONTINUE";
     case TK_GOTO: // goto
       return "TK_GOTO";
+    case TK_SWITCH: // switch
+      return "TK_SWITCH";
+    case TK_CASE: // case
+      return "TK_CASE";
+    case TK_DEFAULT: // default
+      return "TK_DEFAULT";
     case TK_EOF: // 入力終了
       return "TK_EOF";
   }
@@ -199,6 +205,18 @@ static Keyword keywords[] = {
   {
     "goto",
     TK_GOTO,
+  },
+  {
+    "switch",
+    TK_SWITCH,
+  },
+  {
+    "case",
+    TK_CASE,
+  },
+  {
+    "default",
+    TK_DEFAULT,
   },
 };
 
