@@ -21,6 +21,7 @@ typedef struct Queue {
 Queue *init_queue() {
   Queue *q = calloc(1, sizeof(Queue));
   q->head = q->tail = q->next = 0;
+  q->val = 0;
   return q;
 }
 
