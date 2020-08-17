@@ -178,7 +178,7 @@ int dump_step(State *s) {
   if (s) {
     int step = dump_step(s->parent);
     if (step == 0) {
-      printf("inital state:\n");
+      printf("initial state:\n");
     } else {
       printf("step %d:\n", step);
     }
