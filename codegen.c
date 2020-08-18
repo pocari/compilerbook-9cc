@@ -259,8 +259,9 @@ static void gen(Node *node) {
       printfln("  # ND_BLOCK end");
       return;
     case ND_IF:
+    case ND_TERNARY:
       {
-        printfln("  # ND_IF start");
+        printfln("  # ND_IF(ND_TERNARY) start");
         gen(node->cond); // 条件式のコード生成
         if (node->els) {
           // else ありの if
@@ -283,7 +284,7 @@ static void gen(Node *node) {
           gen(node->then);                       // true節のコード生成
           printfln(".L.end.%04d:", end_label); // elseのときの飛び先
         }
-        printfln("  # ND_IF end");
+        printfln("  # ND_IF(ND_TERNARY) end");
       }
       return;
     case ND_WHILE:

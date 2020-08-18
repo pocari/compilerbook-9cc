@@ -1519,7 +1519,7 @@ static Node *ternary() {
 
     // ifと同じ構造で式になるのでthen, elsにstmtじゃなくてexprいれたら動いたので取り敢えずこれで
     Node *cond = node;
-    node = new_node(ND_IF);
+    node = new_node(ND_TERNARY);
     node->cond = cond;
     node->then = true_expr;
     node->els = false_expr;

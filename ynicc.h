@@ -181,6 +181,7 @@ typedef enum {
   ND_LABEL,     // ラベル
   ND_SWITCH,    // switch
   ND_CASE,      // case
+  ND_TERNARY,   // x ? y : z (コード生成の実態はifと同じにする)
   ND_NULL,      // 何もしないノード
 } NodeKind;
 
