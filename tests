@@ -1265,6 +1265,31 @@ void f72_shift_op_test() {
   assert(-64, c3, "c3");
 }
 
+int f73_complex_ternary_op(int x) {
+  return x == 1 ? 10 : x == 2 ? 20 : 30;
+}
+
+void f73_ternary_op_test() {
+  assert(2, (1 ? 2 : 3), "1 ? 2 : 3");
+  assert(3, (0 ? 2 : 3), "1 ? 2 : 3");
+  assert(2, (1 || 0 ? 2 : 3), "1 || 0 ? 2 : 3");
+  assert(3, (0 || 0 ? 2 : 3), "1 || 0 ? 2 : 3");
+
+  assert(10, f73_complex_ternary_op(1),"f73_complex_ternary_op(1)");
+  assert(20, f73_complex_ternary_op(2),"f73_complex_ternary_op(2)");
+  assert(30, f73_complex_ternary_op(3),"f73_complex_ternary_op(3)");
+
+  int i;
+  assert(2, (i = 10 ? 2 : 3), "i = 10 ? 2 : 3");
+  // iに10が代入されたわけではない
+  assert(2, i, "i");
+
+  assert(3, (i =  0 ? 2 : 3), "i = 0 ? 2 : 3");
+  // iに0が代入されたわけではない
+  assert(3, i, "i");
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1483,6 +1508,7 @@ int main() {
   f70_goto_test();
   f71_switch_test();
   f72_shift_op_test();
+  f73_ternary_op_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

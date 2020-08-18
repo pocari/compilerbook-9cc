@@ -503,7 +503,8 @@ static bool is_type(Token *tk) {
 // 以降の演算子の優先順位は下記参照(この表で上にある演算子(優先度が高い演算子)ほどBNFとしては下にくる)
 // http://www.bohyoh.com/CandCPP/C/operator.html
 // expr                      = assign ("," assign)*
-// assign                    = logical_or ( ("="  | "+=" | "-=" | "*=" | "/=") assign)?
+// assign                    = ternary ( ("="  | "+=" | "-=" | "*=" | "/=") assign)?
+// ternary                   = logical_or ("?" expr : expr)?
 // logical_or                = logical_and ( "||" logical_and )*
 // logical_and               = bit_or ( "&&" bit_or )*
 // bit_or                    = bit_and ( "|" bit_and )*
@@ -542,6 +543,7 @@ static Node *var_decl();
 static Node *var_decl_sub();
 static Node *expr();
 static Node *assign();
+static Node *ternary();
 static Node *bit_and();
 static Node *logical_or();
 static Node *logical_and();
@@ -1477,7 +1479,7 @@ static Node *expr() {
 }
 
 static Node *assign() {
-  Node *node = logical_or();
+  Node *node = ternary();
 
   // chibicc だと "=" 以外の +=, -=... 計の演算子は別途 ND_ADD_EQ のような専用のNode種別をつくって処理している
   // https://github.com/rui314/chibicc/commit/05e907d2b8a94103d60148ce90e27ca191ad5446
@@ -1505,6 +1507,24 @@ static Node *assign() {
     Node *n = new_bin_node(ND_A_RSHIFT, node, assign());
     return new_bin_node(ND_ASSIGN, node, n);
   }
+  return node;
+}
+
+static Node *ternary() {
+  Node *node = logical_or();
+  if (consume("?")) {
+    Node *true_expr = expr();
+    expect(":");
+    Node *false_expr = expr();
+
+    // ifと同じ構造で式になるのでthen, elsにstmtじゃなくてexprいれたら動いたので取り敢えずこれで
+    Node *cond = node;
+    node = new_node(ND_IF);
+    node->cond = cond;
+    node->then = true_expr;
+    node->els = false_expr;
+  }
+
   return node;
 }
 
