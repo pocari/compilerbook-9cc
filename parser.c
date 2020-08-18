@@ -396,6 +396,20 @@ static void expect_token(TokenKind kind) {
   token = token->next;
 }
 
+// }か }, で終わると受理する
+bool expect_trailing_comma_end_brace() {
+    if (consume("}")) {
+      return true;
+    }
+    expect(",");
+
+    if (consume("}")) {
+      return true;;
+    }
+
+    return false;
+}
+
 static bool at_eof() {
   return token->kind == TK_EOF;
 }
@@ -1010,13 +1024,7 @@ static Type *enum_decl() {
     }
     push_enum_scope(ident, ty, enum_value++);
 
-    if (consume("}")) {
-      break;
-    }
-
-    expect(",");
-
-    if (consume("}")) {
+    if (expect_trailing_comma_end_brace()) {
       break;
     }
   }
@@ -1357,6 +1365,20 @@ static Node *new_desg_node(Var *var, Designator *desg, Node *rhs) {
   return new_unary_node(ND_EXPR_STMT, assign);
 }
 
+static Node *lvar_init_zero(Node *cur, Var *var, Type *ty, Designator *dseg) {
+  if (ty->kind == TY_ARRAY) {
+    // 配列の場合は各要素も再帰的に0にする
+    for (int i = 0; i < ty->array_size; i++) {
+      Designator desg2 = {dseg, i};
+      cur = lvar_init_zero(cur, var, ty->ptr_to, &desg2);
+    }
+    return cur;
+  }
+  // 配列出ない場合は、単純にその変数(入れ子の配列の場合はどこかの末端の要素)に0を代入するコードをnextにつなげていく
+  cur->next = new_desg_node(var, dseg, new_num_node(0));
+  return cur->next;
+}
+
 static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator *desg) {
   // static int count = 0;
   // fprintf(stdout, "count: %d, type: %d\n", count++, ty->kind);
@@ -1364,12 +1386,20 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
     expect("{");
     int i = 0;
 
-    do {
-      Designator desg2 = {desg, i++};
-      cur = local_var_initializer_sub(cur, var, ty->ptr_to, &desg2);
-    } while(!peek_token("}") && consume(","));
+    if (!peek_token("}")) {
+      do {
+        Designator desg2 = {desg, i++};
+        cur = local_var_initializer_sub(cur, var, ty->ptr_to, &desg2);
+      } while(!peek_token("}") && consume(","));
+    }
 
-    expect("}");
+    expect_trailing_comma_end_brace();
+
+    // 初期化子が配列のサイズに満たない場合は、0で初期化する
+    for (; i < ty->array_size; i++) {
+      Designator dseg2 = {desg, i};
+      cur = lvar_init_zero(cur, var, ty->ptr_to, &dseg2);
+    }
 
     return cur;
   }
