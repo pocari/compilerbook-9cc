@@ -474,7 +474,7 @@ static bool is_type(Token *tk) {
 // declarator                =  "*" * ( "(" declarator         ")" | ident )  type_suffix
 // abstract_declarator       =  "*" * ( "(" abstract_declarator")"         )? type_suffix
 // typename                  = basetype abstract_declarator type_suffix
-// type_suffix               = ("[" number "]" type_suffix)?
+// type_suffix               = ("[" const_expr? "]" type_suffix)?
 // function_def_or_decl      = basetype declarator "(" function_params? ")" ("{" stmt* "}" | ";")
 // global_var_decls          = basetype declarator ";"
 // stmt                      = expr ";"
@@ -484,7 +484,7 @@ static bool is_type(Token *tk) {
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
 //                           | "switch" "(" expr ")"
-//                           | "case" number ":" stmt
+//                           | "case" const_expr ":" stmt
 //                           | "default" ":" stmt
 //                           | var_decl
 //                           | "break" ";"
@@ -505,6 +505,7 @@ static bool is_type(Token *tk) {
 // expr                      = assign ("," assign)*
 // assign                    = ternary ( ("="  | "+=" | "-=" | "*=" | "/=") assign)?
 // ternary                   = logical_or ("?" expr : expr)?
+// const_expr                = eval( ternary )
 // logical_or                = logical_and ( "||" logical_and )*
 // logical_and               = bit_or ( "&&" bit_or )*
 // bit_or                    = bit_and ( "|" bit_and )*
@@ -544,6 +545,8 @@ static Node *var_decl_sub();
 static Node *expr();
 static Node *assign();
 static Node *ternary();
+static long const_expr();
+static long eval(Node *node);
 static Node *bit_and();
 static Node *logical_or();
 static Node *logical_and();
@@ -1227,7 +1230,7 @@ static Node *stmt() {
     if (!current_switch) {
       error(cur_tok->str, "対応するswitchがありません");
     }
-    int case_cond_val = expect_number();
+    int case_cond_val = const_expr();
     expect(":");
     node = new_unary_node(ND_CASE, stmt());
     node->case_cond_val = case_cond_val;
@@ -1278,7 +1281,7 @@ static Type *type_suffix(Type *base) {
   if (!consume("]")) {
     //[の直後に"]"が来ていない場合、配列のサイズがあるはずなので、完全な方としてis_incompleteをfalseに
     is_incomplete = false;
-    array_size = expect_number();
+    array_size = const_expr();
     expect("]");
   }
 
@@ -1526,6 +1529,58 @@ static Node *ternary() {
   }
 
   return node;
+}
+
+static long const_expr() {
+  return eval(ternary());
+}
+
+static long eval(Node *node) {
+  switch (node->kind) {
+    case ND_ADD:
+      return eval(node->lhs) + eval(node->rhs);
+    case ND_SUB:
+      return eval(node->lhs) - eval(node->rhs);
+    case ND_MUL:
+      return eval(node->lhs) * eval(node->rhs);
+    case ND_DIV:
+      return eval(node->lhs) / eval(node->rhs);
+    case ND_BIT_AND:
+      return eval(node->lhs) & eval(node->rhs);
+    case ND_BIT_OR:
+      return eval(node->lhs) | eval(node->rhs);
+    case ND_BIT_XOR:
+      return eval(node->lhs) ^ eval(node->rhs);
+    case ND_A_LSHIFT:
+      return eval(node->lhs) << eval(node->rhs);
+    case ND_A_RSHIFT:
+      return eval(node->lhs) >> eval(node->rhs);
+    case ND_EQL:
+      return eval(node->lhs) == eval(node->rhs);
+    case ND_NOT_EQL:
+      return eval(node->lhs) != eval(node->rhs);
+    case ND_LT:
+      return eval(node->lhs) < eval(node->rhs);
+    case ND_LTE:
+      return eval(node->lhs) <= eval(node->rhs);
+    case ND_TERNARY:
+      return eval(node->cond) ? eval(node->then) : eval(node->els);
+    case ND_COMMA:
+      return eval(node->rhs);
+    case ND_NOT:
+      return !eval(node->lhs);
+    case ND_BIT_NOT:
+      return ~eval(node->lhs);
+    case ND_AND:
+      return eval(node->lhs) && eval(node->rhs);
+    case ND_OR:
+      return eval(node->lhs) || eval(node->rhs);
+    case ND_MOD:
+      return eval(node->lhs) % eval(node->rhs);
+    case ND_NUM:
+      return node->val;
+  }
+  error("定数式の計算のみ可能です");
 }
 
 static Node *logical_or() {

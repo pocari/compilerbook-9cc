@@ -1289,6 +1289,29 @@ void f73_ternary_op_test() {
   assert(3, i, "i");
 }
 
+void f74_const_expr_test() {
+  int x[1+2] = {1, 2, 3};
+  assert(2, x[1], "x[1]");
+
+  int y = 0;
+  switch(x[2]) {
+    case 1:
+      y = 10;
+      break;
+    case 1 * 2:
+      y = 20;
+      break;
+    case 1 + 2:
+      y = 30;
+      break;
+    default:
+      y = 40;
+      break;
+  }
+  assert(30, y, "y");
+}
+
+
 
 int main() {
   test_count = 0;
@@ -1509,6 +1532,7 @@ int main() {
   f71_switch_test();
   f72_shift_op_test();
   f73_ternary_op_test();
+  f74_const_expr_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
