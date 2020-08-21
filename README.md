@@ -148,3 +148,13 @@ step 5:
 solved
 ```
 
+## その他便利コマンド
+
+# gccが生成したオブジェクトファイルからintel形式で逆アセンブルする
+
+```
+./ynicc examples/sudoku.c > sudoku.s
+gcc -c sudoku.s
+objdump -d -M intel sudoku.o
+```
+objdump -d -M intel sudoku.o
