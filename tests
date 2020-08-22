@@ -1370,6 +1370,29 @@ void f76_string_initializer_test() {
   assert('f', ary23[1][2], "ary23[1][2]");
 }
 
+void f77_omitted_array_size_with_initializer_test() {
+  int a[] = {1, 2, 3, 4};
+  assert(1, a[0], "a[0]");
+  assert(2, a[1], "a[1]");
+  assert(3, a[2], "a[2]");
+  assert(4, a[3], "a[3]");
+  assert(16, sizeof(a), "sizeof(a))");
+
+  long b[][2] = {
+    {1, 2},
+    {3, 4},
+    {5, 6}
+  };
+  assert(1, b[0][0], "b[0][0]");
+  assert(2, b[0][1], "b[1][0]");
+  assert(3, b[1][0], "b[0][1]");
+  assert(4, b[1][1], "b[1][1]");
+  assert(5, b[2][0], "b[0][2]");
+  assert(6, b[2][1], "b[1][2]");
+  assert(48, sizeof(b), "sizeof(b)");
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1592,6 +1615,7 @@ int main() {
   f74_const_expr_test();
   f75_initialize_zero_if_suppressed_initializer_test();
   f76_string_initializer_test();
+  f77_omitted_array_size_with_initializer_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

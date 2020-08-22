@@ -1379,6 +1379,12 @@ static Node *lvar_init_zero(Node *cur, Var *var, Type *ty, Designator *dseg) {
   return cur->next;
 }
 
+static void array_size_completed(Type *ty, int array_size) {
+  ty->is_incomplete = false;
+  ty->array_size = array_size;
+  ty->size = ty->ptr_to->size * ty->array_size;
+}
+
 static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator *desg) {
   if (ty->kind == TY_ARRAY && ty->ptr_to->kind == TY_CHAR && peek_kind(TK_STR)) {
     // char hoge[3] = "abc" のような場合
@@ -1402,6 +1408,10 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
     for (int i = len; i < ty->array_size; i++) {
       Designator desg2 = {desg, i};
       cur = lvar_init_zero(cur, var, ty->ptr_to, &desg2);
+    }
+    // 不完全型(配列のサイズが省略されている場合)の場合、初期化した文字列の長さに合わせる
+    if (ty->is_incomplete) {
+      array_size_completed(ty, str->content_length);
     }
 
     return cur;
@@ -1427,6 +1437,11 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
     for (; i < ty->array_size; i++) {
       Designator dseg2 = {desg, i};
       cur = lvar_init_zero(cur, var, ty->ptr_to, &dseg2);
+    }
+
+    // 不完全型(配列のサイズが省略されている場合)の場合、初期化した文字列の長さに合わせる
+    if (ty->is_incomplete) {
+      array_size_completed(ty, i);
     }
 
     return cur;
