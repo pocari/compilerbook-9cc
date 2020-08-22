@@ -1380,6 +1380,34 @@ static Node *lvar_init_zero(Node *cur, Var *var, Type *ty, Designator *dseg) {
 }
 
 static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator *desg) {
+  if (ty->kind == TY_ARRAY && ty->ptr_to->kind == TY_CHAR && peek_kind(TK_STR)) {
+    // char hoge[3] = "abc" のような場合
+    // hoge[0] = 'a';
+    // hoge[1] = 'b';
+    // hoge[2] = 'c';
+    // のようなコードを生成する
+    // gccでためしたところ
+    // char hoge[10] = "01234";
+    // みたいに配列の長さに満たない分は0で初期化されていいるっぽい
+    // 初期化敷なしで宣言だけの(char hoge[10];)場合は値は不定
+    Token *str = consume_kind(TK_STR);
+
+    int len = ty->array_size > str->content_length ? str->content_length : ty->array_size;
+    for (int i = 0; i < len; i++) {
+      Designator desg2 = {desg, i};
+      cur->next = new_desg_node(var, &desg2, new_num_node(str->contents[i]));
+      cur = cur->next;
+    }
+
+    for (int i = len; i < ty->array_size; i++) {
+      Designator desg2 = {desg, i};
+      cur = lvar_init_zero(cur, var, ty->ptr_to, &desg2);
+    }
+
+    return cur;
+  }
+
+
   // static int count = 0;
   // fprintf(stdout, "count: %d, type: %d\n", count++, ty->kind);
   if (ty->kind == TY_ARRAY) {
