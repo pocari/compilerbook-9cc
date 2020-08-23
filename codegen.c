@@ -757,7 +757,7 @@ static void codegen_data(Program *pgm) {
     for (Initializer *i = var->initializer; i; i = i->next) {
       if (i->label) {
         // 別のグローバル変数の参照の場合
-        printfln("  .quad %s", i->label);
+        printfln("  .quad %s+%ld", i->label, i->addend);
       } else if (i->sz == 1) {
         // 文字の場合
         printfln("  .byte %ld", i->val);

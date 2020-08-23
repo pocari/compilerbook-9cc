@@ -576,6 +576,7 @@ static Node *assign();
 static Node *ternary();
 static long const_expr();
 static long eval(Node *node);
+static long eval2(Node *node, Var **var);
 static Node *bit_and();
 static Node *logical_or();
 static Node *logical_and();
@@ -649,9 +650,11 @@ static Initializer *new_init_val(Initializer *cur, int sz, long val) {
   return initializer;
 }
 
-static Initializer *new_init_label(Initializer *cur, char *label) {
+// addendは labelからのオフセットを指定するときに渡される
+static Initializer *new_init_label(Initializer *cur, char *label, long addend) {
   Initializer *initializer = calloc(1, sizeof(Initializer));
   initializer->label = label;
+  initializer->addend = addend;
   cur->next = initializer;
   return initializer;
 }
@@ -816,24 +819,21 @@ static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
   }
 
 
+  // グローバル変数の初期化で別のグローバル変数のアドレス参照のみ使えるため、
+  // 初期化式の中に最大一つだけ変数を取れる。
+  // その変数をevalの評価中に合わせて取得し返してもらう。
+  // その初期化式の値は、 evalの中で見つかった別のグローバル変数を基準にしたアドレス計算の結果をinitializerとする
   Node *expr = ternary();
-  if (expr->kind == ND_ADDR) {
-    if (expr->lhs->kind != ND_VAR) {
-      //アドレスの参照の場合は他の変数以外の式に対してはエラー
-      error_at(cur_tok->str, "invalid initializer");
-    }
-    // その(グローバル)変数へのアドレス(=グローバル変数のラベル)を設定
-    // 現状はグローバル変数のラベル=グローバル変数名
-    return new_init_label(cur, expr->lhs->var->name);
+  Var *var = NULL;
+  long addend = eval2(expr, &var);
+  if (var) {
+    // 変数からのオフセットの初期化式だったので、ポインタ演算とみなして実際のバイト数に変換する
+    int scale = (var->type->kind == TY_ARRAY) ? var->type->ptr_to->size : var->type->size;
+    return new_init_label(cur, var->name, addend * scale);
   }
 
-  // グローバル変数の配列のアドレスで初期化も可能
-  if (expr->kind == ND_VAR && expr->var->type->kind == TY_ARRAY) {
-    return new_init_label(cur, expr->var->name);
-  }
-
-  // それ以外の場合は式を定数式とみなしてその計算結果で初期化
-  return new_init_val(cur, ty->size, eval(expr));
+  // 変数がない場合は単にevalの値を定数として設定するinitializerとする
+  return new_init_val(cur, ty->size, addend);
 }
 
 static Initializer *gvar_initializer(Type *ty) {
@@ -1870,11 +1870,15 @@ static long const_expr() {
   return eval(ternary());
 }
 
-static long eval(Node *node) {
+static long eval2(Node *node, Var **var) {
   #pragma clang diagnostic ignored "-Wswitch"
   switch (node->kind) {
     case ND_ADD:
       return eval(node->lhs) + eval(node->rhs);
+    case ND_PTR_ADD:
+      return eval2(node->lhs, var) + eval(node->rhs);
+    case ND_PTR_SUB:
+      return eval2(node->lhs, var) - eval(node->rhs);
     case ND_SUB:
       return eval(node->lhs) - eval(node->rhs);
     case ND_MUL:
@@ -1915,10 +1919,38 @@ static long eval(Node *node) {
       return eval(node->lhs) % eval(node->rhs);
     case ND_NUM:
       return node->val;
+    case ND_ADDR:
+      // ing gvar1[] = {1, 2}
+      // int *gvar2 = &gvar1
+      // のようなケースの2行目の&gvar1の処理
+      // この場合、単にgvarの先頭アドレスが設定される
+      //
+      // 変数をついでに探さないモード(!var)か
+      // 変数もついでに探すモード(*var) で、対象のノードが変数でなければエラー
+      if (!var || *var || node->lhs->kind != ND_VAR) {
+        error_at(token->str, "invalid addr initializer");
+      }
+      // 初期化式の中の変数をキャプチャする
+      *var = node->lhs->var;
+      return 0;
+    case ND_VAR:
+      // ing gvar1[] = {1, 2}
+      // int *gvar2 = gvar1
+      // のようなケースの2行目のgvar1の処理
+      if (!var || *var || node->var->type->kind != TY_ARRAY) {
+        error_at(token->str, "invalid var initializer");
+      }
+      *var = node->var;
+      return 0;
   }
   #pragma clang diagnostic ignored "-Wreturn-type"
   error("定数式の計算のみ可能です");
 }
+
+static long eval(Node *node) {
+  return eval2(node, NULL);
+}
+
 
 static Node *logical_or() {
   Node *node = logical_and();

@@ -1585,6 +1585,17 @@ void f81_gvar_char_array_literal_initializer() {
   assert(0,   f81_gvar3[4], "f81_gvar3[4]");
 }
 
+char f82_gvar1[] = "abcdef";
+char *f82_gvar2 = f82_gvar1;
+char *f82_gvar3 = &f82_gvar1;
+char *f82_gvar4 = f82_gvar1 + 2;
+void f82_pointer_add_sub_initializer() {
+  assert(0 ,strcmp(f82_gvar2, "abcdef"), "strcmp(f82_gvar2, \"abcdef\")");
+  assert(0 ,strcmp(f82_gvar3, "abcdef"), "strcmp(f82_gvar3, \"abcdef\")");
+  assert(0 ,strcmp(f82_gvar4, "cdef"), "strcmp(f82_gvar4, \"cdef\")");
+}
+
+
 
 int main() {
   test_count = 0;
@@ -1813,6 +1824,7 @@ int main() {
   f79_gvar_initializer_test();
   f80_gvar_initializer_no_brace_test();
   f81_gvar_char_array_literal_initializer();
+  f82_pointer_add_sub_initializer();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

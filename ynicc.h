@@ -265,6 +265,7 @@ struct Initializer {
 
   // ポインタ用(指す先のグローバル変数のラベル)
   char *label;
+  long addend;
 };
 
 void error_at(char *loc, char *fmt, ...);
