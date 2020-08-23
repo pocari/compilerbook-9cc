@@ -397,17 +397,32 @@ static void expect_token(TokenKind kind) {
 }
 
 // }か }, で終わると受理する
-bool expect_trailing_comma_end_brace() {
-    if (consume("}")) {
-      return true;
-    }
-    expect(",");
+bool consume_end() {
+  if (consume("}")) {
+    return true;
+  }
 
-    if (consume("}")) {
-      return true;;
-    }
+  Token *tmp = token;
+  if (consume(",") && consume("}")) {
+    return true;;
+  }
+  token = tmp;
+  return false;
+}
 
-    return false;
+// }か }, で終わると受理する
+bool peek_end() {
+  Token *tmp = token;
+  bool result = false;
+
+  if (consume("}")) {
+    result = true;
+  } else if (consume(",") && consume("}")) {
+    result =  true;;
+  }
+
+  token = tmp;
+  return result;
 }
 
 static bool at_eof() {
@@ -703,6 +718,27 @@ static bool is_array_limit_over(Type *ty, int i) {
   return i >= ty->array_size;
 }
 
+static void skip_excess_elements2() {
+  for (;;) {
+    if (consume("{")) {
+      skip_excess_elements2();
+    } else {
+      // brace以外の場合は何か式があるはずなので読み飛ばす
+      assign();
+    }
+    if (consume_end()) {
+      return;
+    }
+    expect(",");
+  }
+}
+
+static void skip_excess_elements(void) {
+  expect(",");
+  fprintf(stderr, "省略された初期化式があります\n");
+  skip_excess_elements2();
+}
+
 static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
   Token *cur_tok = token;
 
@@ -713,10 +749,11 @@ static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
       do {
         cur = gvar_initializer_sub(cur, ty->ptr_to);
         i++;
-      } while(!is_array_limit_over(ty, i) && !peek_token("}") && consume(","));
+      } while(!is_array_limit_over(ty, i) && !peek_end() && consume(","));
 
-      if (has_open_brace) {
-        expect_trailing_comma_end_brace();
+      if (has_open_brace && !consume_end()) {
+        // "{" で始まってるのに、配列のサイズ個の初期化式を読んでもなおまだ初期化式が残っている場合、無視する
+        skip_excess_elements();
       }
     }
     if (i < ty->array_size) {
@@ -742,10 +779,11 @@ static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
         cur = gvar_initializer_sub(cur, mem->ty);
         cur = emit_struct_padding(cur, ty, mem);
         mem = mem->next;
-      } while(mem && !peek_token("}") && consume(","));
+      } while(mem && !peek_end() && consume(","));
 
-      if (has_open_brace) {
-        expect_trailing_comma_end_brace();
+      if (has_open_brace && !consume_end()) {
+        // "{" で始まってるのに、配列のサイズ個の初期化式を読んでもなおまだ初期化式が残っている場合、無視する
+        skip_excess_elements();
       }
 
       if (mem) {
@@ -1188,9 +1226,10 @@ static Type *enum_decl() {
     }
     push_enum_scope(ident, ty, enum_value++);
 
-    if (expect_trailing_comma_end_brace()) {
+    if (consume_end()) {
       break;
     }
+    expect(",");
   }
 
   if (tag_tk) {
@@ -1601,11 +1640,12 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
       do {
         Designator desg2 = {desg, i++};
         cur = local_var_initializer_sub(cur, var, ty->ptr_to, &desg2);
-      } while(!is_array_limit_over(ty, i) && !peek_token("}") && consume(","));
+      } while(!is_array_limit_over(ty, i) && !peek_end() && consume(","));
     }
 
-    if (has_open_brace) {
-      expect_trailing_comma_end_brace();
+    if (has_open_brace && !consume_end()) {
+      // "{" で始まってるのに、配列のサイズ個の初期化式を読んでもなおまだ初期化式が残っている場合、無視する
+      skip_excess_elements();
     }
 
     // 初期化子が配列のサイズに満たない場合は、0で初期化する
@@ -1632,11 +1672,12 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
         Designator desg2 = {desg, 0, mem};
         cur = local_var_initializer_sub(cur, var, mem->ty, &desg2);
         mem = mem->next;
-      } while(mem && !peek_token("}") && consume(","));
+      } while(mem && !peek_end() && consume(","));
     }
 
-    if (has_open_brace) {
-      expect_trailing_comma_end_brace();
+    if (has_open_brace && !consume_end()) {
+      // "{" で始まってるのに、配列のサイズ個の初期化式を読んでもなおまだ初期化式が残っている場合、無視する
+      skip_excess_elements();
     }
 
     // 残りのメンバーがまだあったらゼロ初期化する
