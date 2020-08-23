@@ -650,10 +650,103 @@ static Initializer *new_init_string(char *p, int len) {
   return head.next;
 }
 
+static Initializer *new_init_zero(Initializer *cur, int nbytes) {
+  for (int i = 0; i < nbytes; i++) {
+    cur = new_init_val(cur, 1, 0);
+  }
+  return cur;
+}
+
+// global変数として今パース中の構造体を割り付けるにあたって、
+// 各メンバーの間にあるパディングに0を埋めるためのInitializeを確保する
+// 例)
+// struct {
+//   char a;
+//   int  b;
+// } x;
+// というグローバル変数xがある場合、この構造体のメモリ上でのレイアウトは下記のようになる
+//      +--+
+// x -> |  | <- char a のアドレス(1バイト, xからのoffset 0)
+//      +--+
+//      |  | -+-- A
+//      +--+  |
+//      |  |  |
+//      +--+  |
+//      |  | -+-- B このAからBまでの3byteはアラインメントによるパディングで、ここをゼロで初期化するためのinitializerを生成するのがこの関数
+//      +--+
+//      |  | <- int b のアドレス(4バイト, xからのoffset 4)
+//      +--+  |
+//      |  |  |
+//      +--+  |
+//      |  |  |
+//      +--+  |
+//      |  |  |
+//      +--+  |
+//      |  |  |
+//      +--+  <--ここまでがint bの領域
+//
+// この関数の前提として、 引数のcurがあるメンバーを読んだ直後のInitializerになるので、
+// 例えば、 char aの初期化式を読んだ場合は、その初期化式を設定するinitializerがcurとして渡ってくる
+static Initializer *emit_struct_padding(Initializer *cur, Type *parent, Member *mem) {
+  // padding領域の開始位置
+  int a = mem->offset + mem->ty->size;
+  // padding領域の終了位置(最後のメンバーの場合、構造体の最後の領域までをパッディングとする
+  int b = mem->next ? mem->next->offset : parent->size;
+  int padding_size = b - a; // a, b はそれぞれ上の説明の A, Bのこと。例でいうと b = 4, a = (0 + 1) = 1 となって b - a が 3になり3バイト分ゼロで初期化する
+  cur = new_init_zero(cur, padding_size);
+  return cur;
+}
+
 static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
   Token *cur_tok = token;
-  Node *expr = ternary();
 
+  if (ty->kind == TY_ARRAY) {
+    expect("{");
+    int i = 0;
+    if (!peek_token("}")) {
+      do {
+        cur = gvar_initializer_sub(cur, ty->ptr_to);
+        i++;
+      } while(!peek_token("}") && consume(","));
+      expect_trailing_comma_end_brace();
+    }
+    if (i < ty->array_size) {
+      for (; i < ty->array_size; i++) {
+        cur = new_init_zero(cur, ty->ptr_to->size);
+      }
+    }
+
+    if (ty->is_incomplete) {
+      ty->array_size = i;
+      ty->size = ty->ptr_to->size * i;
+      ty->is_incomplete = false;
+    }
+
+    return cur;
+  }
+
+  if (ty->kind == TY_STRUCT) {
+    expect("{");
+    if (!peek_token("}")) {
+      Member *mem = ty->members;
+      do {
+        cur = gvar_initializer_sub(cur, mem->ty);
+        cur = emit_struct_padding(cur, ty, mem);
+        mem = mem->next;
+      } while(mem && !peek_token("}") && consume(","));
+      expect_trailing_comma_end_brace();
+
+      if (mem) {
+        for (; mem; mem = mem->next) {
+          cur = new_init_zero(cur, mem->ty->size);
+        }
+      }
+    }
+    return cur;
+  }
+
+
+  Node *expr = ternary();
   if (expr->kind == ND_ADDR) {
     if (expr->lhs->kind != ND_VAR) {
       //アドレスの参照の場合は他の変数以外の式に対してはエラー

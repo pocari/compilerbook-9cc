@@ -1419,6 +1419,20 @@ void f78_struct_initializer_in_local_var_test() {
 int f79_gvar1 = 1 + 2 + 3;
 int *f79_gvar2 = &f79_gvar1;
 char *f79_gvar3 = "12345";
+int f79_gvar4[5] = {1, 2, 3, 4, 5};
+char f79_gvar5[] = {1, 2, 3, 4};
+struct {
+  char a;
+  int  b;
+} f79_gvar6 = {2, 3};
+
+struct {
+  char a;
+  int  b;
+} f79_gvar7[] = {
+  {2, 3},
+  {4, 5}
+};
 
 void f79_gvar_initializer_test() {
   assert(6, f79_gvar1, "f79_gvar1");
@@ -1428,8 +1442,27 @@ void f79_gvar_initializer_test() {
   // 指してる側も変わる
   assert(5, *f79_gvar2, "*f79_gvar2");
   assert(0, strcmp(f79_gvar3, "12345"), "strcmp(f79_gvar3)");
-}
 
+  assert(1, f79_gvar4[0], "f79_gvar4[0]");
+  assert(2, f79_gvar4[1], "f79_gvar4[1]");
+  assert(3, f79_gvar4[2], "f79_gvar4[2]");
+  assert(4, f79_gvar4[3], "f79_gvar4[3]");
+  assert(5, f79_gvar4[4], "f79_gvar4[4]");
+
+  assert(1, f79_gvar5[0], "f79_gvar5[0]");
+  assert(2, f79_gvar5[1], "f79_gvar5[1]");
+  assert(3, f79_gvar5[2], "f79_gvar5[2]");
+  assert(4, f79_gvar5[3], "f79_gvar5[3]");
+
+  assert(2, f79_gvar6.a, "f79_gvar6.a");
+  assert(3, f79_gvar6.b, "f79_gvar6.b");
+
+  assert(2, f79_gvar7[0].a, "f79_gvar7[0].a");
+  assert(3, f79_gvar7[0].b, "f79_gvar7[0].b");
+  assert(4, f79_gvar7[1].a, "f79_gvar7[1].a");
+  assert(5, f79_gvar7[1].b, "f79_gvar7[1].b");
+
+}
 
 
 
