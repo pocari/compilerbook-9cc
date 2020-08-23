@@ -749,17 +749,21 @@ static void codegen_data(Program *pgm) {
     Var *var = v->var;
 
     printfln("%s:", var->name);
-    if (var->contents) {
-      printf("  .byte");
-      for (int i = 0; i < var->content_length; i++) {
-        printf(" %d", var->contents[i]);
-        if (i + 1 < var->content_length) {
-          printf(",");
-        }
-      }
-      printfln("");
-    } else {
+    if (!var->initializer) {
       printfln("  .zero %d", var->type->size);
+      continue;
+    }
+
+    for (Initializer *i = var->initializer; i; i = i->next) {
+      if (i->label) {
+        // 別のグローバル変数の参照の場合
+        printfln("  .quad %s", i->label);
+      } else if (i->sz == 1) {
+        // 文字の場合
+        printfln("  .byte %ld", i->val);
+      } else {
+        printfln("  .%dbyte %ld", i->sz, i->val);
+      }
     }
   }
 }

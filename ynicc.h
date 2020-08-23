@@ -16,6 +16,7 @@ typedef struct VarList VarList;
 typedef struct Program Program;
 typedef struct Function Function;
 typedef struct Token Token;
+typedef struct Initializer Initializer;
 
 // tokenize.c
 typedef enum {
@@ -244,14 +245,26 @@ struct Var {
   int offset; // rbpからのオフセット
   bool is_local; // local、global変数の識別用フラグ
 
-  //文字列リテラル用の変数
-  char *contents;
-  int content_length;
+  // グローバル変数(文字列リテラル用の変数も含む)
+  Initializer *initializer;
 };
 
 struct VarList {
   VarList *next; // 次の変数
   Var *var; // 変数の実体へのポインタ
+};
+
+// グローバル変数の初期化式
+// グルーバル変数は定数式か他のグローバル変数へのポインタのみ設定できる
+struct Initializer {
+  Initializer *next;
+
+  // 定数式用
+  int sz;
+  long val;
+
+  // ポインタ用(指す先のグローバル変数のラベル)
+  char *label;
 };
 
 void error_at(char *loc, char *fmt, ...);

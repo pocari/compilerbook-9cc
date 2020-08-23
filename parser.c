@@ -481,8 +481,8 @@ static bool is_type(Token *tk) {
 // ynicc BNF
 //
 // program                   = (
-//                               func_decls
-//                             | global_var_decls
+//                               function_def_or_decl
+//                             | global_var_decl
 //                           )*
 // basetype                  = ("void" | "_Bool" | "int" | "char" | "long" | "long" "long" | "short" | struct_decl | typedef_types | enum_decl)
 // declarator                =  "*" * ( "(" declarator         ")" | ident )  type_suffix
@@ -490,7 +490,7 @@ static bool is_type(Token *tk) {
 // typename                  = basetype abstract_declarator type_suffix
 // type_suffix               = ("[" const_expr? "]" type_suffix)?
 // function_def_or_decl      = basetype declarator "(" function_params? ")" ("{" stmt* "}" | ";")
-// global_var_decls          = basetype declarator ";"
+// global_var_decl           = basetype declarator ( "=" gvar_initializer )? ";"
 // stmt                      = expr ";"
 //                           | "{" stmt* "}"
 //                           | "return" expr ";"
@@ -626,26 +626,85 @@ static void parse_typedef() {
   push_typedef_scope(name, ty);
 }
 
+static Initializer *new_init_val(Initializer *cur, int sz, long val) {
+  Initializer *initializer = calloc(1, sizeof(Initializer));
+  initializer->val = val;
+  initializer->sz = sz;
+  cur->next = initializer;
+  return initializer;
+}
+
+static Initializer *new_init_label(Initializer *cur, char *label) {
+  Initializer *initializer = calloc(1, sizeof(Initializer));
+  initializer->label = label;
+  cur->next = initializer;
+  return initializer;
+}
+
+static Initializer *new_init_string(char *p, int len) {
+  Initializer head = {};
+  Initializer *cur = &head;
+  for (int i = 0; i < len; i++) {
+    cur = new_init_val(cur, 1, p[i]);
+  }
+  return head.next;
+}
+
+static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
+  Token *cur_tok = token;
+  Node *expr = ternary();
+
+  if (expr->kind == ND_ADDR) {
+    if (expr->lhs->kind != ND_VAR) {
+      //アドレスの参照の場合は他の変数以外の式に対してはエラー
+      error_at(cur_tok->str, "invalid initializer");
+    }
+    // その(グローバル)変数へのアドレス(=グローバル変数のラベル)を設定
+    // 現状はグローバル変数のラベル=グローバル変数名
+    return new_init_label(cur, expr->lhs->var->name);
+  }
+
+  // グローバル変数の配列のアドレスで初期化も可能
+  if (expr->kind == ND_VAR && expr->var->type->kind == TY_ARRAY) {
+    return new_init_label(cur, expr->var->name);
+  }
+
+  // それ以外の場合は式を定数式とみなしてその計算結果で初期化
+  return new_init_val(cur, ty->size, eval(expr));
+}
+
+static Initializer *gvar_initializer(Type *ty) {
+  Initializer head;
+  gvar_initializer_sub(&head, ty);
+  return head.next;
+}
+
 // グローバル変数のパース
-static void parse_gvar() {
+static void global_var_decl() {
   StorageClass sclass = false;
   Type *type = basetype(&sclass);
   char *ident_name;
   Token *tk = token;
   type = declarator(type, &ident_name);
-  expect(";");
 
   if (sclass == TYPEDEF) {
+    expect(";");
     push_typedef_scope(ident_name, type);
     return;
   }
 
-  if (type->is_incomplete) {
-    error_at(tk->str, "incomplete element type(gvar)");
+  Var *var = new_gvar(ident_name, type, true);
+  if (!consume("=")) {
+    if (type->is_incomplete) {
+      error_at(tk->str, "incomplete element type(gvar)");
+    }
+    expect(";");
+    return;
   }
-
-  new_gvar(ident_name, type, true);
+  var->initializer = gvar_initializer(type);
+  expect(";");
 }
+
 
 Program *program() {
   Function head = {};
@@ -662,7 +721,7 @@ Program *program() {
         }
         break;
       case NEXT_DECL_GLOBAL_VAR_OR_TYPEDEF:
-        parse_gvar();
+        global_var_decl();
         break;
       default:
         // ここには来ないはず
@@ -2070,8 +2129,7 @@ static char *next_data_label() {
 static Node *parse_string_literal(Token *str_token) {
   Type *ty = array_of(char_type, str_token->content_length);
   Var *var = new_gvar(next_data_label(), ty, true);
-  var->contents = str_token->contents;
-  var->content_length = str_token->content_length;
+  var->initializer = new_init_string(str_token->contents, str_token->content_length);
 
   return new_var_node(var);
 }

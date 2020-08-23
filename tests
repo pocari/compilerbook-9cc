@@ -2,6 +2,7 @@
 int test_count;
 int ok_count;
 void *calloc();
+int strcmp();
 
 int printf();
 
@@ -1413,9 +1414,22 @@ void f78_struct_initializer_in_local_var_test() {
   assert('a', y.b[0], "y.b[0]");
   assert('b', y.b[1], "y.b[1]");
   assert('c', y.b[2], "y.b[2]");
-
-
 }
+
+int f79_gvar1 = 1 + 2 + 3;
+int *f79_gvar2 = &f79_gvar1;
+char *f79_gvar3 = "12345";
+
+void f79_gvar_initializer_test() {
+  assert(6, f79_gvar1, "f79_gvar1");
+  assert(6, *f79_gvar2, "*f79_gvar2");
+
+  f79_gvar1 = 5;
+  // 指してる側も変わる
+  assert(5, *f79_gvar2, "*f79_gvar2");
+  assert(0, strcmp(f79_gvar3, "12345"), "strcmp(f79_gvar3)");
+}
+
 
 
 
@@ -1643,6 +1657,7 @@ int main() {
   f76_string_initializer_test();
   f77_omitted_array_size_with_initializer_test();
   f78_struct_initializer_in_local_var_test();
+  f79_gvar_initializer_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
