@@ -205,22 +205,21 @@ int solve(State *initial_state) {
 
 int main() {
   seen = calloc(876543210 + 1, sizeof(char));
-  // 構造体の初期化がまだできないので、配列に初期状態を設定してコピーする
-  int initial_board[3][3] = {
-    // 31手
-    // {8, 0, 6},
-    // {5, 4, 7},
-    // {2, 3, 1}
 
-    // 5手
-    {3, 1, 2},
-    {4, 7, 0},
-    {6, 8, 5}
+  State s = {
+    0,
+    {
+      // 31手
+      // {8, 0, 6},
+      // {5, 4, 7},
+      // {2, 3, 1}
+
+      // 5手
+      {3, 1, 2},
+      {4, 7, 0},
+      {6, 8, 5}
+    },
   };
-
-  State s;
-  s.parent = 0;
-  memcpy(s.board, initial_board, sizeof(initial_board));
 
   solve(&s);
 
