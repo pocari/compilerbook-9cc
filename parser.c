@@ -1915,6 +1915,7 @@ static long eval(Node *node) {
     case ND_NUM:
       return node->val;
   }
+  #pragma clang diagnostic ignored "-Wreturn-type"
   error("定数式の計算のみ可能です");
 }
 
