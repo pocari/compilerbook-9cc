@@ -309,9 +309,10 @@ static Token *tokenize_string_literal(Token *current_token, char **current_point
   p++;
 
   Token *tok = new_token(TK_STR, current_token, s, p - s);
+  sb_append_char(sb, '\0');
   tok->contents = my_strndup(sb_str(sb), sb_str_len(sb));
   // \0まで含めた長さ
-  tok->content_length = sb_str_len(sb) + 1;
+  tok->content_length = sb_str_len(sb);
 
   sb_free(sb);
 

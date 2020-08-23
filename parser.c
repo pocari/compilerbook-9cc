@@ -742,6 +742,26 @@ static void skip_excess_elements(void) {
 static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
   Token *cur_tok = token;
 
+  if (ty->kind == TY_ARRAY && ty->ptr_to->kind == TY_CHAR) {
+    Token *str = consume_kind(TK_STR);
+    if (str) {
+      if (ty->is_incomplete) {
+        ty->array_size = ty->size = str->content_length;
+        ty->is_incomplete = false;
+      }
+
+      int len = str->content_length > ty->array_size ? ty->array_size : str->content_length;
+      for (int i = 0; i < len; i++) {
+        cur = new_init_val(cur, 1, str->contents[i]);
+      }
+      for (; len < ty->array_size; len++) {
+        cur = new_init_val(cur, 1, 0);
+      }
+
+      return cur;
+    }
+  }
+
   if (ty->kind == TY_ARRAY) {
     bool has_open_brace = consume("{");
     int i = 0;

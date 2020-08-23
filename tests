@@ -1568,6 +1568,24 @@ void f80_gvar_initializer_no_brace_test() {
   assert(3, f80_lvar4.c, "f80_lvar4.c");
 }
 
+char f81_gvar1[] = "abc";
+char f81_gvar2[2] = "abc";
+char f81_gvar3[5] = "abc";
+
+void f81_gvar_char_array_literal_initializer() {
+  assert(0, strcmp(f81_gvar1, "abc"), "strcmp(f81_gvar1, \"abc\")");
+
+  assert('a', f81_gvar2[0], "f81_gvar2[0]");
+  assert('b', f81_gvar2[1], "f81_gvar2[1]");
+
+  assert('a', f81_gvar3[0], "f81_gvar3[0]");
+  assert('b', f81_gvar3[1], "f81_gvar3[1]");
+  assert('c', f81_gvar3[2], "f81_gvar3[2]");
+  assert(0,   f81_gvar3[3], "f81_gvar3[3]");
+  assert(0,   f81_gvar3[4], "f81_gvar3[4]");
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1794,6 +1812,7 @@ int main() {
   f78_struct_initializer_in_local_var_test();
   f79_gvar_initializer_test();
   f80_gvar_initializer_no_brace_test();
+  f81_gvar_char_array_literal_initializer();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
