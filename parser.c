@@ -681,8 +681,6 @@ static Initializer *new_init_zero(Initializer *cur, int nbytes) {
 //      |  |  |
 //      +--+  |
 //      |  |  |
-//      +--+  |
-//      |  |  |
 //      +--+  <--ここまでがint bの領域
 //
 // この関数の前提として、 引数のcurがあるメンバーを読んだ直後のInitializerになるので、
