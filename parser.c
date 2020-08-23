@@ -1871,6 +1871,7 @@ static long const_expr() {
 }
 
 static long eval(Node *node) {
+  #pragma clang diagnostic ignored "-Wswitch"
   switch (node->kind) {
     case ND_ADD:
       return eval(node->lhs) + eval(node->rhs);
