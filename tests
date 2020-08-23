@@ -1464,6 +1464,65 @@ void f79_gvar_initializer_test() {
 
 }
 
+int f80_gvar1[][2] = {1, 2, 3, 4, 5, 6};
+struct {
+  char a;
+  int  b;
+  long c;
+} f80_gvar2[] = {
+  1, 2, 3,
+  4, 5, 6,
+  7, 8, 9
+};
+void f80_gvar_initializer_no_brace_test() {
+  assert(1, f80_gvar1[0][0], "f80_gvar1[0][0]");
+  assert(2, f80_gvar1[0][1], "f80_gvar1[0][1]");
+  assert(3, f80_gvar1[1][0], "f80_gvar1[1][0]");
+  assert(4, f80_gvar1[1][1], "f80_gvar1[1][1]");
+  assert(5, f80_gvar1[2][0], "f80_gvar1[2][0]");
+  assert(6, f80_gvar1[2][1], "f80_gvar1[2][1]");
+
+  assert(1, f80_gvar2[0].a, "f80_gvar2[0].a");
+  assert(2, f80_gvar2[0].b, "f80_gvar2[0].b");
+  assert(3, f80_gvar2[0].c, "f80_gvar2[0].c");
+  assert(4, f80_gvar2[1].a, "f80_gvar2[1].a");
+  assert(5, f80_gvar2[1].b, "f80_gvar2[1].b");
+  assert(6, f80_gvar2[1].c, "f80_gvar2[1].c");
+  assert(7, f80_gvar2[2].a, "f80_gvar2[2].a");
+  assert(8, f80_gvar2[2].b, "f80_gvar2[2].b");
+  assert(9, f80_gvar2[2].c, "f80_gvar2[2].c");
+
+
+  int f80_lvar1[][2] = {1, 2, 3, 4, 5, 6};
+  assert(1, f80_lvar1[0][0], "f80_lvar1[0][0]");
+  assert(2, f80_lvar1[0][1], "f80_lvar1[0][1]");
+  assert(3, f80_lvar1[1][0], "f80_lvar1[1][0]");
+  assert(4, f80_lvar1[1][1], "f80_lvar1[1][1]");
+  assert(5, f80_lvar1[2][0], "f80_lvar1[2][0]");
+  assert(6, f80_lvar1[2][1], "f80_lvar1[2][1]");
+
+  struct {
+    char a;
+    int  b;
+    long c;
+  } f80_lvar2[] = {
+    1, 2, 3,
+    4, 5, 6,
+    7, 8, 9
+  };
+  assert(1, f80_lvar2[0].a, "f80_lvar2[0].a");
+  assert(2, f80_lvar2[0].b, "f80_lvar2[0].b");
+  assert(3, f80_lvar2[0].c, "f80_lvar2[0].c");
+  assert(4, f80_lvar2[1].a, "f80_lvar2[1].a");
+  assert(5, f80_lvar2[1].b, "f80_lvar2[1].b");
+  assert(6, f80_lvar2[1].c, "f80_lvar2[1].c");
+  assert(7, f80_lvar2[2].a, "f80_lvar2[2].a");
+  assert(8, f80_lvar2[2].b, "f80_lvar2[2].b");
+  assert(9, f80_lvar2[2].c, "f80_lvar2[2].c");
+
+}
+
+
 
 
 int main() {
@@ -1691,6 +1750,7 @@ int main() {
   f77_omitted_array_size_with_initializer_test();
   f78_struct_initializer_in_local_var_test();
   f79_gvar_initializer_test();
+  f80_gvar_initializer_no_brace_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

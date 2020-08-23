@@ -695,18 +695,29 @@ static Initializer *emit_struct_padding(Initializer *cur, Type *parent, Member *
   return cur;
 }
 
+static bool is_array_limit_over(Type *ty, int i) {
+  if (ty->is_incomplete) {
+    // サイズが不定の場合は無制限にする
+    return false;
+  }
+  return i >= ty->array_size;
+}
+
 static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
   Token *cur_tok = token;
 
   if (ty->kind == TY_ARRAY) {
-    expect("{");
+    bool has_open_brace = consume("{");
     int i = 0;
     if (!peek_token("}")) {
       do {
         cur = gvar_initializer_sub(cur, ty->ptr_to);
         i++;
-      } while(!peek_token("}") && consume(","));
-      expect_trailing_comma_end_brace();
+      } while(!is_array_limit_over(ty, i) && !peek_token("}") && consume(","));
+
+      if (has_open_brace) {
+        expect_trailing_comma_end_brace();
+      }
     }
     if (i < ty->array_size) {
       for (; i < ty->array_size; i++) {
@@ -724,7 +735,7 @@ static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
   }
 
   if (ty->kind == TY_STRUCT) {
-    expect("{");
+    bool has_open_brace = consume("{");
     if (!peek_token("}")) {
       Member *mem = ty->members;
       do {
@@ -732,7 +743,10 @@ static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
         cur = emit_struct_padding(cur, ty, mem);
         mem = mem->next;
       } while(mem && !peek_token("}") && consume(","));
-      expect_trailing_comma_end_brace();
+
+      if (has_open_brace) {
+        expect_trailing_comma_end_brace();
+      }
 
       if (mem) {
         for (; mem; mem = mem->next) {
@@ -1580,17 +1594,19 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
   // static int count = 0;
   // fprintf(stdout, "count: %d, type: %d\n", count++, ty->kind);
   if (ty->kind == TY_ARRAY) {
-    expect("{");
+    bool has_open_brace = consume("{");
     int i = 0;
 
     if (!peek_token("}")) {
       do {
         Designator desg2 = {desg, i++};
         cur = local_var_initializer_sub(cur, var, ty->ptr_to, &desg2);
-      } while(!peek_token("}") && consume(","));
+      } while(!is_array_limit_over(ty, i) && !peek_token("}") && consume(","));
     }
 
-    expect_trailing_comma_end_brace();
+    if (has_open_brace) {
+      expect_trailing_comma_end_brace();
+    }
 
     // 初期化子が配列のサイズに満たない場合は、0で初期化する
     for (; i < ty->array_size; i++) {
@@ -1607,7 +1623,7 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
   }
 
   if (ty->kind == TY_STRUCT) {
-    expect("{");
+    bool has_open_brace = consume("{");
     Member *mem = ty->members;
 
     if (!peek_token("}")) {
@@ -1619,7 +1635,9 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
       } while(mem && !peek_token("}") && consume(","));
     }
 
-    expect_trailing_comma_end_brace();
+    if (has_open_brace) {
+      expect_trailing_comma_end_brace();
+    }
 
     // 残りのメンバーがまだあったらゼロ初期化する
     for (; mem; mem = mem->next) {
