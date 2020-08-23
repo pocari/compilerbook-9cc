@@ -1343,15 +1343,24 @@ static Type *type_suffix(Type *base) {
 typedef struct Designator Designator;
 struct Designator {
   Designator *next;
-  int idx;
+  int idx;     // 配列の初期化式の場合
+  Member *mem; // 構造体の初期化式の場合
 };
 
 static Node *new_desg_node_sub(Var *var, Designator *desg) {
   if (!desg) {
     return new_var_node(var);
   }
-  Node *prev = new_desg_node_sub(var, desg->next);
-  Node *node = new_add_node(prev, new_num_node(desg->idx));
+  Node *node = new_desg_node_sub(var, desg->next);
+  if (desg->mem) {
+    // dsegが構造体のメンバー参照なら、返ってきたnodeを構造体の変数とみなしてそのメンバー参照のastを作成
+    node = new_unary_node(ND_MEMBER, node);
+    node->member = desg->mem;
+
+    return node;
+  }
+
+  node = new_add_node(node, new_num_node(desg->idx));
 
   node = new_unary_node(ND_DEREF, node);
   add_type(node);
@@ -1442,6 +1451,30 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
     // 不完全型(配列のサイズが省略されている場合)の場合、初期化した文字列の長さに合わせる
     if (ty->is_incomplete) {
       array_size_completed(ty, i);
+    }
+
+    return cur;
+  }
+
+  if (ty->kind == TY_STRUCT) {
+    expect("{");
+    Member *mem = ty->members;
+
+    if (!peek_token("}")) {
+      do {
+        assert(mem);
+        Designator desg2 = {desg, 0, mem};
+        cur = local_var_initializer_sub(cur, var, mem->ty, &desg2);
+        mem = mem->next;
+      } while(mem && !peek_token("}") && consume(","));
+    }
+
+    expect_trailing_comma_end_brace();
+
+    // 残りのメンバーがまだあったらゼロ初期化する
+    for (; mem; mem = mem->next) {
+      Designator dseg2 = {desg, 0, mem};
+      cur = lvar_init_zero(cur, var, ty->ptr_to, &dseg2);
     }
 
     return cur;

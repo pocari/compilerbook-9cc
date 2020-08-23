@@ -1392,6 +1392,32 @@ void f77_omitted_array_size_with_initializer_test() {
   assert(48, sizeof(b), "sizeof(b)");
 }
 
+void f78_struct_initializer_in_local_var_test() {
+  struct {
+    int a;
+    int b;
+  } x = {4, 5};
+
+  assert(4, x.a, "x.a");
+  assert(5, x.b, "x.b");
+
+  struct {
+    int a;
+    char b[3];
+  } y = {
+    2,
+    "abc",
+  };
+
+  assert(2, y.a, "y.a");
+  assert('a', y.b[0], "y.b[0]");
+  assert('b', y.b[1], "y.b[1]");
+  assert('c', y.b[2], "y.b[2]");
+
+
+}
+
+
 
 int main() {
   test_count = 0;
@@ -1616,6 +1642,7 @@ int main() {
   f75_initialize_zero_if_suppressed_initializer_test();
   f76_string_initializer_test();
   f77_omitted_array_size_with_initializer_test();
+  f78_struct_initializer_in_local_var_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
