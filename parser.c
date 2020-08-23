@@ -71,7 +71,7 @@ static VarList *locals = NULL;
 // グローバル変数
 static VarList *globals = NULL;
 
-// 現在処理中のswitch分のノード(caseとdefaultをその後追加していく)
+// 現在処理中のswitch文のノード(caseとdefaultをその後追加していく)
 static Node *current_switch = NULL;
 
 static Scope *enter_scope(void) {
