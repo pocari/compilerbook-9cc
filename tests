@@ -1626,6 +1626,11 @@ void f85_toplevel_typename_only_decl_test() {
   assert(2, x.b, "x.b");
 }
 
+void f86_empty_statement_test() {
+  ;
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1857,6 +1862,7 @@ int main() {
   f83_void_function_param_definition();
   f84_extern_global_var_test();
   f85_toplevel_typename_only_decl_test();
+  f86_empty_statement_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

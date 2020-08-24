@@ -509,6 +509,7 @@ static bool is_type(Token *tk) {
 // function_def_or_decl      = basetype declarator "(" function_params? ")" ("{" stmt* "}" | ";")
 // global_var_decl           = basetype declarator ( "=" gvar_initializer )? ";"
 // stmt                      = expr ";"
+//                           | ";"
 //                           | "{" stmt* "}"
 //                           | "return" expr ";"
 //                           | "if" "(" expr ")" stmt ("else" stmt)?
@@ -1401,7 +1402,9 @@ static Node *stmt() {
   Node *node = NULL;
   Token *cur_tok = token;
 
-  if (consume_kind(TK_RETURN)) {
+  if (consume(";")) {
+    node = new_node(ND_NULL);
+  } else if (consume_kind(TK_RETURN)) {
     node = new_node(ND_RETURN);
     node->lhs = expr();
     expect(";");
