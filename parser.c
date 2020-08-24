@@ -609,7 +609,8 @@ typedef enum {
 static next_decl_type next_decl() {
   // 先読みした結果今の位置に戻る用に今のtokenを保存
   Token *tmp = token;
-  bool is_func, is_global_var;
+  bool is_func = false;
+  bool is_global_var = false;
 
   StorageClass sclass = 0;
   Type *ty = basetype(&sclass);
@@ -620,18 +621,19 @@ static next_decl_type next_decl() {
     return NEXT_DECL_GLOBAL_VAR_OR_TYPEDEF;
   }
 
-  char *name;
-  declarator(ty, &name);
-  is_func = consume("(");
-
+  // toplevelでは
+  // int;
+  // のような式も合法で、これらは単に無視される。ので、その対応。
+  if (!consume(";")) {
+    char *name = NULL;
+    declarator(ty, &name);
+    if (consume("(")) {
+      token = tmp;
+      return NEXT_DECL_FUNCTION_DEF;
+    }
+  }
   // 先読みした結果、関数定義かグローバル変数かわかったので、tokenを元に戻す
   token = tmp;
-
-  if (is_func) {
-    // カッコがあれば関数定義
-    return NEXT_DECL_FUNCTION_DEF;
-  }
-
   // それ以外はグローバル変数
   return NEXT_DECL_GLOBAL_VAR_OR_TYPEDEF;
 }
@@ -848,6 +850,12 @@ static Initializer *gvar_initializer(Type *ty) {
 static void global_var_decl() {
   StorageClass sclass = false;
   Type *type = basetype(&sclass);
+
+  if (consume(";")) {
+    // int; とかの場合
+    return;
+  }
+
   char *ident_name;
   Token *tk = token;
   type = declarator(type, &ident_name);
