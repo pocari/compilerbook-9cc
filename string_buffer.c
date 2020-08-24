@@ -1,7 +1,5 @@
 #include "ynicc.h"
 
-#define INITIAL_BUF_SIZE 16
-
 struct string_buffer {
   char *buf;
   int str_len;
@@ -24,8 +22,8 @@ string_buffer *sb_init() {
   string_buffer *sb = calloc(1, sizeof(string_buffer));
 
   sb->str_len = 0;
-  sb->buf_len = INITIAL_BUF_SIZE;
-  sb->buf = calloc(INITIAL_BUF_SIZE, sizeof(char));
+  sb->buf_len = 16;
+  sb->buf = calloc(sb->buf_len, sizeof(char));
 
   return sb;
 }
