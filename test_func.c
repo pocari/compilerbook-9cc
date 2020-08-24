@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// extern のテストで使う
+int f84_ext1;
+int *f84_ext2;
+
 // テストのときに使う関数
 int foo_return2() {
   return 2;

@@ -1599,8 +1599,15 @@ void f83_void_function_param_definition(void) {
   // 関数の仮引数の定義がvoidの場合でもえらーにならないテスト
 }
 
+extern int f84_ext1;
+extern int *f84_ext2;
+void f84_extern_global_var_test() {
+  f84_ext1 = 5;
+  f84_ext2 = &f84_ext1;
 
-
+  assert(5, f84_ext1, "f84_ext1");
+  assert(5, *f84_ext2, "*f84_ext2");
+}
 
 int main() {
   test_count = 0;
@@ -1831,6 +1838,7 @@ int main() {
   f81_gvar_char_array_literal_initializer();
   f82_pointer_add_sub_initializer();
   f83_void_function_param_definition();
+  f84_extern_global_var_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

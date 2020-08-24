@@ -41,6 +41,7 @@ typedef enum {
   TK_STR,      // 文字列リテラル
   TK_TYPEDEF,  // typedef キーワード
   TK_STATIC,   // static キーワード
+  TK_EXTERN,   // extern キーワード
   TK_BREAK,    // break キーワード
   TK_CONTINUE, // continue キーワード
   TK_GOTO,     // goto キーワード

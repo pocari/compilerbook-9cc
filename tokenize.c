@@ -55,6 +55,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_TYPEDEF";
     case TK_STATIC: // static
       return "TK_STATIC";
+    case TK_EXTERN: // extern
+      return "TK_EXTERN";
     case TK_BREAK: // break
       return "TK_BREAK";
     case TK_CONTINUE: // continue
@@ -193,6 +195,10 @@ static Keyword keywords[] = {
   {
     "static",
     TK_STATIC,
+  },
+  {
+    "extern",
+    TK_EXTERN,
   },
   {
     "break",

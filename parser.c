@@ -54,6 +54,7 @@ struct Scope {
 typedef enum {
   TYPEDEF = 1 << 0,
   STATIC  = 1 << 1,
+  EXTERN  = 1 << 2,
 } StorageClass;
 
 // 現在パース中のスコープにある変数(ローカル、グローバル含む)を管理する
@@ -480,13 +481,14 @@ static bool is_type(Token *tk) {
   }
 
   // ビルトインでなくても、typedefか構造体かenumかtypedefされた型ならtrueを返す
-  // 型の途中でtypedef/staticが出てくる場合もあるのでtypedef/static自体も型名の一つとしてtrueにしておき
+  // 型の途中でtypedef/static/externが出てくる場合もあるのでtypedef/static/extern自体も型名の一つとしてtrueにしておき
   // 詳細はbasetype関数で判断する
   switch (tk->kind) {
     case TK_TYPEDEF:
     case TK_STRUCT:
     case TK_ENUM:
     case TK_STATIC:
+    case TK_EXTERN:
       return true;
     default:
       return find_typedef(tk);
@@ -856,7 +858,14 @@ static void global_var_decl() {
     return;
   }
 
-  Var *var = new_gvar(ident_name, type, true);
+  // extern が設定sれていない場合はこのファイルで領域を確保する
+  // それ以外はどこかのファイルのコンパイルで領域が確保されているはずなので、名前のみ登録
+  Var *var = new_gvar(ident_name, type, sclass != EXTERN);
+  if (sclass == EXTERN) {
+    // extern の場合初期化式は書けず、宣言のみになる
+    expect(";");
+    return;
+  }
   if (!consume("=")) {
     if (type->is_incomplete) {
       error_at(tk->str, "incomplete element type(gvar)");
@@ -957,7 +966,7 @@ static Type *basetype(StorageClass *sclass) {
   while (is_type(token)) {
     Token *tk = token;
 
-    if (peek_kind(TK_TYPEDEF) || peek_kind(TK_STATIC)) {
+    if (peek_kind(TK_TYPEDEF) || peek_kind(TK_STATIC) || peek_kind(TK_EXTERN)) {
       if (!sclass) {
         error_at(tk->str, "ストレージクラス指定子はここでは使えません");
       }
@@ -966,11 +975,26 @@ static Type *basetype(StorageClass *sclass) {
         *sclass |= TYPEDEF;
       } else if (consume_kind(TK_STATIC)) {
         *sclass |= STATIC;
+      } else if (consume_kind(TK_EXTERN)) {
+        *sclass |= EXTERN;
       }
 
-      // typedef と static を同時に使っていたらエラーにする
-      if ((*sclass & TYPEDEF) && (*sclass & STATIC)) {
-        error_at(tk->str, "staticとtypedefは同時に指定できません");
+      // typedef と static と extern を同時に使っていたらエラーにする
+      // 001        010       100
+      // 3bitのうちどこか1bitのみ立っている場合だけOKでそれ以外はNGにしたい。
+      // ある値xがあったとして
+      // x & (x - 1) が 0 になる場合は どこかの1bitしか立っていないということに鳴るらしい
+      // 例
+      // x = 0b0010 の場合
+      // x & (x - 1) = 0b0010 & 0b0001 = 0
+      //
+      // x = 0b0011 の場合
+      // x & (x - 1) = 0b0011 & 0b0001 = 0b0001
+      //
+      // となり、複数のbitが立っているときのみ0以外になる
+      if (*sclass & (*sclass - 1)) {
+        // どこかの複数のbitが立っていた場合は複数のsclassが使われていることになるので
+        error_at(tk->str, "static、typedefとexternは同時に指定できません");
       }
 
       continue;
