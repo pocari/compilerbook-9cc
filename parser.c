@@ -1265,6 +1265,12 @@ static void function_params(Function *func) {
     return;
   }
 
+  Token *tmp = token;
+  if (consume_kind(TK_VOID) && consume(")")) {
+    return;
+  }
+  token = tmp;
+
   Type *type = basetype(NULL);
   char *name;
   type = declarator(type, &name);
