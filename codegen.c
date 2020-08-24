@@ -746,6 +746,13 @@ static void codegen_func(Function *func) {
 static void codegen_data(Program *pgm) {
   // https://ja.wikipedia.org/wiki/.bss
   // 初期化敷なしのグローバル変数や static 変数は.bssセクション、それ以外は .data セクションに置くらしい
+  //
+  // どっちにしろ zero 初期化するならどっちでもいいような気もしたが、
+  // .data セクションで使う初期化用の値は、 rom領域に置かれて、それをプログラム起動時にram上にコピーされるらしい。
+  // 一方.bssに置かれた変数はもともとzero初期化用途決まっているので、.dataで使われたようなrom領域がない分メモリや実行時の効率がいいらしい。
+  // http://blog.kmckk.com/archives/1242072.html
+  // > .dataセクションに割り当られた変数はRAMだけでなく、その初期値の保持のためにROMも占有します。
+  // とのことらしい
   printfln(".bss");
   for (VarList *v = pgm->global_var; v; v = v->next) {
     Var *var = v->var;
