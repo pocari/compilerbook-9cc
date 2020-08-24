@@ -758,6 +758,9 @@ static void codegen_data(Program *pgm) {
     Var *var = v->var;
     if (!var->initializer) {
       // 初期化式が無いもののみ対象
+
+      // 全然意図はわからないが、その変数のalignを .align として指定するらしい
+      printfln(".align %d", var->type->align);
       printfln("%s:", var->name);
       printfln("  .zero %d", var->type->size);
       continue;
@@ -771,6 +774,7 @@ static void codegen_data(Program *pgm) {
       continue;
     }
 
+    printfln(".align %d", var->type->align);
     printfln("%s:", var->name);
     for (Initializer *i = var->initializer; i; i = i->next) {
       if (i->label) {
