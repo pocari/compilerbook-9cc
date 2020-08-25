@@ -81,6 +81,11 @@ static void gen_addr(Node *node) {
     case ND_VAR:
       printfln("  # gen_addr start (var_name: %s, var_type: %s)", node->var->name, node->var->is_local ? "local" : "global");
       printfln("  # gen_addr-ND_VAR start");
+      // compound_literaruの場合 この アドレス参照時のvarノードで初めて初期化されるので、そのチェック
+      // &(int) { 1 } みたいなケース
+      if (node->init) {
+        gen(node->init);
+      }
       if (node->var->is_local) {
         printfln("  mov rax, rbp");
         printfln("  sub rax, %d", node->var->offset);
@@ -225,6 +230,10 @@ static void gen(Node *node) {
         //   // . の場合は、node->lhsが構造体の変数
         //   printfln("  # ND_VAR start(struct_var_name: %s, member_name: %s)", node->lhs->var->name, node->member->name);
         // }
+      }
+      // compound-literalの場合、参照のタイミングで初期化されるので、initがあれば初期化する
+      if (node->init) {
+        gen(node->init);
       }
       gen_addr(node);
       if (node->ty->kind != TY_ARRAY) {

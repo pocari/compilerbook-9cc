@@ -411,6 +411,11 @@ bool consume_end() {
   return false;
 }
 
+static void expect_end() {
+  if (!consume_end())
+    expect("}");
+}
+
 // }か }, で終わると受理する
 bool peek_end() {
   Token *tmp = token;
@@ -561,7 +566,9 @@ static bool is_type(Token *tk) {
 //                           | "sizeof" "(" type_name ")"
 //                           | "_Alignof "(" type_naem ")"
 //                           | postfix
-// postfix                   = parimary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
+// postfix                   = ccompound-literal
+//                           | parimary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
+// compound_literal         = "(" type_name ")" "{" (gvar_initializer | local_var_initializer) "}"
 // primary                   = num
 //                           | ident ("(" arg_list? ")")?
 //                           | "(" expr ")"
@@ -598,6 +605,7 @@ static Node *mul();
 static Node *cast();
 static Node *unary();
 static Node *postfix();
+static Node *compound_literal();
 static Node *primary();
 static Node *read_expr_stmt();
 static Type *type_suffix(Type *base);
@@ -828,11 +836,18 @@ static Initializer *gvar_initializer_sub(Initializer *cur, Type *ty) {
   }
 
 
+  // compound-literal で "{" 初期化式 "}" で初期化する場合に "{" が存在する
+  // (int) { 1 } とか
+  bool has_open_brace = consume("{");
+  Node *expr = ternary();
+  if (has_open_brace) {
+    expect_end();
+  }
+
   // グローバル変数の初期化で別のグローバル変数のアドレス参照のみ使えるため、
   // 初期化式の中に最大一つだけ変数を取れる。
   // その変数をevalの評価中に合わせて取得し返してもらう。
   // その初期化式の値は、 evalの中で見つかった別のグローバル変数を基準にしたアドレス計算の結果をinitializerとする
-  Node *expr = ternary();
   Var *var = NULL;
   long addend = eval2(expr, &var);
   if (var) {
@@ -1754,9 +1769,15 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
     return cur;
   }
 
+  // compound-literal で "{" 初期化式 "}" で初期化する場合に "{" が存在する
+  // (int) { 1 } とか
+  bool has_open_brace = consume("{");
   Node *e = assign();
   // fprintf(stdout, "val: %d\n", e->val);
   cur->next = new_desg_node(var, desg, e);
+  if (has_open_brace) {
+    expect_end();
+  }
   return cur->next;
 }
 
@@ -2218,10 +2239,14 @@ static Node *cast() {
     if (is_type(token)) {
       Type *ty = type_name();
       expect(")");
-      Node *node = new_unary_node(ND_CAST, cast());
-      add_type(node->lhs);
-      node->ty = ty;
-      return node;
+      if (!consume("{")) {
+        // "{" が来た場合は、キャストではなくcompound-literaruの"(" typename ")" になるので、
+        // この節はスキップして、token=tmpでもとに戻した上で、postfix側で処理する
+        Node *node = new_unary_node(ND_CAST, cast());
+        add_type(node->lhs);
+        node->ty = ty;
+        return node;
+      }
     }
   }
   token = tmp;
@@ -2334,7 +2359,12 @@ static Node *struct_ref(Node *lhs) {
 }
 
 static Node *postfix() {
-  Node *node = primary();
+  Node *node = compound_literal();
+  if (node) {
+    return node;
+  }
+
+  node = primary();
   for (;;) {
     add_type(node);
     if (consume("[")) {
@@ -2368,6 +2398,35 @@ static Node *postfix() {
     break;
   }
   return node;
+}
+
+static Node *compound_literal() {
+  Token *tmp = token;
+  if (!consume("(") || !is_type(token)) {
+    token = tmp;
+    return NULL;
+  }
+  Type *ty = type_name();
+  expect(")");
+
+  if(!peek_token("{")) {
+    token = tmp;
+    return NULL;
+  }
+
+  if (scope_depth == 0) {
+    // 無名のグローバル変数追加
+    Var *var = new_gvar(new_label(), ty, true);
+    var->initializer = gvar_initializer(ty);
+    return new_var_node(var);
+  } else {
+    // 無名のローカル変数追加
+    Var *var = new_lvar(new_label(), ty);
+    Node *node = new_var_node(var);
+    node->init = local_var_initializer(var);
+    return node;
+  }
+
 }
 
 static Node *parse_call_func(Token *t) {

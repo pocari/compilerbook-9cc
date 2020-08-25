@@ -1670,8 +1670,43 @@ void f88_static_var_test() {
   assert(4, f88_test2(), "f88_test2()");
 }
 
+typedef struct f84_tree {
+  int val;
+  struct f84_tree *lhs;
+  struct f84_tree *rhs;
+} f84_tree;
 
+f84_tree *f84_tree_var = &(f84_tree) {
+  1,
+  &(f84_tree) {
+    2,
+    &(f84_tree) { 3, 0, 0 },
+    &(f84_tree) { 4, 0, 0 },
+  },
+  0,
+};
 
+void f89_compound_literal_test() {
+  assert(1, f84_tree_var->val, "f84_tree_var->val");
+  assert(2, f84_tree_var->lhs->val, "f84_tree_var->lhs->val");
+  assert(3, f84_tree_var->lhs->lhs->val, "f84_tree_var->lhs->lhs->val");
+  assert(4, f84_tree_var->lhs->rhs->val, "f84_tree_var->lhs->rhs->val");
+
+  int i = (int){1};
+  assert(1, i, "i");
+
+  int j = ((int[]){0, 1, 2})[2];
+  assert(2, j, "j");
+
+  char k = ((struct { char a; int b;}){'a', 3}).a;
+  char l = ((struct { char a; int b;}){'a', 3}).b;
+  assert('a', k, "k");
+  assert(3, l, "l");
+
+  int m = 2;
+  int n = (int) { m };
+  assert(2, n, "n");
+}
 
 int main() {
   test_count = 0;
@@ -1907,6 +1942,7 @@ int main() {
   f86_empty_statement_test();
   f87_alignof_test();
   f88_static_var_test();
+  f89_compound_literal_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
