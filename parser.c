@@ -603,7 +603,7 @@ static Node *read_expr_stmt();
 static Type *type_suffix(Type *base);
 static Type *struct_decl();
 static Type *enum_decl();
-static char *next_data_label();
+static char *new_label();
 
 typedef enum {
   NEXT_DECL_DUMMY,
@@ -1798,7 +1798,7 @@ static Node *var_decl() {
       //
       // なので、グローバル変数自体はユニークなラベルで名前をつけて、
       // スコープ側でその変数をここでパースしたident_nameで登録することで、同じ名前のstatic_local変数を別の関数でも使えるようにしている。
-      Var *var = new_gvar(next_data_label(), type, true);
+      Var *var = new_gvar(new_label(), type, true);
       // 別途スコープにident_nameでこの変数を登録
       push_var_scope(ident_name, var);
 
@@ -1849,7 +1849,7 @@ static void static_var_decl_sub(Type *base) {
     Token *tmp_tk = token;
     char *ident_name;
     Type *type = declarator(base, &ident_name);
-    Var *var = new_gvar(next_data_label(), type, true);
+    Var *var = new_gvar(new_label(), type, true);
     push_var_scope(ident_name, var);
 
     if (!consume("=")) {
@@ -2416,7 +2416,7 @@ static Node *parse_call_func(Token *t) {
   return node;
 }
 
-static char *next_data_label() {
+static char *new_label() {
   static int label_index = 0;
   char buf[100];
   int n = sprintf(buf, ".L.data.%03d", label_index++);
@@ -2425,7 +2425,7 @@ static char *next_data_label() {
 
 static Node *parse_string_literal(Token *str_token) {
   Type *ty = array_of(char_type, str_token->content_length);
-  Var *var = new_gvar(next_data_label(), ty, true);
+  Var *var = new_gvar(new_label(), ty, true);
   var->initializer = new_init_string(str_token->contents, str_token->content_length);
 
   return new_var_node(var);
