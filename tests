@@ -1630,6 +1630,20 @@ void f86_empty_statement_test() {
   ;
 }
 
+void f87_alignof_test() {
+  assert(1, _Alignof(char), "_Alignof(char)");
+  assert(2, _Alignof(short), "_Alignof(short)");
+  assert(4, _Alignof(int), "_Alignof(int)");
+  assert(8, _Alignof(long), "_Alignof(long)");
+  assert(8, _Alignof(long long), "_Alignof(long long)");
+  assert(8, _Alignof(int*), "_Alignof(*int)");
+  assert(4, _Alignof(int[]), "_Alignof(int[])");
+  assert(1, _Alignof(struct { char a; char b;}), "_Alignof(struct { char a; char b;})");
+  assert(4, _Alignof(struct { char a; int b;}), "_Alignof(struct { char a; int b;})");
+  assert(4, _Alignof(struct { char a; int b;}[4]), "_Alignof(struct { char a; int b;}[4])");
+}
+
+
 
 int main() {
   test_count = 0;
@@ -1863,6 +1877,7 @@ int main() {
   f84_extern_global_var_test();
   f85_toplevel_typename_only_decl_test();
   f86_empty_statement_test();
+  f87_alignof_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

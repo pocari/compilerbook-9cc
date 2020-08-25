@@ -558,6 +558,7 @@ static bool is_type(Token *tk) {
 //                           | "!" cast
 //                           | "sizeof" cast
 //                           | "sizeof" "(" type_name ")"
+//                           | "_Alignof "(" type_naem ")"
 //                           | postfix
 // postfix                   = parimary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
 // primary                   = num
@@ -2201,6 +2202,11 @@ static Node *unary() {
     return new_unary_node(ND_NOT, cast());
   } else if (consume("~")) {
     return new_unary_node(ND_BIT_NOT, cast());
+  } else if (consume_kind(TK_ALIGNOF)) {
+    expect("(");
+    Type *ty = type_name();
+    expect(")");
+    return new_num_node(ty->align);
   } else if (consume_kind(TK_SIZEOF)) {
     Token *tmp = token;
     if (consume("(")) {

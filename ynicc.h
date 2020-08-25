@@ -38,6 +38,7 @@ typedef enum {
   TK_STRUCT,   // 構造体
   TK_ENUM,     // enum
   TK_SIZEOF,   // sizeof キーワード
+  TK_ALIGNOF,  // _Alignof キーワード
   TK_STR,      // 文字列リテラル
   TK_TYPEDEF,  // typedef キーワード
   TK_STATIC,   // static キーワード

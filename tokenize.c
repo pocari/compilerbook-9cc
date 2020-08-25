@@ -49,6 +49,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_ENUM";
     case TK_SIZEOF: // sizeof
       return "TK_SIZEOF";
+    case TK_ALIGNOF: // _Alignof
+      return "TK_ALIGNOF";
     case TK_STR: // 文字列リテラル
       return "TK_STR";
     case TK_TYPEDEF: // typedef
@@ -187,6 +189,10 @@ static Keyword keywords[] = {
   {
     "sizeof",
     TK_SIZEOF,
+  },
+  {
+    "_Alignof",
+    TK_ALIGNOF,
   },
   {
     "typedef",
