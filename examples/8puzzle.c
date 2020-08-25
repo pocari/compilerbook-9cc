@@ -99,17 +99,17 @@ void dump_board(State *s) {
   printf("\n");
 }
 
-int search_free_pos(int board[][3], int *r, int *c) {
+void search_free_pos(int board[][3], int *r, int *c) {
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       if (board[i][j] == 0) {
         *r = i;
         *c = j;
-        return 0; // まだ値なしreturnができないので適当に返す
+        return;
       }
     }
   }
-  return 0;
+  return;
 }
 
 int can_move(int row, int col) {
