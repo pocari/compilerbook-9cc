@@ -1643,6 +1643,34 @@ void f87_alignof_test() {
   assert(4, _Alignof(struct { char a; int b;}[4]), "_Alignof(struct { char a; int b;}[4])");
 }
 
+int f88_test() {
+  static int f88_i = 1;
+  static int f88_j;
+
+  f88_j = f88_i++;
+  return f88_j;
+}
+
+int f88_test2() {
+  static int f88_i = 1, *f88_j = &f88_i, *f88_k;
+
+  f88_k = f88_j;
+  *f88_k += 1;
+
+  return f88_i;
+}
+
+void f88_static_var_test() {
+  assert(1, f88_test(), "f88_test()");
+  assert(2, f88_test(), "f88_test()");
+  assert(3, f88_test(), "f88_test()");
+
+  assert(2, f88_test2(), "f88_test2()");
+  assert(3, f88_test2(), "f88_test2()");
+  assert(4, f88_test2(), "f88_test2()");
+}
+
+
 
 
 int main() {
@@ -1878,6 +1906,7 @@ int main() {
   f85_toplevel_typename_only_decl_test();
   f86_empty_statement_test();
   f87_alignof_test();
+  f88_static_var_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

@@ -523,9 +523,10 @@ static bool is_type(Token *tk) {
 //                           | "continue" ";"
 //                           | "goto" ident ";"
 //                           | ident ":" stmt
-// var_decl                  = basetype var_decl_sub ("," var_decl_sub)* ";"
+// var_decl                  = basetype ( (var_decl_sub ("," var_decl_sub)*) | (static_var_decl_sub ("," static_var_decl)*) ) ";"
 //                           | basetype ";"
 // var_decl_sub              = declarator ( "=" local_var_initializer)?
+// static_vart_decl          = declarator ( "=" gvar_initializer)?
 // local_var_initializer     = local_var_initializer_sub
 // local_var_initializer_sub = "{" local_var_initializer_sub ("," local_var_initializer_sub)* "}"
 //                           | assign
@@ -575,6 +576,7 @@ static Type *declarator(Type *ty, char **name);
 static Type *abstract_declarator(Type *ty);
 static Node *var_decl();
 static Node *var_decl_sub();
+static void static_var_decl_sub(Type *base);
 static Node *expr();
 static Node *assign();
 static Node *ternary();
@@ -601,6 +603,7 @@ static Node *read_expr_stmt();
 static Type *type_suffix(Type *base);
 static Type *struct_decl();
 static Type *enum_decl();
+static char *next_data_label();
 
 typedef enum {
   NEXT_DECL_DUMMY,
@@ -1788,6 +1791,31 @@ static Node *var_decl() {
       return new_node(ND_NULL);
     }
 
+    if (sclass == STATIC) {
+      // static がついてたらスコープだけローカル変数で、グローバル変数扱いにする
+      // ただ、単純にident_name でグローバル変数を作ってしまうと別の関数で、
+      // 同じ名前のstatic local な変数を作れなくなる。
+      //
+      // なので、グローバル変数自体はユニークなラベルで名前をつけて、
+      // スコープ側でその変数をここでパースしたident_nameで登録することで、同じ名前のstatic_local変数を別の関数でも使えるようにしている。
+      Var *var = new_gvar(next_data_label(), type, true);
+      // 別途スコープにident_nameでこの変数を登録
+      push_var_scope(ident_name, var);
+
+      if (!consume("=")) {
+        if (type->is_incomplete) {
+          error_at(tmp_tk->str, "incomplete element type(gvar)");
+        }
+      } else {
+        var->initializer = gvar_initializer(type);
+      }
+
+      // カンマ区切りの別の宣言もあればパース
+      static_var_decl_sub(basic_type);
+      expect(";");
+      return new_node(ND_NULL);
+    }
+
 
     Var *var = new_lvar(ident_name, type);
     Node *node = new_node(ND_VAR_DECL);
@@ -1814,6 +1842,24 @@ static Node *var_decl() {
     return node;
   }
   return NULL;
+}
+
+static void static_var_decl_sub(Type *base) {
+  while (consume(",")) {
+    Token *tmp_tk = token;
+    char *ident_name;
+    Type *type = declarator(base, &ident_name);
+    Var *var = new_gvar(next_data_label(), type, true);
+    push_var_scope(ident_name, var);
+
+    if (!consume("=")) {
+      if (type->is_incomplete) {
+        error_at(tmp_tk->str, "incomplete element type(gvar)");
+      }
+      continue;
+    }
+    var->initializer = gvar_initializer(type);
+  }
 }
 
 static Node *var_decl_sub(Type *base, Node *decl) {
