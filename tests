@@ -1708,6 +1708,17 @@ void f89_compound_literal_test() {
   assert(2, n, "n");
 }
 
+void f90_sample() {
+  return;
+}
+void f90_return_with_no_expr_test() {
+  int i = 1;
+
+  i++;
+  f90_sample();
+  assert(2, i, "i");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1943,6 +1954,7 @@ int main() {
   f87_alignof_test();
   f88_static_var_test();
   f89_compound_literal_test();
+  f90_return_with_no_expr_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

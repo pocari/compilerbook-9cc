@@ -516,7 +516,7 @@ static bool is_type(Token *tk) {
 // stmt                      = expr ";"
 //                           | ";"
 //                           | "{" stmt* "}"
-//                           | "return" expr ";"
+//                           | "return" expr? ";"
 //                           | "if" "(" expr ")" stmt ("else" stmt)?
 //                           | "while" "(" expr ")" stmt
 //                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
@@ -1425,8 +1425,10 @@ static Node *stmt() {
     node = new_node(ND_NULL);
   } else if (consume_kind(TK_RETURN)) {
     node = new_node(ND_RETURN);
-    node->lhs = expr();
-    expect(";");
+    if (!consume(";")) {
+      node->lhs = expr();
+      expect(";");
+    }
   } else if (consume_kind(TK_IF)) {
     node = new_node(ND_IF);
 

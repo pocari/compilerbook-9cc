@@ -253,9 +253,11 @@ static void gen(Node *node) {
       return;
     case ND_RETURN:
       printfln("  # ND_RETURN start");
-      gen(node->lhs);
-      printfln("  pop rax");
-      printfln("  jmp .L.return.%s", funcname);
+      if (node->lhs) {
+        gen(node->lhs);
+        printfln("  pop rax");
+        printfln("  jmp .L.return.%s", funcname);
+      }
       printfln("  # ND_RETURN end");
       return;
     case ND_BLOCK:
