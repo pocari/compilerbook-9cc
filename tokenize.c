@@ -602,7 +602,7 @@ char *read_file(char *path) {
   if (fseek(fp, 0, SEEK_END) == -1) {
     error("%s: fseek: %s", path, strerror(errno));
   }
-  size_t file_size = ftell(fp);
+  long file_size = ftell(fp);
 
   // 読むために先頭に戻す
   if (fseek(fp, 0, SEEK_SET) == -1) {

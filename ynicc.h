@@ -103,7 +103,7 @@ struct Type {
   int align; // アラインされるバイト数
   bool is_incomplete; // int ary[] のようなサイズがわからない状態で宣言されているときにtrueになるフラグ
   Type *ptr_to; // arrayかpointerの場合の型
-  size_t array_size; // kind が TY_ARRAY のときに配列サイズがセットされる
+  long array_size; // kind が TY_ARRAY のときに配列サイズがセットされる
   Member *members; // 構造体の場合のフィールド達
   Type *return_ty; // 関数型の場合の戻り値の型
 };
