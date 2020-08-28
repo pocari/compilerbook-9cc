@@ -755,6 +755,13 @@ static void codegen_func(Function *func) {
 }
 
 static void codegen_data(Program *pgm) {
+  for (VarList *v = pgm->global_var; v; v = v->next) {
+    Var *var = v->var;
+    if (!var->is_static) {
+      printfln(".global %s", var->name);
+    }
+  }
+
   // https://ja.wikipedia.org/wiki/.bss
   // 初期化敷なしのグローバル変数や static 変数は.bssセクション、それ以外は .data セクションに置くらしい
   //

@@ -196,9 +196,9 @@ static Var *new_lvar(char *name, Type *type) {
   return var;
 }
 
-static Var *new_gvar(char *name, Type *type, bool emit) {
+static Var *new_gvar(char *name, Type *type, bool emit, bool is_static) {
   Var *var = new_var(name, type, false);
-
+  var->is_static = is_static;
   if (emit) {
     // 通常のグローバル変数や、文字列リテラルは.dataセクションに出力するように
     // VarListとして保存するが、関数定義などのND_CALLのときのチェックようにしか使わないものは
@@ -583,7 +583,7 @@ static Type *declarator(Type *ty, char **name);
 static Type *abstract_declarator(Type *ty);
 static Node *var_decl();
 static Node *var_decl_sub();
-static void static_var_decl_sub(Type *base);
+static void static_var_decl_sub(Type *base, StorageClass sclass);
 static Node *expr();
 static Node *assign();
 static Node *ternary();
@@ -888,7 +888,7 @@ static void global_var_decl() {
 
   // extern が設定sれていない場合はこのファイルで領域を確保する
   // それ以外はどこかのファイルのコンパイルで領域が確保されているはずなので、名前のみ登録
-  Var *var = new_gvar(ident_name, type, sclass != EXTERN);
+  Var *var = new_gvar(ident_name, type, sclass != EXTERN, sclass == STATIC);
   if (sclass == EXTERN) {
     // extern の場合初期化式は書けず、宣言のみになる
     expect(";");
@@ -1378,7 +1378,8 @@ static Function *function_def_or_decl() {
   func->return_type = ret_type;
   func->name = ident;
   // 関数呼び出し時のチェック用に定義した関数も関数型としてscopeに入れる
-  new_gvar(func->name, func_type(func->return_type), false);
+  // is_staticに関して、関数は関数自体で別途is_staticを持っていて、そちらで .global の出力有無を制御しているので、このgvarのis_statciは何でもよい
+  new_gvar(func->name, func_type(func->return_type), false, false);
 
   Scope *sc = enter_scope();
   expect("(");
@@ -1821,7 +1822,7 @@ static Node *var_decl() {
       //
       // なので、グローバル変数自体はユニークなラベルで名前をつけて、
       // スコープ側でその変数をここでパースしたident_nameで登録することで、同じ名前のstatic_local変数を別の関数でも使えるようにしている。
-      Var *var = new_gvar(new_label(), type, true);
+      Var *var = new_gvar(new_label(), type, true, true);
       // 別途スコープにident_nameでこの変数を登録
       push_var_scope(ident_name, var);
 
@@ -1834,7 +1835,7 @@ static Node *var_decl() {
       }
 
       // カンマ区切りの別の宣言もあればパース
-      static_var_decl_sub(basic_type);
+      static_var_decl_sub(basic_type, sclass);
       expect(";");
       return new_node(ND_NULL);
     }
@@ -1867,12 +1868,12 @@ static Node *var_decl() {
   return NULL;
 }
 
-static void static_var_decl_sub(Type *base) {
+static void static_var_decl_sub(Type *base, StorageClass sclass) {
   while (consume(",")) {
     Token *tmp_tk = token;
     char *ident_name;
     Type *type = declarator(base, &ident_name);
-    Var *var = new_gvar(new_label(), type, true);
+    Var *var = new_gvar(new_label(), type, true, sclass == STATIC);
     push_var_scope(ident_name, var);
 
     if (!consume("=")) {
@@ -2418,7 +2419,7 @@ static Node *compound_literal() {
 
   if (scope_depth == 0) {
     // 無名のグローバル変数追加
-    Var *var = new_gvar(new_label(), ty, true);
+    Var *var = new_gvar(new_label(), ty, true, false);
     var->initializer = gvar_initializer(ty);
     return new_var_node(var);
   } else {
@@ -2486,7 +2487,7 @@ static char *new_label() {
 
 static Node *parse_string_literal(Token *str_token) {
   Type *ty = array_of(char_type, str_token->content_length);
-  Var *var = new_gvar(new_label(), ty, true);
+  Var *var = new_gvar(new_label(), ty, true, true);
   var->initializer = new_init_string(str_token->contents, str_token->content_length);
 
   return new_var_node(var);

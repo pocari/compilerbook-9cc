@@ -247,8 +247,9 @@ struct Var {
   int offset; // rbpからのオフセット
   bool is_local; // local、global変数の識別用フラグ
 
-  // グローバル変数(文字列リテラル用の変数も含む)
+  // グローバル変数の初期化式(文字列リテラル用の変数も含む)
   Initializer *initializer;
+  bool is_static;
 };
 
 struct VarList {
