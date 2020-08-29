@@ -782,7 +782,10 @@ static void codegen_data(Program *pgm) {
     if (!var->initializer) {
       // 初期化式が無いもののみ対象
 
-      // 全然意図はわからないが、その変数のalignを .align として指定するらしい
+      // ここの .align については
+      // http://www.swlab.cs.okayama-u.ac.jp/~nom/lect/p3/what-is-directive.html
+      // 参照
+      // 上の説明では、mipsなので 「.align n が 2のn乗にアライン」とあるが、x86では単に「nバイトアライン」という意味らしい
       printfln(".align %d", var->type->align);
       printfln("%s:", var->name);
       printfln("  .zero %d", var->type->size);
