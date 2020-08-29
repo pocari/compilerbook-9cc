@@ -1749,6 +1749,20 @@ void f92_do_while_test() {
     }
   } while (j++ < 10);
   assert(30, sum, "sum");
+
+  int a = 0;
+  int sum2 = 0;
+  do {
+    a++;
+    if (a % 2 == 0) {
+      continue;
+    }
+
+    if (a == 9) break;
+
+    sum2 += a;
+  } while (a < 10);
+  assert(16, sum2, "sum2");
 }
 
 int main() {
