@@ -134,7 +134,8 @@ static void push_enum_scope(char *name, Type *enum_ty, int enum_val) {
 
 static TagScope *find_tag(Token *tk) {
   for (TagScope *sc = tag_scope; sc; sc = sc->next) {
-    if (strncmp(sc->name, tk->str, tk->len) == 0) {
+    if (strlen(sc->name) == tk->len && strncmp(sc->name, tk->str, tk->len) == 0) {
+      // fprintf(stderr, "tag: %s, sc_name: %s\n", my_strndup(tk->str, tk->len), sc->name);
       return sc;
     }
   }
