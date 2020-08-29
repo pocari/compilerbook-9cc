@@ -459,10 +459,33 @@ static void gen(Node *node) {
             printfln("  pop %s", ARGUMENT_REGISTERS_SIZE8[i]);
           }
         }
+        // 関数呼び出し前にスタックポインタ(rsp)が16バイト境界にあるように調整する
+        // rspの下位4bitが0かどうか(=16の倍数かどうか調べた上で)
+        // - 16の倍数だった
+        //   - 特に気にせず普通にcallする
+        // - 16の倍数でなかった
+        //   - スタックは8byteずつ増えたり減ったりするので、16の倍数でない場合は下記のように下位4bitが8になっているパターンしかない
+        //    1 0 0 0
+        //   なので、スタックをさらに8バイト伸ばせして(=rspを減らして)16の倍数にしたうえでcallして戻ってきてからもとに戻す
+        int seq = next_label_key();
+        printfln("  mov rax, rsp");
+        printfln("  and rax, 15"); // 15 = 0b1111
+        printfln("  jnz .L.stack_adjusted_call.%04d", seq); // 0じゃない==16の倍数じゃないので調整してから呼ぶ方に飛ぶ
+        // ここに来た場合は、rspが16バイト境界にあるので、単にコールする
+
         // printfを呼ぶときは、 al レジスタに浮動小数点の可変長引数の数をalレジスタに入れておく必要があるが
         // 現状は浮動小数点が無いので、固定で0をいれておく
         printfln("  xor al, al");
         printfln("  call %s", node->funcname);
+        // 関数呼び出しの後のコードにジャンプ
+        printfln("  jmp .L.end_call.%04d", seq);
+        // ここに来た場合は、rspが16バイト境界にないので調整してから関数呼び出しする
+        printfln(".L.stack_adjusted_call.%04d:", seq);
+        printfln("  sub rsp, 8"); // rspが8の倍数になっているので、8バイト伸ばして16の倍数に調整
+        printfln("  xor al, al"); // alのクリアについては上のcall命令参照
+        printfln("  call %s", node->funcname);
+        printfln("  add rsp, 8"); // 関数呼び出し後、rspをもとに戻す
+        printfln(".L.end_call.%04d:", seq);
         printfln("  push rax"); // 関数の戻り値をスタックに積む
         printfln("  # ND_CALL end");
       }
