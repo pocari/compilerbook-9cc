@@ -121,14 +121,14 @@ void add_type(Node *node) {
     case ND_DEREF:
       {
         if (!node->lhs->ty->ptr_to) {
-          error("invalid pointer dereferrence");
+          error_at(node->tok->str, "invalid pointer dereferrence");
         }
         Type *ty = node->lhs->ty->ptr_to;
         if (ty->kind == TY_VOID) {
-          error("void *ポインタをデリファレンスできません");
+          error_at(node->tok->str, "void *ポインタをデリファレンスできません");
         }
         if (ty->kind == TY_STRUCT && ty->is_incomplete) {
-          error("不完全な構造体のデリファレンスはできません");
+          error_at(node->tok->str, "不完全な構造体のデリファレンスはできません");
         }
         node->ty = ty;
       }

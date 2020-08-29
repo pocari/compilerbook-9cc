@@ -208,6 +208,7 @@ struct Function {
 
 struct Node {
   NodeKind kind;
+  Token *tok;
   Type *ty;
 
   Node *lhs; // 二項演算での左辺
@@ -280,7 +281,7 @@ void error(char *fmt, ...);
 void free_program(Program *function);
 char *node_kind_to_s(Node *nd);
 char *my_strndup(char *str, int len);
-Node *new_var_node(Var *var);
+Node *new_var_node(Var *var, Token *tk);
 Program *program();
 
 // codegen.c

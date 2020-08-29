@@ -1783,7 +1783,7 @@ void f93_bool_func_test() {
   assert(0, f93_false(), "f93_false()");
 }
 
-void f94_var_arg_func_call() {
+void f94_var_arg_func_call_test() {
   assert(15, add_all1(1, 2, 3, 4, 5, 0), "add_all1(1, 2, 3, 4, 5, 0)");
   assert(15, add_all2(1, 2, 3, 4, 5, 0), "add_all2(1, 2, 3, 4, 5, 0)");
 }
@@ -2027,7 +2027,7 @@ int main() {
   f91_bit_assign_test();
   f92_do_while_test();
   f93_bool_func_test();
-  f94_var_arg_func_call();
+  f94_var_arg_func_call_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
