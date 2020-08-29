@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 // extern のテストで使う
 int f84_ext1;
@@ -53,3 +54,27 @@ void alloc_3num_ary_8_byte_cell(int **p) {
 //   return 0;
 // }
 
+int add_all1(int x, ...) {
+  va_list ap;
+  va_start(ap, x);
+
+  for (;;) {
+    int y = va_arg(ap, int);
+    if (y == 0)
+      return x;
+    x += y;
+  }
+}
+
+int add_all2(int x, int y, ...) {
+  va_list ap;
+  va_start(ap, y);
+  x = x + y;
+
+  for (;;) {
+    int y = va_arg(ap, int);
+    if (y == 0)
+      return x;
+    x += y;
+  }
+}

@@ -496,6 +496,7 @@ static char *multi_char_ope[]= {
   "|=",
   "&=",
   "^=",
+  "...",
   NULL,
 };
 

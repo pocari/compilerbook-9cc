@@ -20,6 +20,9 @@ int foo_return2();
 // TODO: 戻り値voidだがまだvoid実装してないので一旦int型で宣言しておく
 int alloc_3num_ary_8_byte_cell(int **p);
 
+int add_all1(int x, ...);
+int add_all2(int x, int y, ...);
+
 int assert(int expected, int actual, char *code) {
   test_count = test_count + 1;
   if (expected == actual) {
@@ -1780,6 +1783,11 @@ void f93_bool_func_test() {
   assert(0, f93_false(), "f93_false()");
 }
 
+void f94_var_arg_func_call() {
+  assert(15, add_all1(1, 2, 3, 4, 5, 0), "add_all1(1, 2, 3, 4, 5, 0)");
+  assert(15, add_all2(1, 2, 3, 4, 5, 0), "add_all2(1, 2, 3, 4, 5, 0)");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -2019,6 +2027,7 @@ int main() {
   f91_bit_assign_test();
   f92_do_while_test();
   f93_bool_func_test();
+  f94_var_arg_func_call();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

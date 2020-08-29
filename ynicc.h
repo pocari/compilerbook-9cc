@@ -203,6 +203,7 @@ struct Function {
   VarList *params; //この関数の仮引数
   int stack_size; //この関数のスタックサイズ
   bool is_staitc;
+  bool has_vararg; // 引数に ... をとるかどうか
 };
 
 struct Node {

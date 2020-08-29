@@ -1343,6 +1343,12 @@ static void function_params(Function *func) {
   // fprintf(stderr, "parse func param start\n");
   while (!consume(")")) {
     expect(",");
+    if (consume("...")) {
+      func->has_vararg = true;
+      // ... は引数の最後であること
+      expect(")");
+      break;
+    }
     type = basetype(NULL);
     char *name;
     type = declarator(type, &name);
