@@ -26,6 +26,7 @@ typedef enum {
   TK_NUM,      // 整数トークン
   TK_RETURN,   // return
   TK_WHILE,    // while
+  TK_DO,       // do
   TK_IF,       // if
   TK_ELSE,     // else
   TK_FOR,      // for
@@ -217,6 +218,8 @@ struct Node {
   Node *cond; // if, while, for の条件式
   Node *then; // ifの then節
   Node *els; // ifのelse節
+
+  bool is_do_while; // do_while と while 分の区別
 
   Node *init; // forの初期化式
   Node *inc; // forの継続式

@@ -25,6 +25,8 @@ char *token_kind_to_s(TokenKind kind) {
       return "TK_RETURN";
     case TK_WHILE: // while
       return "TK_WHILE";
+    case TK_DO: // do
+      return "TK_DO";
     case TK_IF: // if
       return "TK_IF";
     case TK_ELSE: // else
@@ -229,6 +231,10 @@ static Keyword keywords[] = {
   {
     "default",
     TK_DEFAULT,
+  },
+  {
+    "do",
+    TK_DO,
   },
 };
 

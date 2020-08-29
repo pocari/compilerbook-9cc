@@ -339,6 +339,12 @@ static Token *consume_kind(TokenKind kind) {
   return t;
 }
 
+static void expect_kind(TokenKind kind) {
+  if (!consume_kind(kind)) {
+    error_at(token->str, "トークン %s がありません", token_kind_to_s(kind));
+  }
+}
+
 static Token *consume_ident() {
   if (token->kind == TK_IDENT) {
     Token *ret = token;
@@ -519,6 +525,7 @@ static bool is_type(Token *tk) {
 //                           | "return" expr? ";"
 //                           | "if" "(" expr ")" stmt ("else" stmt)?
 //                           | "while" "(" expr ")" stmt
+//                           | "do" stmt "while" "(" expr ")"
 //                           | "for" "(" (expr | var_decl)? ";" expr? ";" expr? ")" stmt
 //                           | "switch" "(" expr ")"
 //                           | "case" const_expr ":" stmt
@@ -1451,6 +1458,14 @@ static Node *stmt() {
     node->cond = expr();
     expect(")");
     node->body = stmt();
+  } else if (consume_kind(TK_DO)) {
+    node = new_node(ND_WHILE);
+    node->is_do_while = true;
+    node->body = stmt();
+    expect_kind(TK_WHILE);
+    expect("(");
+    node->cond = expr();
+    expect(")");
   } else if (consume_kind(TK_FOR)) {
     node = new_node(ND_FOR);
     Scope *sc = enter_scope();

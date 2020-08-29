@@ -1732,6 +1732,25 @@ void f91_bit_assign_test() {
   assert(0b1010, i, "i");
 }
 
+void f92_do_while_test() {
+  int i = 0;
+
+  // 実は do while の{} は 構文じゃなくて ただの複文(block)ステートメントが来てるだけだった。
+  do
+    i++;
+  while (i < 10);
+  assert(10, i, "i");
+
+  int sum = 0;
+  int j = 1;
+  do {
+    if (j % 2 == 0) {
+      sum += j;
+    }
+  } while (j++ < 10);
+  assert(30, sum, "sum");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -1969,6 +1988,7 @@ int main() {
   f89_compound_literal_test();
   f90_return_with_no_expr_test();
   f91_bit_assign_test();
+  f92_do_while_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

@@ -302,9 +302,13 @@ static void gen(Node *node) {
       {
         printfln("  # ND_WHILE start");
         int begin_label = next_label_key();
+        int while_body_label = next_label_key();
         int continue_seq_backup = current_continue_jump_seq;
         current_continue_jump_seq = begin_label;
-
+        if (node->is_do_while) {
+          // do while分の場合は初回の条件式のチェックはスキップしてbodyのコードにジャンプ
+          printfln("  jmp .L.while_body.%04d", while_body_label);
+        }
         printfln(".L.continue.%04d:", begin_label);
         printfln("  # ND_WHILE condition start");
         gen(node->cond); // 条件式のコード生成
@@ -317,6 +321,7 @@ static void gen(Node *node) {
         current_break_jump_seq = end_label;
         printfln("  je .L.break.%04d", end_label); // false(rax == 0)ならwhile終了なのでジャンプ
         printfln("  # ND_WHILE body start");
+        printfln(".L.while_body.%04d:", while_body_label); // do 〜 while() のときに実行開始位置(初回の条件チェックを省く)
         gen(node->body); // whileの本体実行
         printfln("  # ND_WHILE body end");
         printfln("  jmp .L.continue.%04d", begin_label); //繰り返し
