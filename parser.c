@@ -1466,6 +1466,7 @@ static Node *stmt() {
     expect("(");
     node->cond = expr();
     expect(")");
+    expect(";");
   } else if (consume_kind(TK_FOR)) {
     node = new_node(ND_FOR);
     Scope *sc = enter_scope();
