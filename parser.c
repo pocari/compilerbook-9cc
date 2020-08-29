@@ -1047,12 +1047,12 @@ static Type *basetype(StorageClass *sclass) {
       //まだ何も型名を読んでいなくて、ビルトインの方じゃない場合は、構造体か、typedefされた型名になる。
       if (tk->kind == TK_STRUCT) {
         ty = struct_decl();
-        // fprintf(stderr, "struct decl!!!!!!!!!!!!!\n");
-        // fprintf(stderr, "ty->kind: %d\n", ty->kind);
       } else if (tk->kind == TK_ENUM) {
         ty = enum_decl();
       } else {
         ty = find_typedef(tk);
+        // fprintf(stderr, "found typedef: %s\n", my_strndup(tk->str, tk->len));
+        // fprintf(stderr, "found is_incomplete: %d\n", ty->is_incomplete);
         assert(ty);
         token = token->next;
       }
@@ -2002,7 +2002,7 @@ static Node *ternary() {
   if (tk = consume("?")) {
     Node *true_expr = expr();
     expect(":");
-    Node *false_expr = expr();
+    Node *false_expr = ternary();
 
     // ifと同じ構造で式になるのでthen, elsにstmtじゃなくてexprいれたら動いたので取り敢えずこれで
     Node *cond = node;
@@ -2336,6 +2336,8 @@ static Node *unary() {
         Token *tk = token;
         Type *ty = type_name();
 
+        // fprintf(stderr, "ty->kind:%d\n", ty->kind);
+        // fprintf(stderr, "ty->isincomplete:%d\n", ty->is_incomplete);
         if (ty->is_incomplete) {
           error_at(tk->str, "incomplete element type(sizeof1)");
         }
