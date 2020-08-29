@@ -1303,7 +1303,7 @@ static Type *enum_decl() {
   for (;;) {
     char *ident = expect_ident();
     if (consume("=")) {
-      enum_value = expect_number();
+      enum_value = const_expr();
     }
     push_enum_scope(ident, ty, enum_value++);
 

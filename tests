@@ -1788,6 +1788,19 @@ void f94_var_arg_func_call_test() {
   assert(15, add_all2(1, 2, 3, 4, 5, 0), "add_all2(1, 2, 3, 4, 5, 0)");
 }
 
+void f95_enum_value_const_expr_test() {
+  typedef enum {
+    A = 1,
+    B = 1 + 2,
+    C,
+  } test_enum;
+
+  assert(1, A, "A");
+  assert(3, B, "B");
+  assert(4, C, "C");
+
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -2028,6 +2041,7 @@ int main() {
   f92_do_while_test();
   f93_bool_func_test();
   f94_var_arg_func_call_test();
+  f95_enum_value_const_expr_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
