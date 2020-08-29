@@ -1610,10 +1610,10 @@ static Type *type_suffix(Type *base) {
   if (base->is_incomplete) {
     error_at(tk->str, "incomplete element type(type_suffix)");
   }
-  Type *ary_ty = array_of(base, array_size);
-  ary_ty->is_incomplete = is_incomplete;
+  base = array_of(base, array_size);
+  base->is_incomplete = is_incomplete;
 
-  return ary_ty;
+  return base;
 }
 
 // https://github.com/rui314/chibicc/blob/e1b12f2c3d0e4389f327fcaa7484b5e439d4a716/parse.c#L679
@@ -2523,7 +2523,7 @@ static Node *parse_call_func(Token *t) {
   node->funcarg_num = args;
 
   if (args > 6) {
-    fprintf(stderr, "関数呼び出しの引数が6を超えると今はコンパイル出来ません\n");
+    error_at(node->tok->str, "関数呼び出しの引数が6を超えると今はコンパイル出来ません\n");
   }
   expect(")");
 
