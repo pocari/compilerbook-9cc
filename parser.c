@@ -541,7 +541,7 @@ static bool is_type(Token *tk) {
 // 以降の演算子の優先順位は下記参照(この表で上にある演算子(優先度が高い演算子)ほどBNFとしては下にくる)
 // http://www.bohyoh.com/CandCPP/C/operator.html
 // expr                      = assign ("," assign)*
-// assign                    = ternary ( ("="  | "+=" | "-=" | "*=" | "/=") assign)?
+// assign                    = ternary ( ("="  | "+=" | "-=" | "*=" | "/=" | "|=" | "&=" | "^=") assign)?
 // ternary                   = logical_or ("?" expr : expr)?
 // const_expr                = eval( ternary )
 // logical_or                = logical_and ( "||" logical_and )*
@@ -1955,6 +1955,15 @@ static Node *assign() {
     return new_bin_node(ND_ASSIGN, node, n);
   } else if (consume(">>=")) {
     Node *n = new_bin_node(ND_A_RSHIFT, node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
+  } else if (consume("|=")) {
+    Node *n = new_bin_node(ND_BIT_OR, node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
+  } else if (consume("&=")) {
+    Node *n = new_bin_node(ND_BIT_AND, node, assign());
+    return new_bin_node(ND_ASSIGN, node, n);
+  } else if (consume("^=")) {
+    Node *n = new_bin_node(ND_BIT_XOR, node, assign());
     return new_bin_node(ND_ASSIGN, node, n);
   }
   return node;
