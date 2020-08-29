@@ -486,6 +486,10 @@ static void gen(Node *node) {
         printfln("  call %s", node->funcname);
         printfln("  add rsp, 8"); // 関数呼び出し後、rspをもとに戻す
         printfln(".L.end_call.%04d:", seq);
+        if (node->ty->kind == TY_BOOL) {
+          // boolを返す場合にx86-64の規約で、値として意味がある下位8bit以外の上位56bitを全部ゼロにしないといけないらしい
+          printfln("  movzb rax, al");
+        }
         printfln("  push rax"); // 関数の戻り値をスタックに積む
         printfln("  # ND_CALL end");
       }
