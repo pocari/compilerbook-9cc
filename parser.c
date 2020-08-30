@@ -361,7 +361,7 @@ static void expect(char *op) {
   if (token->kind != TK_RESERVED ||
       token->len != strlen(op) ||
       memcmp(token->str, op, token->len)) {
-    error_at(token->str, "'%c'(token->kind: %s, token->len: %d, strlen(op): %d, op: %s)ではありません", op, token_kind_to_s(token->kind), token->len, strlen(op), op);
+    error_at(token->str, "'%c'(token->kind: %s, token->len: %d, op: %s)ではありません", op, token_kind_to_s(token->kind), token->len, op);
   }
   token = token->next;
 }
@@ -1790,7 +1790,7 @@ static Node *local_var_initializer_sub(Node *cur, Var *var, Type *ty, Designator
     // 残りのメンバーがまだあったらゼロ初期化する
     for (; mem; mem = mem->next) {
       Designator dseg2 = {desg, 0, mem};
-      cur = lvar_init_zero(cur, var, ty->ptr_to, &dseg2);
+      cur = lvar_init_zero(cur, var, mem->ty, &dseg2);
     }
 
     return cur;
