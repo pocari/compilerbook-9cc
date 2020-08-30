@@ -257,6 +257,8 @@ static void gen(Node *node) {
         gen(node->lhs);
         printfln("  pop rax");
         printfln("  jmp .L.return.%s", funcname);
+      } else {
+        printfln("  jmp .L.return.%s", funcname);
       }
       printfln("  # ND_RETURN end");
       return;

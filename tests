@@ -1845,6 +1845,32 @@ void f98_fix_shift_node_add_type_test() {
   assert(5, (8 >> 1) + 1, "(8 >> 1) | 1");
 }
 
+void f99_test(int i, int *output) {
+  if (i == 1) {
+    *output = 10;
+    return;
+  }
+  if (i == 2) {
+    *output =  20;
+    return;
+  }
+  *output = 30;
+  return;
+}
+
+void f99_fix_return_no_lhs_test() {
+  int output;
+
+  f99_test(1, &output);
+  assert(10, output, "output");
+
+  f99_test(2, &output);
+  assert(20, output, "output");
+
+  f99_test(3, &output);
+  assert(30, output, "output");
+}
+
 
 
 int main() {
@@ -2091,6 +2117,7 @@ int main() {
   f96_vaarg_func_def_test();
   f97_fix_struct_initializer_test();
   f98_fix_shift_node_add_type_test();
+  f99_fix_return_no_lhs_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
