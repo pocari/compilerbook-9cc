@@ -1829,6 +1829,18 @@ void f96_vaarg_func_def_test() {
   assert(7, len, "len");
 }
 
+void f97_fix_struct_initializer_test() {
+  typedef struct {
+    int x;
+    int y;
+  } S1;
+
+  S1 s = {1};
+  assert(1, s.x, "s.x");
+  assert(0, s.y, "s.y");
+}
+
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -2071,6 +2083,7 @@ int main() {
   f94_var_arg_func_call_test();
   f95_enum_value_const_expr_test();
   f96_vaarg_func_def_test();
+  f97_fix_struct_initializer_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
