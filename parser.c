@@ -248,7 +248,6 @@ static int get_pos_by_line(char *loc) {
 }
 
 static char *get_error_lines(char *loc) {
-  //エラーが出た行までの文字列を返す
   int pos = 0;
   char *p = user_input;
 
@@ -1273,7 +1272,6 @@ static Type *struct_decl() {
   // メンバーの定義までパースして初めて不完全型->完全型になる
   ty->is_incomplete = false;
 
-
   return ty;
 }
 
@@ -1372,7 +1370,8 @@ static void function_params(Function *func) {
 
 // 関数のスタックサイズ関連を計算
 static void set_stack_info(Function *f) {
-  int offset = 0;
+  // vaargの場合引数のregister、6個を保存する場所＋ ... までの引数の個数情報をわたす1個で合計 (6+1)*8 = 56byteのオフセットを準備
+  int offset = f->has_vararg ? 56 : 0;
   for (VarList *v = f->locals; v; v = v->next) {
     Var *var = v->var;
     offset = align_to(offset, var->type->align);
@@ -2010,6 +2009,7 @@ static Node *ternary() {
     node->cond = cond;
     node->then = true_expr;
     node->els = false_expr;
+
   }
 
   return node;

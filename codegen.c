@@ -438,6 +438,31 @@ static void gen(Node *node) {
       return;
     case ND_CALL:
       {
+        if (!strcmp(node->funcname, "__builtin_va_start")) {
+          printfln("  # __builtin_va_start");
+          printfln("  pop rax");
+          printfln("  mov r10, [rbp]"); // va_list を呼んだ関数のrbp取得
+          printfln("  mov edi, [r10-8]"); // 引数の数*8の値
+
+          // gp_offset
+          printfln("  mov dword ptr [rax], edi");
+
+          // fp_offset
+          printfln("  mov dword ptr [rax+4], 48");
+
+          // overflow_arg_area
+          // gcc でrbpの16バイト手前を渡してたので同じように
+          // 今はスタック渡しの引数がないので0にしとく
+          printfln("  mov qword ptr [rax+8], 0");
+
+          // reg_save_area
+          // 引数をのレジスタをスタックに保存した先頭アドレス
+          // rbpから レジスタの数(6) + 引数の個数情報(1) の (6+1)*8=56の位置から始まる
+          printfln("  mov qword ptr [rax+16], r10");
+          printfln("  sub qword ptr [rax+16], 56");
+          return;
+        }
+
         // 引数を渡すときにつかうレジスタは
         // https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf
         // の
@@ -744,7 +769,6 @@ static void codegen_func(Function *func) {
   // 使用されているローカル変数の数分、領域確保(ここに引数の値を保存する領域も確保される)
   printfln("  sub rsp, %d", func->stack_size);
 
-
   // paramsが引数を逆順に保持しているので、ロードするレジスタも逆順にする。そのため一度引数の数を数える
   int param_len = 0;
   for (VarList *v = func->params; v; v = v->next) {
@@ -752,6 +776,16 @@ static void codegen_func(Function *func) {
   }
 
   // レジスタから引数の情報をスタックに確保
+  if (func->has_vararg) {
+    printfln("  mov dword ptr [rbp-8], %d", param_len * 8);
+    printfln("  mov [rbp-16], r9");
+    printfln("  mov [rbp-24], r8");
+    printfln("  mov [rbp-32], rcx");
+    printfln("  mov [rbp-40], rdx");
+    printfln("  mov [rbp-48], rsi");
+    printfln("  mov [rbp-56], rdi");
+  }
+
   int i = param_len - 1;
   for (VarList *v = func->params; v; v = v->next) {
     int sz = v->var->type->size;
