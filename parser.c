@@ -1246,9 +1246,9 @@ static Type *struct_decl() {
 
   int offset = 0;
   for (Member *m = ty->members; m; m = m->next) {
-    m->offset = align_to(offset, m->ty->align);
+    offset = align_to(offset, m->ty->align);
+    m->offset = offset;
     offset += m->ty->size;
-
     if (ty->align < m->ty->align) {
       // 構造体自身のアラインメントは、構造体のメンバーの中の最大のアラインメントに合わせる
       // 構造体自体のサイズの割当(ループの外)で効いてくるらしい
