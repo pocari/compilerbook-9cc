@@ -247,7 +247,7 @@ Keyword *tokenize_keyword(char *p) {
     }
   }
   return NULL;
-};
+}
 
 static int parse_escaped(int ch) {
   switch(ch) {
