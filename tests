@@ -1801,6 +1801,34 @@ void f95_enum_value_const_expr_test() {
 
 }
 
+
+typedef struct {
+  int gp_offset;
+  int fp_offset;
+  void *overflow_arg_area;
+  void *reg_save_area;
+} __va_elem;
+
+static void my_va_start(__va_elem *ap) {
+  __builtin_va_start(ap);
+}
+static void my_va_end(__va_elem *ap) {}
+int vprintf(char *fmt, ...);
+
+int f96_vaarg_f(char *fmt, ...) {
+  __va_elem ap[1];
+  my_va_start(ap);
+  int n = vprintf(fmt, ap);
+  my_va_end(ap);
+  return n;
+}
+
+void f96_vaarg_func_def_test() {
+  int len = f96_vaarg_f("%d, %s\n", 12, "ab");
+  // "12, 34\n" の7文字
+  assert(7, len, "len");
+}
+
 int main() {
   test_count = 0;
   ok_count = 0;
@@ -2042,6 +2070,7 @@ int main() {
   f93_bool_func_test();
   f94_var_arg_func_call_test();
   f95_enum_value_const_expr_test();
+  f96_vaarg_func_def_test();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く
