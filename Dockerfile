@@ -11,4 +11,5 @@ RUN set -ex \
                  libc6-dev \
                  vim-tiny
 RUN mkdir -p /var/compilerbook
+RUN echo "set disassembly-flavor intel" > /root/.gdbinit
 WORKDIR /var/compilerbook
