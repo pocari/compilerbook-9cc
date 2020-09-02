@@ -69,7 +69,7 @@ EOF
     sed -i 's/SEEK_SET/0/g' $TMP/$1
 
     ./ynicc $TMP/$1 > $TMP/${1%.c}.s
-    gcc -c -o $TMP/${1%.c}.o $TMP/${1%.c}.s
+    gcc -g -c -o $TMP/${1%.c}.o $TMP/${1%.c}.s
 }
 
 cp *.c $TMP
@@ -85,4 +85,4 @@ expand tokenize.c
 expand debug.c
 expand type.c
 
-gcc -static -o ynicc-gen2 $TMP/*.o
+gcc -g -static -o ynicc-gen2 $TMP/*.o
