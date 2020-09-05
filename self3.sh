@@ -85,4 +85,4 @@ expand tokenize.c
 expand debug.c
 expand type.c
 
-gcc -static -g -o ynicc-gen3 $TMP/*.o
+gcc -g -static -o ynicc-gen3 $TMP/*.o
