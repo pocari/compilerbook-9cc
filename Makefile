@@ -18,8 +18,17 @@ test: ynicc
 ynicc-gen2: ynicc
 	./self.sh
 
+ynicc-gen3: ynicc-gen2
+	./self3.sh
+
 test-gen2: ynicc-gen2
 	./ynicc-gen2 tests > tmp.s
+	gcc -O0 -c test_func.c
+	gcc -O0 -static -o tmp test_func.o tmp.s
+	./tmp
+
+test-gen3: ynicc-gen3
+	./ynicc-gen3 tests > tmp.s
 	gcc -O0 -c test_func.c
 	gcc -O0 -static -o tmp test_func.o tmp.s
 	./tmp
