@@ -504,7 +504,7 @@ static bool is_type(Token *tk) {
     case TK_EXTERN:
       return true;
     default:
-      return find_typedef(tk);
+      return find_typedef(tk) ? true : false;
   }
 }
 
