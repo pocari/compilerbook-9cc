@@ -13,7 +13,8 @@ typedef struct FILE FILE;
 extern FILE *stdout;
 extern FILE *stderr;
 
-int isdigit(int c); int ispunct(int c);
+int isdigit(int c);
+int ispunct(int c);
 int putchar(int c);
 int fseek(FILE *fp, long offset, int origin);
 long int ftell(FILE *stream);
@@ -68,20 +69,20 @@ EOF
     sed -i 's/SEEK_SET/0/g' $TMP/$1
 
     ./ynicc-gen2 $TMP/$1 > $TMP/${1%.c}.s
-    gcc -c -o $TMP/${1%.c}.o $TMP/${1%.c}.s
+    gcc -g -c -o $TMP/${1%.c}.o $TMP/${1%.c}.s
 }
 
 cp *.c $TMP
-for i in $TMP/*.c; do
-  gcc -g -I. -c -o ${i%.c}.o $i
-done
+# for i in $TMP/*.c; do
+#   gcc -I. -c -o ${i%.c}.o $i
+# done
 
 expand ynicc.c
-# expand parser.c
-# expand codegen.c
-# expand string_buffer.c
-# expand tokenize.c
-# expand debug.c
-# expand type.c
-# 
+expand parser.c
+expand codegen.c
+expand string_buffer.c
+expand tokenize.c
+expand debug.c
+expand type.c
+
 gcc -static -g -o ynicc-gen3 $TMP/*.o
