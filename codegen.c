@@ -473,15 +473,17 @@ static void gen(Node *node) {
         printfln("  # ND_CALL start");
         if (node->funcarg_num > 0) {
           Node *cur = node->arg;
+
           for (int i = 0; i < node->funcarg_num; i++) {
             // 引数のアセンブリを出力(どんどん引数の式の値がスタックに積まれる)
-            printfln("  # func call argument %d", i + 1);
+            // 逆順に評価してスタックに詰んでいく(node->argが呼び出し時の引数の逆順のリストになっている)
+            printfln("  # func call argument %d", (node->funcarg_num - i));
             gen(cur);
             cur = cur->next;
           }
 
           // スタックから引数用のレジスタに値をロード
-          for (int i = node->funcarg_num - 1; i >= 0; i--) {
+          for (int i = 0; i < node->funcarg_num; i++) {
             printfln("  # load argument %d to register", i + 1);
             printfln("  pop %s", ARGUMENT_REGISTERS_SIZE8[i]);
           }

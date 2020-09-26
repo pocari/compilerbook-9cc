@@ -2512,14 +2512,21 @@ static Node *parse_call_func(Token *t) {
   }
 
   // 引数パース
+  // 引数を評価するときは最後の引数から評価したいので、node->argには逆順のリストを設定する
   int args = 0;
-  Node *cur = node->arg = assign();
+  Node *cur = assign();
   args++;
   while (consume(",")) {
-    cur->next = assign();
-    cur = cur->next;
+    Node *arg = assign();
+    arg->next = cur;
+    cur = arg;
     args++;
   }
+  // f(1, 2, 3)という関数呼び出しのnode->argは
+  // 3 -> 2 -> 1
+  // になる
+  node->arg = cur;
+
   node->funcarg_num = args;
 
   if (args > 6) {
