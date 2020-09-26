@@ -455,7 +455,8 @@ static void gen(Node *node) {
           // overflow_arg_area
           // gcc でrbpの16バイト手前を渡してたので同じように
           // 今はスタック渡しの引数がないので0にしとく
-          printfln("  mov qword ptr [rax+8], 0");
+          printfln("  mov qword ptr [rax+8], r10");
+          printfln("  add qword ptr [rax+8], 16");
 
           // reg_save_area
           // 引数をのレジスタをスタックに保存した先頭アドレス
@@ -484,6 +485,10 @@ static void gen(Node *node) {
 
           // スタックから引数用のレジスタに値をロード
           for (int i = 0; i < node->funcarg_num; i++) {
+            if (i >= 6) {
+              // 7個目以上の引数はそのまま引数に載せた状態で関数にわたす
+              break;
+            }
             printfln("  # load argument %d to register", i + 1);
             printfln("  pop %s", ARGUMENT_REGISTERS_SIZE8[i]);
           }
@@ -510,6 +515,16 @@ static void gen(Node *node) {
         // ここに来た場合は、rspが16バイト境界にないので調整してから関数呼び出しする
         printfln(".L.stack_adjusted_call.%04d:", seq);
         printfln("  sub rsp, 8"); // rspが8の倍数になっているので、8バイト伸ばして16の倍数に調整
+
+        // ここでスタックを8バイト伸ばしたことによって、関数呼び出し前のスタックトップにのっていた7番目以降の引数の場所がずれてしまうので、7番目以降の引数を8バイトずつずらす
+        printfln("# adjust 7th arg pos start"); // rspが8の倍数になっているので、8バイト伸ばして16の倍数に調整
+        int rest_args = node->funcarg_num - 6;
+        for (int i = 0; i < rest_args; i++) {
+          printfln(" mov rax, [rsp + %d]", 8 * (i + 1));
+          printfln(" mov [rsp + %d], rax", 8 * i);
+        }
+        printfln("# adjust 7th arg pos end");
+
         printfln("  xor al, al"); // alのクリアについては上のcall命令参照
         printfln("  call %s", node->funcname);
         printfln("  add rsp, 8"); // 関数呼び出し後、rspをもとに戻す
@@ -518,6 +533,11 @@ static void gen(Node *node) {
           // boolを返す場合にx86-64の規約で、値として意味がある下位8bit以外の上位56bitを全部ゼロにしないといけないらしい
           printfln("  movzb rax, al");
         }
+        // スタック渡しで渡していた７個目移行の引数の領域を破棄する
+        if (node->funcarg_num > 6) {
+          printfln("  add rsp, %d", (node->funcarg_num - 6) * 8);
+        }
+
         printfln("  push rax"); // 関数の戻り値をスタックに積む
         printfln("  # ND_CALL end");
       }
@@ -792,18 +812,27 @@ static void codegen_func(Function *func) {
 
   int i = param_len - 1;
   for (VarList *v = func->params; v; v = v->next) {
-    int sz = v->var->type->size;
-    if (sz == 1) {
-      printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE1[i]);
-    } else if (sz == 2) {
-      printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE2[i]);
-    } else if (sz == 4) {
-      printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE4[i]);
-    } else if (sz == 8) {
-      assert(sz == 8);
-      printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE8[i]);
+    if (i >= 6) {
+      // 7個以上(indexベースでいうと6以上)の引数は、スタックから取得する
+
+      // 7個目の引数は、この関数のスタックフレームの外(呼び出した側のスタック)にあるので、
+      // リターンアドレス(=rbp + 8)の次(rbp + 16)からのオフセットで7個目以上の引数のアドレスを計算
+      printfln("  mov rax, [rbp+%d]", 16 + (i - 6) * 8);
+      printfln("  mov [rbp-%d], rax", v->var->offset);
     } else {
-      assert(false);
+      int sz = v->var->type->size;
+      if (sz == 1) {
+        printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE1[i]);
+      } else if (sz == 2) {
+        printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE2[i]);
+      } else if (sz == 4) {
+        printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE4[i]);
+      } else if (sz == 8) {
+        assert(sz == 8);
+        printfln("  mov [rbp-%d], %s", v->var->offset, ARGUMENT_REGISTERS_SIZE8[i]);
+      } else {
+        assert(false);
+      }
     }
     i--;
   }

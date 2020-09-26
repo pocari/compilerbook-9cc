@@ -1812,6 +1812,23 @@ typedef struct {
 static void my_va_start(__va_elem *ap) {
   __builtin_va_start(ap);
 }
+
+// とりあえず long 限定
+static long my_var_arg(__va_elem *ap) {
+  long val;
+  if (ap->gp_offset >= 48) {
+    long **p = (long**)&ap->overflow_arg_area;
+    val = **p;
+    (*p)++;
+  } else {
+    char *p = ((char *)ap->reg_save_area) + ap->gp_offset;
+    val = *((long *)p);
+    ap->gp_offset += 8;
+  }
+  return val;
+}
+
+
 static void my_va_end(__va_elem *ap) {}
 int vprintf(char *fmt, ...);
 
@@ -1823,10 +1840,27 @@ int f96_vaarg_f(char *fmt, ...) {
   return n;
 }
 
+int f96_vaarg_arg_over_6(long x, ...) {
+  __va_elem ap[1];
+  my_va_start(ap);
+  long sum = x;
+  for (;;) {
+    long v = my_var_arg(ap);
+    if (v == 0) {
+      break;
+    }
+    sum += v;
+  }
+  my_va_end(ap);
+  return sum;
+}
+
 void f96_vaarg_func_def_test() {
   int len = f96_vaarg_f("%d, %s\n", 12, "ab");
   // "12, 34\n" の7文字
   assert(7, len, "len");
+
+  assert(36, f96_vaarg_arg_over_6(1, 2, 3, 4, 5, 6, 7, 8, 0), "f96_vaarg_arg_over_6(1, 2, 3, 4, 5, 6, 7, 8, 0)");
 }
 
 void f97_fix_struct_initializer_test() {
@@ -1871,7 +1905,22 @@ void f99_fix_return_no_lhs_test() {
   assert(30, output, "output");
 }
 
+long f100_helper(
+    long x1,
+    long x2,
+    long x3,
+    long x4,
+    long x5,
+    long x6,
+    long x7,
+    long x8
+) {
+  return x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8;
+}
 
+void f100_fun_args_over_6() {
+  assert(44, f100_helper(2, 3, 4, 5, 6, 7, 8, 9), "f100_helper(2, 3, 4, 5, 6, 7, 8, 9)");
+}
 
 int main() {
   test_count = 0;
@@ -2118,6 +2167,7 @@ int main() {
   f97_fix_struct_initializer_test();
   f98_fix_shift_node_add_type_test();
   f99_fix_return_no_lhs_test();
+  f100_fun_args_over_6();
 
   //------------------------------------------------------------------------
   // ここより上にテストを書く

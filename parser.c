@@ -2529,9 +2529,6 @@ static Node *parse_call_func(Token *t) {
 
   node->funcarg_num = args;
 
-  if (args > 6) {
-    error_at(node->tok->str, "関数呼び出しの引数が6を超えると今はコンパイル出来ません\n");
-  }
   expect(")");
 
   add_type(node);
