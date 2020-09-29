@@ -453,8 +453,8 @@ static void gen(Node *node) {
           printfln("  mov dword ptr [rax+4], 48");
 
           // overflow_arg_area
-          // gcc でrbpの16バイト手前を渡してたので同じように
-          // 今はスタック渡しの引数がないので0にしとく
+          // gcc でrbpの16バイト手前を渡してたので同じようにする
+          // rbpの場所からみて16バイト上(リターンアドレス8バイトはさんでさらに8バイト上のアドレス)がスタック経由で渡される引数(７番目以降になる)
           printfln("  mov qword ptr [rax+8], r10");
           printfln("  add qword ptr [rax+8], 16");
 
@@ -486,7 +486,10 @@ static void gen(Node *node) {
           // スタックから引数用のレジスタに値をロード
           for (int i = 0; i < node->funcarg_num; i++) {
             if (i >= 6) {
-              // 7個目以上の引数はそのまま引数に載せた状態で関数にわたす
+              // 7個目以上の引数はそのままスタックに載せた状態で関数にわたす
+              //
+              // とりあえずスタックに載せた状態にしておくが、実際に関数呼び出しの際は、
+              // さらに16バイト境界のアラインメント調整がrspにかかるので、その調整後のrspが７番目の引数を指すように後で調整し直す。
               break;
             }
             printfln("  # load argument %d to register", i + 1);
@@ -541,7 +544,7 @@ static void gen(Node *node) {
         // | argX |
         // +------+
         // 
-        // になっている状態なので arg7〜argxまでをひとつずつ上にコピーして、arg7がスタックトップになるように調節
+        // になっている状態なので arg7〜argxまでをひとつずつ上にコピーして、arg7がスタックトップ(rspの指す位置)になるように調節
 
         int rest_args = node->funcarg_num - 6;
         for (int i = 0; i < rest_args; i++) {
