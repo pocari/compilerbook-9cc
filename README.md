@@ -1,5 +1,6 @@
 [低レイヤを知りたい人のためのCコンパイラ作成入門](https://www.sigbus.info/compilerbook)
 
+[参考実装(old chibicc)](https://github.com/rui314/chibicc/tree/historical/old)
 ```
 $ make
 $ cat examples/fib.c
